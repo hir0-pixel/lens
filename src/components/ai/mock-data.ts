@@ -56,7 +56,7 @@ export const DEFAULT_CONTEXT_CHIPS: ContextChip[] = [
 
 export const MENTION_ITEMS: MentionItem[] = [
   { id: "m1", kind: "file", label: "App.tsx", detail: "src/App.tsx" },
-  { id: "m2", kind: "file", label: "AgentChat.tsx", detail: "src/components/agent/AgentChat.tsx" },
+  { id: "m2", kind: "file", label: "AIPanel.tsx", detail: "src/components/ai/AIPanel.tsx" },
   { id: "m3", kind: "file", label: "types.ts", detail: "src/lib/types.ts" },
   { id: "m4", kind: "folder", label: "components/ai", detail: "src/components/ai/" },
   { id: "m5", kind: "folder", label: "components/shell", detail: "src/components/shell/" },
@@ -91,7 +91,7 @@ export const SUGGESTED_PROMPTS = [
   { id: "s2", label: "Fix TypeScript errors", prompt: "Fix all TypeScript errors in the workspace" },
   { id: "s3", label: "Add a new feature", prompt: "Add a dark mode toggle to the settings panel" },
   { id: "s4", label: "Write tests", prompt: "Write unit tests for the layout store" },
-  { id: "s5", label: "Refactor component", prompt: "Refactor AgentChat into smaller components" },
+  { id: "s5", label: "Refactor component", prompt: "Refactor AIPanel into smaller components" },
   { id: "s6", label: "Generate docs", prompt: "Generate README documentation for this project" },
 ];
 
@@ -112,7 +112,7 @@ export const MOCK_DIFF: DiffFileChange[] = [
     deletions: 6,
     status: "pending",
     lines: [
-      { type: "context", content: "import AgentChat from \"./components/agent/AgentChat\";", oldLineNumber: 1, newLineNumber: 1 },
+      { type: "context", content: "import AIPanel from \"./components/ai/AIPanel\";", oldLineNumber: 1, newLineNumber: 1 },
       { type: "delete", content: "import AppShell from \"./components/shell/AppShell\";", oldLineNumber: 2 },
       { type: "add", content: "import AppShell from \"./components/shell/AppShell\";", newLineNumber: 2 },
       { type: "add", content: "import { AIPanel } from \"./components/ai/AIPanel\";", newLineNumber: 3 },
