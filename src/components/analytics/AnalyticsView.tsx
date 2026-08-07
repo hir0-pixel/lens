@@ -115,7 +115,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
               ].map((h, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-t bg-gradient-to-t from-accent-600/40 to-accent-400/80 transition-all hover:from-accent-500 hover:to-accent-300"
+                  className="flex-1 rounded-t bg-[var(--accent-primary-muted)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--accent-primary)]/40"
                   style={{ height: `${h}%` }}
                 />
               ))}

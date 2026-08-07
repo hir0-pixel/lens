@@ -12,11 +12,15 @@ import {
 import GithubIcon from "../ui/GithubIcon";
 import { cn } from "../../lib/utils";
 import Modal from "../ui/Modal";
+import { openFolder } from "@/features/projects/openFolder";
+import { toast } from "sonner";
 
 interface ImportDialogProps {
   open: boolean;
   onClose: () => void;
-  onImport: (source: string, repo?: string) => void;
+  /** Called after a successful local/github open; other sources stay disabled. */
+  onImport?: (source: string, repo?: string) => void;
+  onCloneRequest?: () => void;
 }
 
 const SOURCES = [
@@ -26,13 +30,15 @@ const SOURCES = [
     desc: "Open a project from your computer",
     icon: FolderOpen,
     color: "text-zinc-300",
+    ready: true as const,
   },
   {
     id: "github",
     name: "GitHub",
-    desc: "Clone a repository and stay in sync",
+    desc: "Clone a repository via git URL",
     icon: GithubIcon,
     color: "text-zinc-300",
+    ready: true as const,
   },
   {
     id: "v0",
@@ -40,6 +46,8 @@ const SOURCES = [
     desc: "Import a Vercel v0 project",
     icon: Sparkles,
     color: "text-violet-400",
+    ready: false as const,
+    reason: "v0 import is coming soon",
   },
   {
     id: "lovable",
@@ -47,6 +55,8 @@ const SOURCES = [
     desc: "Import from Lovable studio",
     icon: Wand2,
     color: "text-pink-400",
+    ready: false as const,
+    reason: "Lovable import is coming soon",
   },
   {
     id: "replit",
@@ -54,6 +64,8 @@ const SOURCES = [
     desc: "Import a Replit project",
     icon: Code2,
     color: "text-amber-400",
+    ready: false as const,
+    reason: "Replit import is coming soon",
   },
   {
     id: "bolt",
@@ -61,6 +73,8 @@ const SOURCES = [
     desc: "Import from Bolt.new",
     icon: Bot,
     color: "text-sky-400",
+    ready: false as const,
+    reason: "Bolt import is coming soon",
   },
 ];
 
@@ -68,12 +82,33 @@ export default function ImportDialog({
   open,
   onClose,
   onImport,
+  onCloneRequest,
 }: ImportDialogProps) {
   const [query, setQuery] = useState("");
 
   const filtered = SOURCES.filter((s) =>
     s.name.toLowerCase().includes(query.toLowerCase()),
   );
+
+  async function handleSource(id: string) {
+    if (id === "local") {
+      onClose();
+      await openFolder();
+      onImport?.("local");
+      return;
+    }
+    if (id === "github") {
+      onClose();
+      if (onCloneRequest) onCloneRequest();
+      else {
+        toast.message("Clone a repo", {
+          description: "Use Welcome → Clone repo, or paste a git URL after opening a folder.",
+        });
+      }
+      onImport?.("github");
+      return;
+    }
+  }
 
   return (
     <Modal
@@ -99,8 +134,16 @@ export default function ImportDialog({
           {filtered.map((source) => (
             <button
               key={source.id}
-              onClick={() => onImport(source.id)}
-              className="group flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3.5 text-left transition-colors hover:border-white/20 hover:bg-white/10"
+              type="button"
+              disabled={!source.ready}
+              title={!source.ready ? source.reason : undefined}
+              onClick={() => void handleSource(source.id)}
+              className={cn(
+                "group flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3.5 text-left transition-colors",
+                source.ready
+                  ? "hover:border-white/20 hover:bg-white/10"
+                  : "cursor-not-allowed opacity-50",
+              )}
             >
               <div
                 className={cn(
@@ -108,11 +151,16 @@ export default function ImportDialog({
                   source.color,
                 )}
               >
-                <source.icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
+                <source.icon className="h-[18px] w-[18px]" />
               </div>
               <div className="min-w-0">
                 <div className="text-[13.5px] font-medium text-zinc-100">
                   {source.name}
+                  {!source.ready && (
+                    <span className="ml-2 text-[10px] font-normal uppercase tracking-wide text-zinc-500">
+                      Soon
+                    </span>
+                  )}
                 </div>
                 <div className="truncate text-[11.5px] text-zinc-500">
                   {source.desc}
@@ -133,8 +181,7 @@ export default function ImportDialog({
 
         <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-zinc-500">
           <LifeBuoy className="h-3.5 w-3.5" />
-          Can't find your project? Wires any other project by pasting a folder
-          path or repo URL.
+          Prefer a folder path? Use File → Open Folder.
         </div>
       </div>
     </Modal>

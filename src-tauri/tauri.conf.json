@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "orchids-desktop",
+  "productName": "Orchids",
   "version": "0.1.0",
   "identifier": "com.rameel.orchids-desktop",
   "build": {
@@ -12,13 +12,19 @@
   "app": {
     "windows": [
       {
-        "title": "orchids-desktop",
-        "width": 800,
-        "height": 600
+        "label": "main",
+        "title": "Agents",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: http://localhost:* ws://localhost:* wss://localhost:*; frame-src 'self' https:;"
     }
   },
   "bundle": {
@@ -30,6 +36,12 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
-  }
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
+  },
+  "plugins": {}
 }

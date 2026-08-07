@@ -46,15 +46,9 @@ export default function TopBar({
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [creditsMenuOpen, setCreditsMenuOpen] = useState(false);
-  const [deploying, setDeploying] = useState(false);
-
-  function handleDeploy() {
-    setDeploying(true);
-    setTimeout(() => setDeploying(false), 2200);
-  }
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-white/5 bg-surface-1 px-3">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-surface-1 px-3">
       <div className="relative">
         <button
           onClick={() => setProjectMenuOpen((v) => !v)}
@@ -182,7 +176,7 @@ export default function TopBar({
 
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-accent-500 to-accent-300"
+                  className="h-full rounded-full bg-[var(--accent-primary)]"
                   style={{ width: "68%" }}
                 />
               </div>
@@ -253,41 +247,24 @@ export default function TopBar({
               <div className="mt-1.5 px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
                 Switch provider
               </div>
-              <button
-                onClick={() => setModelMenuOpen(false)}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-zinc-300 transition-colors hover:bg-white/5"
-              >
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                Orchids (trial)
-              </button>
-              <button
-                onClick={() => setModelMenuOpen(false)}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-zinc-300 transition-colors hover:bg-white/5"
-              >
-                <span className="h-2 w-2 rounded-full bg-[#D97757]" />
-                Claude Code
-              </button>
-              <button
-                onClick={() => setModelMenuOpen(false)}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-zinc-300 transition-colors hover:bg-white/5"
-              >
-                <span className="h-2 w-2 rounded-full bg-[#10A37F]" />
-                ChatGPT
-              </button>
-              <button
-                onClick={() => setModelMenuOpen(false)}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-zinc-300 transition-colors hover:bg-white/5"
-              >
-                <span className="h-2 w-2 rounded-full bg-[#4285F4]" />
-                Gemini
-              </button>
-              <button
-                onClick={() => setModelMenuOpen(false)}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-zinc-300 transition-colors hover:bg-white/5"
-              >
-                <span className="h-2 w-2 rounded-full bg-[#2490EB]" />
-                GitHub Copilot
-              </button>
+              {[
+                { label: "Orchids (trial)", color: "bg-accent" },
+                { label: "Claude Code", color: "bg-[#D97757]" },
+                { label: "ChatGPT", color: "bg-[#10A37F]" },
+                { label: "Gemini", color: "bg-[#4285F4]" },
+                { label: "GitHub Copilot", color: "bg-[#2490EB]" },
+              ].map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  disabled
+                  title="Use the composer model picker to change models"
+                  className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] text-zinc-300 opacity-50"
+                >
+                  <span className={cn("h-2 w-2 rounded-full", p.color)} />
+                  {p.label}
+                </button>
+              ))}
             </div>
           </>
         )}
@@ -297,8 +274,10 @@ export default function TopBar({
 
       {/* GitHub */}
       <button
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[12px] font-medium text-zinc-300 transition-colors hover:border-white/20 hover:bg-white/10"
-        title="GitHub sync"
+        type="button"
+        disabled
+        className="flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[12px] font-medium text-zinc-300 opacity-50"
+        title="Connect GitHub to enable branch sync"
       >
         <GithubIcon className="h-3.5 w-3.5" />
         <span>{project.branch}</span>
@@ -306,25 +285,13 @@ export default function TopBar({
 
       {/* Deploy */}
       <button
-        onClick={handleDeploy}
-        className={cn(
-          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors",
-          deploying
-            ? "bg-emerald-600 text-white hover:bg-emerald-500"
-            : "bg-accent text-surface-0 hover:bg-accent-600",
-        )}
+        type="button"
+        disabled
+        title="Deploy requires a connected hosting provider"
+        className="flex cursor-not-allowed items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-surface-0 opacity-50"
       >
-        {deploying ? (
-          <>
-            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            Deploying…
-          </>
-        ) : (
-          <>
-            <Rocket className="h-3.5 w-3.5" />
-            Deploy
-          </>
-        )}
+        <Rocket className="h-3.5 w-3.5" />
+        Deploy
       </button>
 
       <div className="mx-1 h-5 w-px bg-white/10" />

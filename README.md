@@ -1,7 +1,35 @@
-# Tauri + React + Typescript
+# Orchids Desktop
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+Professional desktop IDE shell built with **Tauri 2 + React 19**, designed for Cursor-class UX with Orchids branding.
 
-## Recommended IDE Setup
+## Quick start
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+```bash
+npm install
+npm run tauri dev
+```
+
+Frontend only: `npm run dev`
+
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run build` | Typecheck + production bundle |
+| `npm run test` | Unit + integration tests |
+| `npm run lint` | ESLint |
+| `npm run validate` | Full quality gate |
+| `npm run tauri build` | Native installer |
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Design System](docs/DESIGN_SYSTEM.md)
+- [User Guide](docs/USER_GUIDE.md)
+- [Contributing](docs/CONTRIBUTING.md)
+- [Release Checklist](docs/RELEASE_CHECKLIST.md)
+- [Changelog](docs/CHANGELOG.md)
+
+## License
+
+Private / proprietary unless otherwise stated.

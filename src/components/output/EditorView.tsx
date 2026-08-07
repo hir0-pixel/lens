@@ -1,44 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  FileJson,
-  File as FileIcon,
-  Folder as FolderIcon,
-  FolderOpen,
-  MoreHorizontal,
-} from "lucide-react";
-import { cn } from "../../lib/utils";
-
-interface FileNode {
-  name: string;
-  lang?: string;
-  children?: FileNode[];
-}
-
-const FILE_TREE: FileNode[] = [
-  {
-    name: "src",
-    children: [
-      { name: "App.tsx", lang: "typescript" },
-      { name: "main.tsx", lang: "typescript" },
-      { name: "index.css", lang: "css" },
-      {
-        name: "components",
-        children: [
-          { name: "Sidebar.tsx", lang: "typescript" },
-          { name: "SavingsGoals.tsx", lang: "typescript" },
-          { name: "CashFlowChart.tsx", lang: "typescript" },
-        ],
-      },
-    ],
-  },
-  { name: "package.json", lang: "json" },
-  { name: "vite.config.ts", lang: "typescript" },
-  { name: "tsconfig.json", lang: "json" },
-];
+import { useEditorChromeStore } from "@/stores/editorChromeStore";
 
 const FILES: Record<string, { lang: string; content: string }> = {
   "src/App.tsx": {
@@ -63,6 +25,19 @@ export default function App() {
   );
 }`,
   },
+  "src/main.tsx": {
+    lang: "typescript",
+    content: `import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App";
+import "./index.css";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);`,
+  },
   "src/components/Sidebar.tsx": {
     lang: "typescript",
     content: `import { Coins, Home, LineChart, Settings, Wallet } from "lucide-react";
@@ -82,8 +57,7 @@ export function Sidebar() {
         {NAV.map((item) => (
           <a
             key={item.label}
-            className="flex items-center gap-2 rounded-md px-3 py-2
-                       text-sm text-zinc-300 hover:bg-white/5"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-white/5"
           >
             <item.icon className="h-4 w-4" />
             {item.label}
@@ -97,7 +71,7 @@ export function Sidebar() {
   "src/components/SavingsGoals.tsx": {
     lang: "typescript",
     content: `const GOALS = [
-  { label: "Emergency Fund", current: 48, total: 10_000, color: "#FCAA26" },
+  { label: "Emergency Fund", current: 48, total: 10_000, color: "var(--accent-primary)" },
   { label: "Trip to Japan", current: 72, total: 6_000, color: "#34D399" },
   { label: "New Laptop", current: 35, total: 2_500, color: "#60A5FA" },
 ];
@@ -108,9 +82,9 @@ export function SavingsGoals() {
       <h2 className="mb-3 text-base font-semibold">Savings Goals</h2>
       <div className="space-y-4">
         {GOALS.map((goal) => (
-          <div key={\${goal.label}}>
+          <div key={goal.label}>
             <div className="mb-1 flex justify-between text-sm">
-              <span>{\${goal.label}}</span>
+              <span>{goal.label}</span>
               <span className="text-zinc-400">
                 \${goal.current * 100} / \${goal.total.toLocaleString()}
               </span>
@@ -142,8 +116,7 @@ export function SavingsGoals() {
         {data.map((height, i) => (
           <div key={i} className="flex-1">
             <div
-              className="max-w-10 rounded-t bg-[#FCAA26]/25
-                          transition-all hover:bg-[#FCAA26]/50"
+              className="max-w-10 rounded-t bg-[var(--accent-primary-muted)] transition-all hover:bg-[var(--accent-primary)]"
               style={{ height: \`\${height}%\` }}
             />
           </div>
@@ -153,165 +126,107 @@ export function SavingsGoals() {
   );
 }`,
   },
+  "package.json": {
+    lang: "json",
+    content: `{
+  "name": "finance-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  }
+}`,
+  },
 };
 
-function TreeNode({
-  node,
-  depth,
-  onOpen,
-  activePath,
-}: {
-  node: FileNode;
-  depth: number;
-  onOpen: (path: string) => void;
-  activePath: string;
-}) {
-  const [open, setOpen] = useState(true);
-
-  const fullPath = node.children ? "" : `src/${node.name}`;
-
-  if (node.children) {
-    return (
-      <div>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          style={{ paddingLeft: depth * 14 }}
-          className="flex w-full items-center gap-1.5 rounded py-1 pr-2 text-[12.5px] text-zinc-300 hover:bg-white/5"
-        >
-          {open ? (
-            <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-zinc-500" />
-          )}
-          {open ? (
-            <FolderOpen className="h-3.5 w-3.5 text-accent" />
-          ) : (
-            <FolderIcon className="h-3.5 w-3.5 text-accent" />
-          )}
-          {node.name}
-        </button>
-        {open && (
-          <div>
-            {node.children.map((child) => (
-              <TreeNode
-                key={child.name}
-                node={child}
-                depth={depth + 1}
-                onOpen={onOpen}
-                activePath={activePath}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <button
-      onClick={() => onOpen(fullPath)}
-      style={{ paddingLeft: depth * 14 + 20 }}
-      className={cn(
-        "flex w-full items-center gap-1.5 rounded py-1 pr-2 text-[12.5px]",
-        fullPath === activePath
-          ? "bg-white/10 text-white"
-          : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
-      )}
-    >
-      <FileIcon className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-      <span className="truncate">{node.name}</span>
-    </button>
-  );
+function languageForPath(path: string): string {
+  if (path.endsWith(".tsx") || path.endsWith(".ts")) return "typescript";
+  if (path.endsWith(".json")) return "json";
+  if (path.endsWith(".css")) return "css";
+  if (path.endsWith(".html")) return "html";
+  if (path.endsWith(".md")) return "markdown";
+  return "plaintext";
 }
 
-export default function EditorView() {
-  const [activePath, setActivePath] = useState("src/App.tsx");
-  const openFile = FILES[activePath] ?? FILES["src/App.tsx"];
+interface EditorViewProps {
+  /** Absolute or workspace-relative path from editor tabs / explorer */
+  path?: string;
+}
+
+/**
+ * Monaco editor surface only — tabs/explorer live in the workbench shell.
+ */
+export default function EditorView({ path = "src/App.tsx" }: EditorViewProps) {
+  const known = FILES[path];
+  const baseline = known?.content ?? `// ${path}\n`;
+  const [value, setValue] = useState(baseline);
+  const markDirty = useEditorChromeStore((s) => s.markDirty);
+  const setCursor = useEditorChromeStore((s) => s.setCursor);
+  const setActivePath = useEditorChromeStore((s) => s.setActivePath);
+  const baselineRef = useRef(baseline);
+
+  useEffect(() => {
+    const next = FILES[path]?.content ?? `// ${path}\n`;
+    baselineRef.current = next;
+    setValue(next);
+    markDirty(path, false);
+    setActivePath(path);
+  }, [path, markDirty, setActivePath]);
 
   return (
-    <div className="flex h-full bg-surface-0">
-      {/* File tree */}
-      <div className="w-56 shrink-0 overflow-y-auto border-r border-white/5 bg-surface-1 p-2">
-        <div className="mb-1 flex items-center justify-between px-2 py-1">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-            Explorer
-          </span>
-          <MoreHorizontal className="h-3.5 w-3.5 text-zinc-500" />
-        </div>
-        <div className="flex items-center gap-1.5 px-2 py-1 text-[12px] text-zinc-400">
-          <Check className="h-3.5 w-3.5 text-emerald-400" />
-          finance-dashboard
-        </div>
-        <div className="-ml-2 mt-1">
-          {FILE_TREE.map((node) => (
-            <TreeNode
-              key={node.name}
-              node={node}
-              depth={0}
-              onOpen={setActivePath}
-              activePath={activePath}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Editor */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Tab strip */}
-        <div className="flex items-center border-b border-white/5 bg-surface-1">
-          <div className="flex items-center gap-0.5 overflow-x-auto px-1 pt-1.5">
-            {Object.keys(FILES).map((path) => {
-              const name = path.split("/").pop()!;
-              const active = path === activePath;
-              const icon =
-                name.endsWith(".json") ? (
-                  <FileJson className="h-3 w-3 text-lime-400" />
-                ) : (
-                  <FileIcon className="h-3 w-3 text-sky-400" />
-                );
-              return (
-                <button
-                  key={path}
-                  onClick={() => setActivePath(path)}
-                  className={cn(
-                    "flex min-w-0 items-center gap-1.5 rounded-t-md border-b-2 px-2.5 py-1.5 text-[12px] transition-colors",
-                    active
-                      ? "border-accent bg-surface-0 text-zinc-100"
-                      : "border-transparent text-zinc-500 hover:text-zinc-300",
-                  )}
-                >
-                  {icon}
-                  <span className="truncate">{name}</span>
-                </button>
-              );
-            })}
+    <div className="h-full min-h-0 bg-[var(--ds-editor)]">
+      <Editor
+        height="100%"
+        path={path}
+        language={known?.lang ?? languageForPath(path)}
+        value={value}
+        onChange={(v) => {
+          const next = v ?? "";
+          setValue(next);
+          markDirty(path, next !== baselineRef.current);
+        }}
+        onMount={(editor, monaco) => {
+          editor.onDidChangeCursorPosition((e) => {
+            setCursor(e.position.lineNumber, e.position.column);
+          });
+          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
+            void editor.getAction("actions.find")?.run();
+          });
+        }}
+        theme="vs-dark"
+        loading={
+          <div className="flex h-full items-center justify-center bg-[var(--ds-editor)] text-[12px] text-[var(--ds-fg-muted)]">
+            Loading editor…
           </div>
-        </div>
-
-        <div className="min-h-0 flex-1">
-          <Editor
-            height="100%"
-            language={openFile.lang}
-            value={openFile.content}
-            theme="vs-dark"
-            loading={<div className="h-full bg-surface-0" />}
-            options={{
-              fontSize: 13,
-              fontFamily:
-                "JetBrains Mono, Geist Mono, Menlo, Consolas, monospace",
-              minimap: { enabled: true },
-              scrollBeyondLastLine: false,
-              padding: { top: 12 },
-              renderLineHighlight: "none",
-              lineNumbersMinChars: 3,
-              scrollbar: {
-                verticalScrollbarSize: 10,
-                horizontalScrollbarSize: 10,
-              },
-            }}
-          />
-        </div>
-      </div>
+        }
+        options={{
+          fontSize: 13,
+          fontFamily: "var(--ds-font-mono)",
+          fontLigatures: true,
+          minimap: { enabled: true, maxColumn: 80 },
+          find: { addExtraSpaceOnTop: false, autoFindInSelection: "never" },
+          scrollBeyondLastLine: false,
+          padding: { top: 8 },
+          renderLineHighlight: "line",
+          lineNumbers: "on",
+          lineNumbersMinChars: 3,
+          guides: { indentation: true, bracketPairs: true },
+          bracketPairColorization: { enabled: true },
+          matchBrackets: "always",
+          cursorBlinking: "smooth",
+          cursorSmoothCaretAnimation: "on",
+          smoothScrolling: true,
+          scrollbar: {
+            verticalScrollbarSize: 10,
+            horizontalScrollbarSize: 10,
+            useShadows: false,
+          },
+          overviewRulerBorder: false,
+          hideCursorInOverviewRuler: true,
+        }}
+      />
     </div>
   );
 }

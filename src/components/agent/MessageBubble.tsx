@@ -7,8 +7,7 @@ import {
   User,
   Video,
 } from "lucide-react";
-import { cn } from "../../lib/utils";
-import type { ChatMessage, ToolCallRecord, FileEdit } from "../../lib/types";
+import type { ChatMessage } from "../../lib/types";
 import { ToolCallsList } from "./ToolCalls";
 import FileEdits from "./FileEdits";
 
@@ -88,8 +87,8 @@ export default function MessageBubble({
 
   return (
     <div className="flex items-start gap-2.5">
-      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-400 to-accent-600">
-        <Bot className="h-4 w-4 text-surface-0" />
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary-muted)] text-[var(--accent-primary)]">
+        <Bot className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1 space-y-2.5">
         <div className="flex items-center gap-2">

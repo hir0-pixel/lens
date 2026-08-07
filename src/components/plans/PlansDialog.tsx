@@ -38,7 +38,7 @@ export default function PlansDialog({ open, onClose, credits }: PlansDialogProps
             </div>
           </div>
           <div className="hidden h-2 w-40 overflow-hidden rounded-full bg-white/10 sm:block">
-            <div className="h-full rounded-full bg-gradient-to-r from-accent-500 to-accent-300" style={{ width: "32%" }} />
+            <div className="h-full rounded-full bg-[var(--accent-primary)]" style={{ width: "32%" }} />
           </div>
         </div>
 
@@ -111,11 +111,18 @@ export default function PlansDialog({ open, onClose, credits }: PlansDialogProps
                 ))}
               </div>
               <button
+                type="button"
+                disabled
+                title={
+                  plan.name === "Pro"
+                    ? "You are already on Pro"
+                    : "Billing checkout is not connected yet"
+                }
                 className={cn(
-                  "mt-4 w-full rounded-lg py-1.5 text-[12.5px] font-semibold transition-colors",
+                  "mt-4 w-full cursor-not-allowed rounded-lg py-1.5 text-[12.5px] font-semibold opacity-50",
                   plan.highlight
-                    ? "bg-accent text-surface-0 hover:bg-accent-600"
-                    : "border border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10",
+                    ? "bg-accent text-surface-0"
+                    : "border border-white/10 bg-white/5 text-zinc-200",
                 )}
               >
                 {plan.name === "Pro" ? "Current plan" : "Switch to " + plan.name}

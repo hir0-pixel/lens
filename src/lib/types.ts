@@ -15,12 +15,86 @@ export interface Model {
 
 export type ToolCallStatus = "running" | "done" | "error";
 
+export type ToolCallCategory =
+  | "thinking"
+  | "read"
+  | "write"
+  | "edit"
+  | "terminal"
+  | "search"
+  | "git"
+  | "generic";
+
 export interface ToolCallRecord {
   id: string;
   name: string;
   detail: string;
   status: ToolCallStatus;
   durationMs?: number;
+  category?: ToolCallCategory;
+  timestamp?: string;
+  expandedContent?: string;
+}
+
+export type AIMode = "agent" | "ask" | "edit";
+
+export type ContextChipKind =
+  | "workspace"
+  | "file"
+  | "folder"
+  | "selection"
+  | "terminal"
+  | "git"
+  | "errors"
+  | "diagnostics";
+
+export interface ContextChip {
+  id: string;
+  kind: ContextChipKind;
+  label: string;
+  detail?: string;
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  preview: string;
+  updatedAt: Date;
+  pinned?: boolean;
+}
+
+export type DiffLineType = "add" | "delete" | "context" | "modify";
+
+export interface DiffLine {
+  type: DiffLineType;
+  content: string;
+  oldLineNumber?: number;
+  newLineNumber?: number;
+}
+
+export interface DiffFileChange {
+  path: string;
+  language: string;
+  lines: DiffLine[];
+  additions: number;
+  deletions: number;
+  status?: "pending" | "accepted" | "rejected";
+}
+
+export type MentionKind =
+  | "file"
+  | "folder"
+  | "terminal"
+  | "git"
+  | "diagnostics"
+  | "codebase"
+  | "session";
+
+export interface MentionItem {
+  id: string;
+  kind: MentionKind;
+  label: string;
+  detail?: string;
 }
 
 export type MessageRole = "user" | "assistant";
@@ -53,7 +127,13 @@ export interface ChatMessage {
   model?: string;
 }
 
-export type OutputTab = "browser" | "editor" | "terminal";
+export type OutputTab = "browser" | "editor" | "terminal" | "task";
+
+export interface AgentPlanStep {
+  id: string;
+  label: string;
+  status: "done" | "in_progress" | "pending";
+}
 
 export type ViewKind = "workspace" | "projects" | "analytics";
 
