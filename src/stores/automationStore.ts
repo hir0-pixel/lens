@@ -60,6 +60,6 @@ export const useAutomationStore = create<AutomationState>()(
         get().update(id, { enabled: !a.enabled });
       },
     }),
-    { name: "orchids-automations-v1" },
+    { name: "lens-automations-v1" },
   ),
 );

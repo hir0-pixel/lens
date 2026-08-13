@@ -1,6 +1,6 @@
-# Orchids Design System
+# Lens Design System
 
-Production visual language for the Orchids Desktop IDE. Goal: **Cursor parity** in layout, spacing, motion, and interaction — with Orchids amber branding preserved.
+Production visual language for the Lens Desktop IDE. Goal: **Cursor parity** in layout, spacing, motion, and interaction — with Lens amber branding preserved.
 
 ## Principles
 
@@ -8,7 +8,7 @@ Production visual language for the Orchids Desktop IDE. Goal: **Cursor parity** 
 2. **One hierarchy** — Nav Rail → Navigator → **Agent** → Tools → Utility → Status Bar.
 3. **Subtle motion** — 100–220ms, ease-out; respect `reduce-motion`.
 4. **Semantic first** — prefer `border-border`, `text-muted-foreground`, `bg-surface-*` over raw zinc/white opacity.
-5. **Brand sparingly** — accent `#FCAA26` for active indicators, CTAs, and Orchids provider.
+5. **Brand sparingly** — accent `#FCAA26` for active indicators, CTAs, and Lens provider.
 
 ## Tokens
 
@@ -70,7 +70,7 @@ Stroke: prefer `1.75` on activity icons, default elsewhere.
 | slow | 200ms |
 | enter | 220ms |
 
-Easing: `cubic-bezier(0.16, 1, 0.3, 1)` (`ease-orchids`).
+Easing: `cubic-bezier(0.16, 1, 0.3, 1)` (`ease-lens`).
 
 Chrome uses `transition-colors duration-150`. Entrance: `animate-fade-in` / `fade-up` / `scale-in` for overlays and AI content only.
 

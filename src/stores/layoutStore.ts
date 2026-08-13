@@ -416,7 +416,7 @@ export const useLayoutStore = create<LayoutState>()(
       setAiPanelWidthPx: (px) => get().setToolsWidthPx(px),
     }),
     {
-      name: "orchids-layout",
+      name: "lens-layout",
       version: 6,
       partialize: (state) => ({
         navView: state.navView,

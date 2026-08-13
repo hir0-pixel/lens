@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/stores/sessionStore";
 import { openFolder, openFolderPath } from "@/features/projects/openFolder";
 import GithubIcon from "@/components/ui/GithubIcon";
-import { OrchidsWordmark } from "@/components/brand/OrchidsWordmark";
+import { LensWordmark } from "@/components/brand/LensWordmark";
 import { CloneRepoDialog } from "./CloneRepoDialog";
 import {
   Card,
@@ -44,7 +44,7 @@ interface ActionCard {
 
 /**
  * Centered welcome when no session / repo is active.
- * Orchids branding + primary project actions + recent list.
+ * Lens branding + primary project actions + recent list.
  */
 export function WelcomeScreen({
   planLabel = "Pro",
@@ -109,7 +109,7 @@ export function WelcomeScreen({
 
       <div className="relative z-[1] flex w-full max-w-[560px] flex-col items-center">
         <div className="mb-10 flex items-center gap-3">
-          <OrchidsWordmark size="welcome" />
+          <LensWordmark size="welcome" />
           <div className="flex items-end gap-2 self-end pb-1">
             <Badge variant="secondary" className="h-auto px-1.5 py-0.5 text-[11px] leading-none">
               {planLabel}

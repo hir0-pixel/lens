@@ -117,7 +117,7 @@ export default function StatusBar({ project, model }: StatusBarProps) {
           className="cursor-statusbar-item"
           onClick={() =>
             window.dispatchEvent(
-              new CustomEvent("orchids:command", { detail: { id: "file.saveAll" } }),
+              new CustomEvent("lens:command", { detail: { id: "file.saveAll" } }),
             )
           }
           aria-label={`${dirtyPaths.size} unsaved files`}
@@ -133,7 +133,7 @@ export default function StatusBar({ project, model }: StatusBarProps) {
         type="button"
         className="cursor-statusbar-item hidden md:inline-flex"
         onClick={() =>
-          window.dispatchEvent(new CustomEvent("orchids:open-settings"))
+          window.dispatchEvent(new CustomEvent("lens:open-settings"))
         }
         aria-label={`Model: ${model.label}`}
       >
@@ -162,7 +162,7 @@ export default function StatusBar({ project, model }: StatusBarProps) {
         type="button"
         className="cursor-statusbar-item hidden lg:inline-flex"
         onClick={() =>
-          window.dispatchEvent(new CustomEvent("orchids:open-settings"))
+          window.dispatchEvent(new CustomEvent("lens:open-settings"))
         }
       >
         {encoding}

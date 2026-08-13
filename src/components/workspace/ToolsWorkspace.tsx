@@ -54,11 +54,11 @@ export function ToolsWorkspace() {
       openTools("terminal");
       setActiveToolsTab("terminal");
     }
-    window.addEventListener("orchids:open-file", onOpenFile);
-    window.addEventListener("orchids:focus-terminal", onFocusTerminal);
+    window.addEventListener("lens:open-file", onOpenFile);
+    window.addEventListener("lens:focus-terminal", onFocusTerminal);
     return () => {
-      window.removeEventListener("orchids:open-file", onOpenFile);
-      window.removeEventListener("orchids:focus-terminal", onFocusTerminal);
+      window.removeEventListener("lens:open-file", onOpenFile);
+      window.removeEventListener("lens:focus-terminal", onFocusTerminal);
     };
   }, [openTools, setActiveToolsTab]);
 
@@ -93,7 +93,7 @@ export function ToolsWorkspace() {
           type="button"
           onClick={() => {
             setActiveToolsTab("terminal");
-            window.dispatchEvent(new CustomEvent("orchids:focus-terminal"));
+            window.dispatchEvent(new CustomEvent("lens:focus-terminal"));
           }}
           className={cn(
             "inline-flex h-7 items-center gap-1 rounded-md px-2 font-mono text-[12px]",

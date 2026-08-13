@@ -21,9 +21,9 @@ export function EmptyState({
   onWorkspaceSelect,
 }: EmptyStateProps) {
   return (
-    <div className="orchids-empty-enter flex h-full flex-col px-3 py-4">
+    <div className="lens-empty-enter flex h-full flex-col px-3 py-4">
       <div className="mx-auto flex w-full max-w-[480px] flex-col">
-        <div className="orchids-empty-icon mb-3 flex h-16 w-16 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--accent-primary-muted)]">
+        <div className="lens-empty-icon mb-3 flex h-16 w-16 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--accent-primary-muted)]">
           <Sparkles
             className="h-7 w-7 text-[var(--accent-primary)]"
             strokeWidth={1.5}

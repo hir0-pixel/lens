@@ -175,7 +175,7 @@ export function KeyboardSettingsPage() {
     <div>
       <SettingsSectionHeader
         title="Keyboard Shortcuts"
-        description="Reference for primary Orchids / Cursor-aligned bindings. Full remapping coming soon."
+        description="Reference for primary Lens / Cursor-aligned bindings. Full remapping coming soon."
       />
       <Card className="gap-0 divide-y divide-white/5 overflow-hidden rounded-lg py-0">
         {DEFAULT_KEYBINDINGS.map((b) => (
@@ -206,7 +206,7 @@ export function AboutSettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `orchids-settings-v1.json`;
+    a.download = `lens-settings-v1.json`;
     a.click();
     URL.revokeObjectURL(url);
     PreferencesService.createBackup("export");
@@ -233,7 +233,7 @@ export function AboutSettingsPage() {
     <div>
       <SettingsSectionHeader
         title="About"
-        description="Orchids Desktop IDE · Settings backup and restore."
+        description="Lens Desktop IDE · Settings backup and restore."
       />
       <SettingsGroup title="Application">
         <div className="space-y-1 px-3.5 py-3 text-[12px] text-zinc-400">

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const checklist = `
-# Orchids Release Checklist (v0.1.0)
+# Lens Release Checklist (v0.1.0)
 
 ## Pre-release
 - [ ] npm run validate passes (typecheck + tests + build)
@@ -16,7 +16,7 @@ const checklist = `
 
 ## Packaging
 - [ ] tauri build succeeds for target OS
-- [ ] Installer launches and opens Orchids
+- [ ] Installer launches and opens Lens
 - [ ] Icons render correctly
 - [ ] CSP does not block critical resources
 - [ ] Updater placeholder documented (UpdateService)

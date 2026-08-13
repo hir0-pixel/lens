@@ -1,4 +1,4 @@
-# Contributing to Orchids Desktop
+# Contributing to Lens Desktop
 
 ## Setup
 

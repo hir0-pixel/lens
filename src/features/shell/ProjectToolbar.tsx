@@ -79,7 +79,7 @@ export function ProjectToolbar({
           className="btn-ghost h-7 gap-2"
           onClick={() =>
             window.dispatchEvent(
-              new CustomEvent("orchids:view", { detail: { id: "git" } }),
+              new CustomEvent("lens:view", { detail: { id: "git" } }),
             )
           }
           aria-label={`Branch ${project.branch}`}

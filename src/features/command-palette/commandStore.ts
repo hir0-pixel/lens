@@ -100,7 +100,7 @@ export const useCommandStore = create<CommandPaletteState>()(
       setLastOpenedFile: (path) => set({ lastOpenedFile: path }),
     }),
     {
-      name: "orchids-command-palette",
+      name: "lens-command-palette",
       partialize: (s) => ({
         recentCommandIds: s.recentCommandIds,
         pinnedCommandIds: s.pinnedCommandIds,

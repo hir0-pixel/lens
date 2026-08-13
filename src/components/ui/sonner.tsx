@@ -2,7 +2,7 @@ import { Toaster as Sonner } from "sonner";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-/** Dark-first toaster for Orchids (no next-themes dependency). */
+/** Dark-first toaster for Lens (no next-themes dependency). */
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner

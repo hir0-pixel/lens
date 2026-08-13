@@ -66,11 +66,11 @@ export function applyAppearance(settings: AppearanceSettings): void {
   root.style.colorScheme = resolved;
 
   const accent = ACCENT_COLORS[settings.accent];
-  root.style.setProperty("--orchids-accent", accent);
+  root.style.setProperty("--lens-accent", accent);
   root.style.setProperty("--radius", `${settings.cornerRadius / 16}rem`);
-  root.style.setProperty("--orchids-font-size", `${settings.fontSize}px`);
-  root.style.setProperty("--orchids-line-height", String(settings.lineHeight));
-  root.style.setProperty("--orchids-font-family", settings.fontFamily);
+  root.style.setProperty("--lens-font-size", `${settings.fontSize}px`);
+  root.style.setProperty("--lens-line-height", String(settings.lineHeight));
+  root.style.setProperty("--lens-font-family", settings.fontFamily);
 
   // Sync design-system accent + shadcn primary when accent changes
   if (settings.accent === "amber") {

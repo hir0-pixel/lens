@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Orchids Desktop are documented here.
+All notable changes to Lens Desktop are documented here.
 
 ## [0.1.0] - 2026-08-06
 

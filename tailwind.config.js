@@ -104,7 +104,7 @@ export default {
 			enter: 'var(--motion-enter)'
 		},
 		transitionTimingFunction: {
-			orchids: 'var(--ease-out)'
+			lens: 'var(--ease-out)'
 		},
 		zIndex: {
 			sticky: 'var(--z-sticky)',

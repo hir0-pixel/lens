@@ -539,7 +539,7 @@ export const useSessionStore = create<SessionState>()(
         MODELS.find((m) => m.id === session.modelId) ?? MODELS[0],
     }),
     {
-      name: "orchids-session-v2",
+      name: "lens-session-v2",
       partialize: (s) => ({
         sessions: s.sessions,
         repositories: s.repositories,

@@ -158,7 +158,7 @@ export const useSettingsStore = create<SettingsStore>()(
       },
     }),
     {
-      name: "orchids-settings",
+      name: "lens-settings",
       partialize: (s) => ({
         version: s.version,
         general: s.general,

@@ -156,7 +156,7 @@ class ShortcutRegistryImpl {
 
 export const shortcutRegistry = new ShortcutRegistryImpl();
 
-/** Default Orchids / Cursor-aligned keybindings. */
+/** Default Lens / Cursor-aligned keybindings. */
 export const DEFAULT_KEYBINDINGS: Keybinding[] = [
   { keys: "mod+shift+p", commandId: "workbench.action.showCommands", scope: "global" },
   { keys: "f1", commandId: "workbench.action.showCommands", scope: "global" },

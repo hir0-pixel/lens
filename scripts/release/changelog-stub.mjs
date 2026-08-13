@@ -28,7 +28,7 @@ const stub = `## [${pkg.version}] - ${date}
 if (!existsSync(changelogPath)) {
   writeFileSync(
     changelogPath,
-    `# Changelog\n\nAll notable changes to Orchids Desktop are documented here.\n\n${stub}`,
+    `# Changelog\n\nAll notable changes to Lens Desktop are documented here.\n\n${stub}`,
   );
 } else {
   const existing = readFileSync(changelogPath, "utf8");

@@ -20,7 +20,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault();
         // Debug adapter not configured — surface the panel with a clear empty state
         window.dispatchEvent(
-          new CustomEvent("orchids:view", { detail: { id: "debug" } }),
+          new CustomEvent("lens:view", { detail: { id: "debug" } }),
         );
         return;
       }

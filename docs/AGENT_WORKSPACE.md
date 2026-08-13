@@ -1,6 +1,6 @@
-# Orchids Agent Workspace
+# Lens Agent Workspace
 
-Orchids is an **AI-native software engineering workspace**. The Agent is the primary surface; the editor, browser, terminal, git, and logs are tools around it.
+Lens is an **AI-native software engineering workspace**. The Agent is the primary surface; the editor, browser, terminal, git, and logs are tools around it.
 
 ## Minimal default chrome
 
@@ -16,7 +16,7 @@ Closing a tools pane (`×`) sets `toolsOpen: false` — grid track collapses to 
 
 ## Empty / new-session view
 
-When no messages yet, `App` renders `EmptySessionView`. Sessions live in `sessionStore` (`orchids-session-v1`):
+When no messages yet, `App` renders `EmptySessionView`. Sessions live in `sessionStore` (`lens-session-v1`):
 
 | Session type | UI |
 |--------------|-----|
@@ -71,7 +71,7 @@ AppShell
 | Tools | `toolsWidthPx`, `toolsCollapsed` | left of tools | 280–~55vw; rail 40px |
 | Utility | `bottomPanelHeightPx`, `bottomPanelSlim` | top of bottom | 120–70vh; slim 28px |
 
-Persist: Zustand `orchids-layout` **v5**. Drag skips CSS transitions (`workbench-grid-dragging`).
+Persist: Zustand `lens-layout` **v5**. Drag skips CSS transitions (`workbench-grid-dragging`).
 
 ## State management
 
@@ -90,7 +90,7 @@ Persist: Zustand `orchids-layout` **v5**. Drag skips CSS transitions (`workbench
 | Ctrl+J / `` Ctrl+` `` | Toggle utility panel |
 | Ctrl+I | Focus agent composer |
 
-File open (`orchids:open-file`) calls `openTools("editor")`.
+File open (`lens:open-file`) calls `openTools("editor")`.
 
 ## shadcn/ui usage
 

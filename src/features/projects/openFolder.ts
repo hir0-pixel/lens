@@ -29,12 +29,12 @@ export async function openFolderPath(
   useTerminalStore.getState().setDefaultCwd(trimmed);
 
   window.dispatchEvent(
-    new CustomEvent("orchids:project-opened", {
+    new CustomEvent("lens:project-opened", {
       detail: { path: trimmed, sessionId: session.id },
     }),
   );
   window.setTimeout(() => {
-    window.dispatchEvent(new CustomEvent("orchids:focus-composer"));
+    window.dispatchEvent(new CustomEvent("lens:focus-composer"));
   }, 50);
 
   return { ok: true };

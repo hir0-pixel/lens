@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** Map mock model provider ids → brand color tokens */
 const ALIAS: Record<string, string> = {
-  orchids: PROVIDER_COLORS.orchids,
+  lens: PROVIDER_COLORS.lens,
   claude: PROVIDER_COLORS.anthropic,
   anthropic: PROVIDER_COLORS.anthropic,
   chatgpt: PROVIDER_COLORS.openai,
@@ -28,15 +28,15 @@ interface ProviderDotProps {
 }
 
 export function ProviderDot({ provider, className }: ProviderDotProps) {
-  const isOrchids = provider === "orchids";
+  const isLens = provider === "lens";
   return (
     <span
       className={cn(
         "inline-block h-1.5 w-1.5 shrink-0 rounded-full",
-        isOrchids && "bg-accent",
+        isLens && "bg-accent",
         className,
       )}
-      style={isOrchids ? undefined : { backgroundColor: providerColor(provider) }}
+      style={isLens ? undefined : { backgroundColor: providerColor(provider) }}
       aria-hidden
     />
   );

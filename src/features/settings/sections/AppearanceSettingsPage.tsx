@@ -58,7 +58,7 @@ export function AppearanceSettingsPage() {
         <SettingRow
           id="a-accent"
           title="Accent Color"
-          description="Orchids brand accent used across the IDE"
+          description="Lens brand accent used across the IDE"
         >
           <div className="flex flex-wrap justify-end gap-2" id="a-accent">
             {ACCENTS.map((id) => (

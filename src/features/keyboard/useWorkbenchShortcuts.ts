@@ -64,7 +64,7 @@ export function useWorkbenchShortcuts() {
 
       if (!e.shiftKey && key === "p") {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("orchids:open-ide"));
+        window.dispatchEvent(new CustomEvent("lens:open-ide"));
         useLayoutStore.getState().openTools("editor");
         openQuickOpen();
         return;
@@ -72,31 +72,31 @@ export function useWorkbenchShortcuts() {
 
       if (!e.shiftKey && key === "n" && !e.altKey && !inEditable) {
         e.preventDefault();
-        void commandRegistry.execute("orchids.chat.new");
+        void commandRegistry.execute("lens.chat.new");
         return;
       }
 
       if (!e.shiftKey && key === "o" && !e.altKey && !inEditable) {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("orchids:open-folder"));
+        window.dispatchEvent(new CustomEvent("lens:open-folder"));
         return;
       }
 
       if (e.shiftKey && (key === "`" || e.code === "Backquote") && !inEditable) {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("orchids:terminal-new"));
+        window.dispatchEvent(new CustomEvent("lens:terminal-new"));
         return;
       }
 
       if (e.shiftKey && key === "n" && !inEditable) {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("orchids:open-ide"));
+        window.dispatchEvent(new CustomEvent("lens:open-ide"));
         return;
       }
 
       if (e.shiftKey && key === "a" && !inEditable) {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("orchids:new-agent"));
+        window.dispatchEvent(new CustomEvent("lens:new-agent"));
         return;
       }
 

@@ -5,7 +5,7 @@ import { isPlausibleApiKey, redactProviderForLog } from "@/shared/security/sanit
 import { logger } from "@/shared/diagnostics/logger";
 
 export type AiProviderKind =
-  | "orchids"
+  | "lens"
   | "openai"
   | "anthropic"
   | "google"
@@ -41,13 +41,13 @@ export interface AiModelInfo {
 
 const DEFAULT_PROVIDERS: AiProviderConfig[] = [
   {
-    id: "orchids",
-    kind: "orchids",
-    name: "Orchids",
+    id: "lens",
+    kind: "lens",
+    name: "Lens",
     enabled: true,
     apiKey: "",
-    baseUrl: "https://api.orchids.app/v1",
-    defaultModelId: "orchids-default",
+    baseUrl: "https://api.lens.app/v1",
+    defaultModelId: "lens-default",
     priority: 0,
     status: "connected",
   },
@@ -129,7 +129,7 @@ const DEFAULT_PROVIDERS: AiProviderConfig[] = [
 ];
 
 const DEFAULT_MODELS: AiModelInfo[] = [
-  { id: "orchids-default", providerId: "orchids", label: "Orchids Default", contextWindow: 200000, vision: true, reasoning: true, favorite: true },
+  { id: "lens-default", providerId: "lens", label: "Lens Default", contextWindow: 200000, vision: true, reasoning: true, favorite: true },
   { id: "gpt-5.1", providerId: "openai", label: "GPT-5.1", contextWindow: 128000, vision: true, reasoning: true, favorite: true },
   { id: "gpt-4o", providerId: "openai", label: "GPT-4o", contextWindow: 128000, vision: true, reasoning: false },
   { id: "claude-opus-4.5", providerId: "anthropic", label: "Claude Opus 4.5", contextWindow: 200000, vision: true, reasoning: true },
@@ -161,7 +161,7 @@ export const useProviderStore = create<ProviderStore>()(
     (set, get) => ({
       providers: DEFAULT_PROVIDERS,
       models: DEFAULT_MODELS,
-      recentModelIds: ["orchids-default", "claude-sonnet-4.5", "gpt-5.1"],
+      recentModelIds: ["lens-default", "claude-sonnet-4.5", "gpt-5.1"],
 
       updateProvider: (id, partial) =>
         set((s) => ({
@@ -182,7 +182,7 @@ export const useProviderStore = create<ProviderStore>()(
         await delay(900);
         const provider = get().providers.find((p) => p.id === id);
         const ok =
-          provider?.kind === "orchids" ||
+          provider?.kind === "lens" ||
           provider?.kind === "ollama" ||
           Boolean(
             provider &&
@@ -224,7 +224,7 @@ export const useProviderStore = create<ProviderStore>()(
         get().updateProvider(providerId, { defaultModelId: modelId }),
     }),
     {
-      name: "orchids-providers",
+      name: "lens-providers",
       partialize: (s) => ({
         providers: s.providers,
         models: s.models,

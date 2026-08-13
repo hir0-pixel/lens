@@ -205,7 +205,7 @@ export function ExplorerPanel({
   function openFile(path: string) {
     onOpenFile?.(path);
     window.dispatchEvent(
-      new CustomEvent("orchids:open-file", { detail: { path } }),
+      new CustomEvent("lens:open-file", { detail: { path } }),
     );
   }
 
@@ -406,7 +406,7 @@ export function ExplorerPanel({
             >
               {isSelected && (
                 <span
-                  className="absolute bottom-0.5 left-0 top-0.5 w-0.5 origin-center rounded-sm bg-[var(--accent-primary)] animate-[orchids-bar-in_var(--duration-fast)_var(--ease-standard)_both]"
+                  className="absolute bottom-0.5 left-0 top-0.5 w-0.5 origin-center rounded-sm bg-[var(--accent-primary)] animate-[lens-bar-in_var(--duration-fast)_var(--ease-standard)_both]"
                   aria-hidden
                 />
               )}

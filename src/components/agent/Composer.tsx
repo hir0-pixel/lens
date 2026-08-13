@@ -144,7 +144,7 @@ export default function Composer({
             <span
               className={cn(
                 "h-1.5 w-1.5 rounded-full",
-                activeModel.provider === "orchids"
+                activeModel.provider === "lens"
                   ? "bg-accent"
                   : activeModel.provider === "claude"
                     ? "bg-[#D97757]"
@@ -176,7 +176,7 @@ export default function Composer({
                     <span
                       className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        m.provider === "orchids" && "bg-accent",
+                        m.provider === "lens" && "bg-accent",
                         m.provider === "claude" && "bg-[#D97757]",
                         m.provider === "chatgpt" && "bg-[#10A37F]",
                         m.provider === "gemini" && "bg-[#4285F4]",

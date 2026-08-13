@@ -1,8 +1,8 @@
-# Orchids User Guide
+# Lens User Guide
 
 ## Getting started
 
-1. Launch Orchids.
+1. Launch Lens.
 2. Open or import a project from the Top Bar / Projects view.
 3. Use the Activity Bar (left) to switch Explorer, Search, Source Control, and Debug stubs.
 4. Toggle AI with **Ctrl+L**, Terminal with **Ctrl+J** / **Ctrl+\`**, Settings with **Ctrl+,**.
@@ -72,7 +72,7 @@ Deep links: `#settings/appearance`, `#settings/providers`, etc.
 
 ## FAQ
 
-**Is this Cursor?** No — Orchids aims for Cursor-class UX with Orchids branding and a modular architecture.
+**Is this Cursor?** No — Lens aims for Cursor-class UX with Lens branding and a modular architecture.
 
 **Are API keys safe?** Keys are stored locally and redacted from logs. OS keychain encryption is planned; treat this machine as trusted.
 

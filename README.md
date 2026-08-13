@@ -1,6 +1,6 @@
-# Orchids Desktop
+# Lens Desktop
 
-Professional desktop IDE shell built with **Tauri 2 + React 19**, designed for Cursor-class UX with Orchids branding.
+Professional desktop IDE shell built with **Tauri 2 + React 19**, designed for Cursor-class UX with Lens branding.
 
 ## Quick start
 

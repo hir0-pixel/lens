@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-interface OrchidsWordmarkProps {
+interface LensWordmarkProps {
   /** titlebar ≈ 13–14px; welcome ≈ 24–28px */
   size?: "titlebar" | "welcome";
   className?: string;
@@ -10,11 +10,11 @@ interface OrchidsWordmarkProps {
 /**
  * Brand wordmark — Space Grotesk only here, never on body UI.
  */
-export function OrchidsWordmark({
+export function LensWordmark({
   size = "titlebar",
   className,
   showMark = true,
-}: OrchidsWordmarkProps) {
+}: LensWordmarkProps) {
   const welcome = size === "welcome";
   return (
     <span
@@ -34,14 +34,14 @@ export function OrchidsWordmark({
           )}
           aria-hidden
         >
-          O
+          L
         </span>
       )}
       <span className={cn(welcome ? "leading-none" : "leading-none")}>
-        Orchids
+        Lens
       </span>
     </span>
   );
 }
 
-export default OrchidsWordmark;
+export default LensWordmark;

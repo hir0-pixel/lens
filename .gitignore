@@ -23,3 +23,6 @@ opencode.json
 *.njsproj
 *.sln
 *.sw?
+
+.codex/
+docs/LENS_FRONTEND_SPEC.md

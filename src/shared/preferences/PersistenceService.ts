@@ -4,7 +4,7 @@
  * explicit backup/restore and versioned imports outside the store lifecycle.
  */
 
-const PREFIX = "orchids.prefs.";
+const PREFIX = "lens.prefs.";
 
 export const PersistenceService = {
   read<T>(key: string): T | null {

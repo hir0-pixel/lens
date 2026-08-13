@@ -176,13 +176,13 @@ export default function OutputTabs() {
         ];
       });
     }
-    window.addEventListener("orchids:open-file", onOpenFile);
-    window.addEventListener("orchids:focus-terminal", onFocusTerminal);
-    window.addEventListener("orchids:focus-editor", onFocusEditor);
+    window.addEventListener("lens:open-file", onOpenFile);
+    window.addEventListener("lens:focus-terminal", onFocusTerminal);
+    window.addEventListener("lens:focus-editor", onFocusEditor);
     return () => {
-      window.removeEventListener("orchids:open-file", onOpenFile);
-      window.removeEventListener("orchids:focus-terminal", onFocusTerminal);
-      window.removeEventListener("orchids:focus-editor", onFocusEditor);
+      window.removeEventListener("lens:open-file", onOpenFile);
+      window.removeEventListener("lens:focus-terminal", onFocusTerminal);
+      window.removeEventListener("lens:focus-editor", onFocusEditor);
     };
   }, []);
 
@@ -339,7 +339,7 @@ export default function OutputTabs() {
                   if (i < crumbs.length - 1) {
                     const folder = crumbs.slice(0, i + 1).join("/");
                     window.dispatchEvent(
-                      new CustomEvent("orchids:view", {
+                      new CustomEvent("lens:view", {
                         detail: { id: "explorer" },
                       }),
                     );

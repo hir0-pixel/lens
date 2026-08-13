@@ -492,7 +492,7 @@ export function EmptySessionView({
                   <DropdownMenuItem
                     disabled
                     className="cursor-not-allowed opacity-50"
-                    title="Cloud Agents require a connected Orchids account"
+                    title="Cloud Agents require a connected Lens account"
                     onSelect={(e) => e.preventDefault()}
                   >
                     <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />

@@ -36,7 +36,7 @@ export function WorkbenchEmptyState({
   return (
     <div
       className={cn(
-        "orchids-empty-enter flex flex-col",
+        "lens-empty-enter flex flex-col",
         compact
           ? "items-start px-5 py-4 text-left"
           : "items-center justify-center px-6 py-8 text-center",
@@ -46,7 +46,7 @@ export function WorkbenchEmptyState({
     >
       <div
         className={cn(
-          "orchids-empty-icon flex items-center justify-center rounded-2xl",
+          "lens-empty-icon flex items-center justify-center rounded-2xl",
           compact ? "mb-3 h-10 w-10" : "mb-4 h-16 w-16",
           tone === "error"
             ? "bg-[var(--error-muted)] text-[var(--error)]"

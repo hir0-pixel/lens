@@ -68,9 +68,9 @@ export class ErrorBoundary extends Component<Props, State> {
         role="alert"
         aria-live="assertive"
       >
-        <div className="orchids-empty-enter flex w-full max-w-[480px] flex-col items-center text-center">
+        <div className="lens-empty-enter flex w-full max-w-[480px] flex-col items-center text-center">
           <div
-            className="orchids-empty-icon flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--error-muted)] text-[var(--error)]"
+            className="lens-empty-icon flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--error-muted)] text-[var(--error)]"
             aria-hidden
           >
             <AlertTriangle className="h-7 w-7" strokeWidth={1.5} />

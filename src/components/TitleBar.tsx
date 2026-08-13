@@ -5,7 +5,8 @@ import { WindowControls } from "@/features/shell/WindowControls";
 import { MENU_BAR } from "@/features/menu-bar/menuRegistry";
 import { useSessionStore } from "@/stores/sessionStore";
 import { openIdeWindow, openAgentsWindow } from "@/features/windows/openAppWindow";
-import { OrchidsWordmark } from "@/components/brand/OrchidsWordmark";
+import { LensWordmark } from "@/components/brand/LensWordmark";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface TitleBarProps {
@@ -42,7 +43,7 @@ export default function TitleBar({
   return (
     <header
       data-tauri-drag-region
-      className="cursor-titlebar titlebar-drag relative z-sticky flex h-8 shrink-0 select-none items-stretch bg-[#0a0a0a]"
+      className="cursor-titlebar titlebar-drag relative z-sticky flex h-8 shrink-0 select-none items-stretch bg-background"
       role="banner"
       onDoubleClick={() => {
         void (async () => {
@@ -57,7 +58,7 @@ export default function TitleBar({
       }}
     >
       <div className="titlebar-no-drag relative z-[1] flex items-center gap-2 pl-2">
-        <OrchidsWordmark size="titlebar" />
+        <LensWordmark size="titlebar" />
         <MenuBar menus={isAgents ? AGENT_MENUS : MENU_BAR} />
       </div>
 
@@ -73,39 +74,45 @@ export default function TitleBar({
       )}
 
       <div className="titlebar-no-drag relative z-[1] ml-auto flex items-stretch">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           className={cn(
-            "flex h-full items-center px-1.5",
+            "h-full rounded-none px-1.5",
             canGoBack
-              ? "text-[#8a8a8a] hover:text-[#d4d4d4]"
-              : "cursor-not-allowed text-[#444]",
+              ? "text-muted-foreground hover:text-foreground"
+              : "cursor-not-allowed text-muted-foreground",
           )}
           aria-label="Back"
           disabled={!canGoBack}
           onClick={() => goBack()}
         >
           <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           className={cn(
-            "flex h-full items-center px-1.5",
+            "h-full rounded-none px-1.5",
             canGoForward
-              ? "text-[#8a8a8a] hover:text-[#d4d4d4]"
-              : "cursor-not-allowed text-[#444]",
+              ? "text-muted-foreground hover:text-foreground"
+              : "cursor-not-allowed text-muted-foreground",
           )}
           aria-label="Forward"
           disabled={!canGoForward}
           onClick={() => goForward()}
         >
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
-        </button>
+        </Button>
 
         {isAgents ? (
-          <button
+          <Button
             type="button"
-            className="mx-1 flex h-full items-center gap-1.5 rounded-md px-2.5 text-[12px] text-[#e8e8e8] hover:bg-white/[0.08]"
+            variant="ghost"
+            size="sm"
+            className="mx-1 h-full text-[12px]"
             aria-label="Open IDE"
             title="Open IDE in a new window"
             onClick={() => {
@@ -115,11 +122,13 @@ export default function TitleBar({
           >
             IDE
             <SquareArrowOutUpRight className="h-3 w-3" strokeWidth={1.5} />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
-            className="mx-1 flex h-full items-center gap-1.5 rounded-md bg-[#1a3a5c] px-2.5 text-[12px] text-[#8ec8ff] hover:bg-[#214a70]"
+            variant="secondary"
+            size="sm"
+            className="mx-1 h-full text-[12px]"
             aria-label="Agents Window"
             title="Switch to Agents Window"
             onClick={() => {
@@ -129,18 +138,20 @@ export default function TitleBar({
           >
             Agents Window
             <SquareArrowOutUpRight className="h-3 w-3" strokeWidth={1.5} />
-          </button>
+          </Button>
         )}
 
         {!isAgents && (
-          <button
+          <Button
             type="button"
-            className="btn-ghost h-full rounded-none px-3 text-[12px]"
+            variant="ghost"
+            size="sm"
+            className="h-full rounded-none px-3 text-[12px]"
             onClick={onOpenSettings}
             aria-label="Open Settings"
           >
             Settings
-          </button>
+          </Button>
         )}
         <WindowControls />
       </div>

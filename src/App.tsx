@@ -167,7 +167,7 @@ function AgentsApp() {
       void openIdeWindow().then(() => {
         if (detail?.path) {
           try {
-            localStorage.setItem("orchids-ide-open-path", detail.path);
+            localStorage.setItem("lens-ide-open-path", detail.path);
           } catch {
             /* ignore */
           }
@@ -179,7 +179,7 @@ function AgentsApp() {
       setView("workspace");
       setAgentsDock(null);
       window.setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("orchids:focus-composer"));
+        window.dispatchEvent(new CustomEvent("lens:focus-composer"));
       }, 50);
     }
     function onOpenIde() {
@@ -211,21 +211,21 @@ function AgentsApp() {
       setAgentsDock(null);
     }
 
-    window.addEventListener("orchids:open-file", onOpenFile);
-    window.addEventListener("orchids:new-agent", onNewAgent);
-    window.addEventListener("orchids:open-ide", onOpenIde);
-    window.addEventListener("orchids:open-terminal", onOpenTerminal);
-    window.addEventListener("orchids:open-browser", onOpenBrowser);
-    window.addEventListener("orchids:show-welcome", onShowWelcome);
-    window.addEventListener("orchids:project-opened", onProjectOpened);
+    window.addEventListener("lens:open-file", onOpenFile);
+    window.addEventListener("lens:new-agent", onNewAgent);
+    window.addEventListener("lens:open-ide", onOpenIde);
+    window.addEventListener("lens:open-terminal", onOpenTerminal);
+    window.addEventListener("lens:open-browser", onOpenBrowser);
+    window.addEventListener("lens:show-welcome", onShowWelcome);
+    window.addEventListener("lens:project-opened", onProjectOpened);
     return () => {
-      window.removeEventListener("orchids:open-file", onOpenFile);
-      window.removeEventListener("orchids:new-agent", onNewAgent);
-      window.removeEventListener("orchids:open-ide", onOpenIde);
-      window.removeEventListener("orchids:open-terminal", onOpenTerminal);
-      window.removeEventListener("orchids:open-browser", onOpenBrowser);
-      window.removeEventListener("orchids:show-welcome", onShowWelcome);
-      window.removeEventListener("orchids:project-opened", onProjectOpened);
+      window.removeEventListener("lens:open-file", onOpenFile);
+      window.removeEventListener("lens:new-agent", onNewAgent);
+      window.removeEventListener("lens:open-ide", onOpenIde);
+      window.removeEventListener("lens:open-terminal", onOpenTerminal);
+      window.removeEventListener("lens:open-browser", onOpenBrowser);
+      window.removeEventListener("lens:show-welcome", onShowWelcome);
+      window.removeEventListener("lens:project-opened", onProjectOpened);
     };
   }, [newChat, closeWorkspace]);
 
@@ -409,7 +409,7 @@ function AgentsApp() {
     </ErrorBoundary>
   ) : showAgentChat ? (
     <ErrorBoundary fallbackTitle="Agent crashed">
-      <div className="flex min-h-0 flex-1 flex-col bg-[#0a0a0a]">
+      <div className="flex min-h-0 flex-1 flex-col bg-background">
         <AgentWorkspace
           project={project}
           projects={projects}
@@ -446,7 +446,7 @@ function AgentsApp() {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-[#0a0a0a] font-sans text-[#e8e8e8] antialiased">
+    <div className="flex h-screen flex-col bg-background font-sans text-foreground antialiased">
       <TitleBar
         projectName={project.name}
         onOpenSettings={() => openSettings()}

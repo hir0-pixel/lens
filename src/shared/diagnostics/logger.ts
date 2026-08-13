@@ -117,7 +117,7 @@ class Logger {
             ? console.debug
             : console.info;
     if (import.meta.env.DEV || level === "error" || level === "warn") {
-      consoleFn(`[orchids:${level}]`, entry.message, entry.context ?? "");
+      consoleFn(`[lens:${level}]`, entry.message, entry.context ?? "");
     }
 
     this.listeners.forEach((fn) => fn(entry));

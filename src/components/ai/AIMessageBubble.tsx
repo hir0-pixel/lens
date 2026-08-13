@@ -129,11 +129,11 @@ export function AIMessageBubble({
       <div className="group min-w-0 flex-1 space-y-2">
         <div className="flex items-center gap-2">
           <span className="text-[12px] font-medium text-[var(--text-primary)]">
-            Orchids
+            Lens
           </span>
           {streaming && (
-            <span className="orchids-thinking-glow" title="Streaming">
-              <span className="orchids-thinking-dot" />
+            <span className="lens-thinking-glow" title="Streaming">
+              <span className="lens-thinking-dot" />
             </span>
           )}
           {message.model && (

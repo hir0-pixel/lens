@@ -298,7 +298,7 @@ export const useTerminalStore = create<TerminalStore>()(
       },
     }),
     {
-      name: "orchids-terminal",
+      name: "lens-terminal",
       partialize: (state) => ({
         sessions: state.sessions,
         activeSessionId: state.activeSessionId,

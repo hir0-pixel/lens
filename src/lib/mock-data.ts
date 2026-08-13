@@ -6,8 +6,8 @@ import type {
 } from "./types";
 
 export const MODELS: Model[] = [
-  { id: "composer-2.5-fast", label: "Composer 2.5 Fast", provider: "orchids" },
-  { id: "orchids-default", label: "Orchids Default", provider: "orchids" },
+  { id: "composer-2.5-fast", label: "Composer 2.5 Fast", provider: "lens" },
+  { id: "lens-default", label: "Lens Default", provider: "lens" },
   { id: "claude-opus", label: "Claude Opus 4.5", provider: "claude" },
   { id: "claude-sonnet", label: "Claude Sonnet 4.5", provider: "claude" },
   { id: "gpt-5", label: "GPT-5.1", provider: "chatgpt" },
@@ -153,7 +153,7 @@ export const INITIAL_PROJECTS: Project[] = [
     path: "~/dev/Lens",
     branch: "main",
     deployStatus: "live",
-    deployedUrl: "https://lens.orchids.app",
+    deployedUrl: "https://lens.lens.app",
     updatedAt: "yesterday",
     color: "#FCAA26",
   },

@@ -1,7 +1,7 @@
 import { ExternalLink, Radio } from "lucide-react";
 
 const MOCK_PORTS = [
-  { port: 1420, process: "vite", label: "Orchids Dev Server" },
+  { port: 1420, process: "vite", label: "Lens Dev Server" },
   { port: 3000, process: "node", label: "Preview" },
 ];
 

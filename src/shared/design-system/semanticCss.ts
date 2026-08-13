@@ -25,7 +25,7 @@ export const SEMANTIC_CSS = `
   --ds-disabled: 0.4;
 
   /* Brand / status */
-  --ds-primary: var(--orchids-accent);
+  --ds-primary: var(--lens-accent);
   --ds-secondary: var(--cursor-focus);
   --ds-warning: #d29922;
   --ds-error: var(--cursor-error);

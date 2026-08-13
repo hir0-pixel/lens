@@ -11,7 +11,7 @@ export type CommandCategory =
   | "Preferences"
   | "Help";
 
-export interface OrchidsCommand {
+export interface LensCommand {
   id: string;
   title: string;
   category: CommandCategory;
@@ -27,26 +27,26 @@ export interface OrchidsCommand {
 type CommandListener = () => void;
 
 class CommandRegistryImpl {
-  private commands = new Map<string, OrchidsCommand>();
+  private commands = new Map<string, LensCommand>();
   private recent: string[] = [];
   private pinned = new Set<string>();
   private listeners = new Set<CommandListener>();
 
-  register(command: OrchidsCommand): void {
+  register(command: LensCommand): void {
     this.commands.set(command.id, command);
     this.notify();
   }
 
-  registerMany(commands: OrchidsCommand[]): void {
+  registerMany(commands: LensCommand[]): void {
     commands.forEach((c) => this.commands.set(c.id, c));
     this.notify();
   }
 
-  get(id: string): OrchidsCommand | undefined {
+  get(id: string): LensCommand | undefined {
     return this.commands.get(id);
   }
 
-  getAll(): OrchidsCommand[] {
+  getAll(): LensCommand[] {
     return Array.from(this.commands.values());
   }
 
@@ -65,10 +65,10 @@ class CommandRegistryImpl {
     this.notify();
   }
 
-  getRecent(): OrchidsCommand[] {
+  getRecent(): LensCommand[] {
     return this.recent
       .map((id) => this.commands.get(id))
-      .filter((c): c is OrchidsCommand => Boolean(c));
+      .filter((c): c is LensCommand => Boolean(c));
   }
 
   pin(id: string): void {
@@ -86,10 +86,10 @@ class CommandRegistryImpl {
     else this.pin(id);
   }
 
-  getPinned(): OrchidsCommand[] {
+  getPinned(): LensCommand[] {
     return Array.from(this.pinned)
       .map((id) => this.commands.get(id))
-      .filter((c): c is OrchidsCommand => Boolean(c));
+      .filter((c): c is LensCommand => Boolean(c));
   }
 
   isPinned(id: string): boolean {

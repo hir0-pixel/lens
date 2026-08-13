@@ -20,7 +20,7 @@ export function useShellEvents(opts: {
     function onView(e: Event) {
       const id = (e as CustomEvent<{ id?: ActivityView }>).detail?.id;
       if (id) {
-        window.dispatchEvent(new CustomEvent("orchids:open-ide"));
+        window.dispatchEvent(new CustomEvent("lens:open-ide"));
         useLayoutStore.getState().setActivityView(id);
       }
     }
@@ -37,10 +37,10 @@ export function useShellEvents(opts: {
         repos.find((r) => r.id === activeId)?.path ??
         useTerminalStore.getState().defaultCwd;
       useTerminalStore.getState().createSession({ cwd });
-      window.dispatchEvent(new CustomEvent("orchids:open-terminal"));
+      window.dispatchEvent(new CustomEvent("lens:open-terminal"));
     }
     function onTerminalSplit() {
-      window.dispatchEvent(new CustomEvent("orchids:open-terminal"));
+      window.dispatchEvent(new CustomEvent("lens:open-terminal"));
       const { activeSessionId, splitSession } = useTerminalStore.getState();
       if (activeSessionId) splitSession(activeSessionId, "horizontal");
     }
@@ -64,7 +64,7 @@ export function useShellEvents(opts: {
         if (ok) return;
         if (id === "file.new") {
           window.dispatchEvent(
-            new CustomEvent("orchids:open-file", {
+            new CustomEvent("lens:open-file", {
               detail: { path: `untitled-${Date.now()}.tsx` },
             }),
           );
@@ -72,27 +72,27 @@ export function useShellEvents(opts: {
       });
     }
 
-    window.addEventListener("orchids:view", onView);
-    window.addEventListener("orchids:toggle-ai", onToggleAi);
-    window.addEventListener("orchids:toggle-panel", onTogglePanel);
-    window.addEventListener("orchids:terminal-new", onTerminalNew);
-    window.addEventListener("orchids:terminal-split", onTerminalSplit);
-    window.addEventListener("orchids:open-projects", onOpenProjectsEvt);
-    window.addEventListener("orchids:open-folder", onOpenFolderEvt);
-    window.addEventListener("orchids:exit", onExitEvt);
-    window.addEventListener("orchids:open-settings", onOpenSettingsEvt);
-    window.addEventListener("orchids:command", onCommand);
+    window.addEventListener("lens:view", onView);
+    window.addEventListener("lens:toggle-ai", onToggleAi);
+    window.addEventListener("lens:toggle-panel", onTogglePanel);
+    window.addEventListener("lens:terminal-new", onTerminalNew);
+    window.addEventListener("lens:terminal-split", onTerminalSplit);
+    window.addEventListener("lens:open-projects", onOpenProjectsEvt);
+    window.addEventListener("lens:open-folder", onOpenFolderEvt);
+    window.addEventListener("lens:exit", onExitEvt);
+    window.addEventListener("lens:open-settings", onOpenSettingsEvt);
+    window.addEventListener("lens:command", onCommand);
     return () => {
-      window.removeEventListener("orchids:view", onView);
-      window.removeEventListener("orchids:toggle-ai", onToggleAi);
-      window.removeEventListener("orchids:toggle-panel", onTogglePanel);
-      window.removeEventListener("orchids:terminal-new", onTerminalNew);
-      window.removeEventListener("orchids:terminal-split", onTerminalSplit);
-      window.removeEventListener("orchids:open-projects", onOpenProjectsEvt);
-      window.removeEventListener("orchids:open-folder", onOpenFolderEvt);
-      window.removeEventListener("orchids:exit", onExitEvt);
-      window.removeEventListener("orchids:open-settings", onOpenSettingsEvt);
-      window.removeEventListener("orchids:command", onCommand);
+      window.removeEventListener("lens:view", onView);
+      window.removeEventListener("lens:toggle-ai", onToggleAi);
+      window.removeEventListener("lens:toggle-panel", onTogglePanel);
+      window.removeEventListener("lens:terminal-new", onTerminalNew);
+      window.removeEventListener("lens:terminal-split", onTerminalSplit);
+      window.removeEventListener("lens:open-projects", onOpenProjectsEvt);
+      window.removeEventListener("lens:open-folder", onOpenFolderEvt);
+      window.removeEventListener("lens:exit", onExitEvt);
+      window.removeEventListener("lens:open-settings", onOpenSettingsEvt);
+      window.removeEventListener("lens:command", onCommand);
     };
   }, [onOpenProjects, onOpenSettings]);
 }

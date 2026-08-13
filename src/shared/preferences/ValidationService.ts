@@ -51,7 +51,7 @@ export const ValidationService = {
     const errors: string[] = [];
     const warnings: string[] = [];
     const trimmed = key.trim();
-    if (!trimmed && kind !== "ollama" && kind !== "orchids") {
+    if (!trimmed && kind !== "ollama" && kind !== "lens") {
       warnings.push("API key is empty");
     }
     if (trimmed.length > 0 && trimmed.length < 8) {

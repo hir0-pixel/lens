@@ -1,4 +1,4 @@
-# Orchids Desktop — Architecture
+# Lens Desktop — Architecture
 
 Feature-based React + Tauri **Agent Workspace** — AI-first shell with tools (editor, browser, terminal) as secondary surfaces.
 
@@ -46,13 +46,13 @@ src/
 
 | Store / key | Persists |
 |-------------|----------|
-| `orchids-layout` v5 | Nav/tools/utility sizes, collapse, navView, tools tab |
-| `orchids-settings` | Settings categories, favorites, search history |
-| `orchids-appearance` | Theme, accent, density, a11y flags |
-| `orchids-providers` | Provider configs + models |
-| `orchids-git` | SCM UI state (mock repo selection) |
-| `orchids-terminal` | Session metadata |
-| `orchids-conversations` | Agent threads per project (bounded) |
+| `lens-layout` v5 | Nav/tools/utility sizes, collapse, navView, tools tab |
+| `lens-settings` | Settings categories, favorites, search history |
+| `lens-appearance` | Theme, accent, density, a11y flags |
+| `lens-providers` | Provider configs + models |
+| `lens-git` | SCM UI state (mock repo selection) |
+| `lens-terminal` | Session metadata |
+| `lens-conversations` | Agent threads per project (bounded) |
 
 ## Diagnostics
 

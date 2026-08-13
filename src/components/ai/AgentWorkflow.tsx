@@ -164,14 +164,14 @@ export function AgentWorkflow({ calls, thinking }: AgentWorkflowProps) {
 }
 
 export function ThinkingIndicator({
-  label = "Orchids is thinking…",
+  label = "Lens is thinking…",
 }: {
   label?: string;
 }) {
   return (
     <div className="flex items-center gap-2 px-3 py-2 animate-cursor-fade">
-      <span className="orchids-thinking-glow" aria-hidden>
-        <span className="orchids-think-dots">
+      <span className="lens-thinking-glow" aria-hidden>
+        <span className="lens-think-dots">
           <span />
           <span />
           <span />

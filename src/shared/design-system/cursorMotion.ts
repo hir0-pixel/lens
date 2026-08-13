@@ -1,5 +1,5 @@
 /**
- * Orchids motion language — mirrors CSS --duration-* / --ease-* tokens.
+ * Lens motion language — mirrors CSS --duration-* / --ease-* tokens.
  */
 export const CURSOR_MOTION = {
   duration: {

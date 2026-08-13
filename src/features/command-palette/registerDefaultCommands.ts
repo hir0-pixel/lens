@@ -22,7 +22,7 @@ import { formatShortcut } from "@/features/keyboard/ShortcutRegistry";
 
 /** Enter agent+tools workspace from empty home when a View/Go command needs IDE chrome. */
 function ensureIde() {
-  window.dispatchEvent(new CustomEvent("orchids:open-ide"));
+  window.dispatchEvent(new CustomEvent("lens:open-ide"));
 }
 
 /**
@@ -42,7 +42,7 @@ export function registerDefaultCommands(): void {
       keywords: ["untitled", "create"],
       run: () => {
         window.dispatchEvent(
-          new CustomEvent("orchids:open-file", {
+          new CustomEvent("lens:open-file", {
             detail: { path: `untitled-${Date.now()}.tsx` },
           }),
         );
@@ -56,7 +56,7 @@ export function registerDefaultCommands(): void {
       shortcut: formatShortcut("mod+o"),
       keywords: ["project", "directory", "repo"],
       run: () => {
-        window.dispatchEvent(new CustomEvent("orchids:open-folder"));
+        window.dispatchEvent(new CustomEvent("lens:open-folder"));
       },
     },
     {
@@ -79,14 +79,14 @@ export function registerDefaultCommands(): void {
       },
     },
     {
-      id: "orchids.chat.new",
+      id: "lens.chat.new",
       title: "New Chat",
       category: "AI",
       icon: MessageSquare,
       shortcut: formatShortcut("mod+n"),
       keywords: ["session", "agent", "new"],
       run: () => {
-        window.dispatchEvent(new CustomEvent("orchids:new-agent"));
+        window.dispatchEvent(new CustomEvent("lens:new-agent"));
       },
     },
     {
@@ -336,17 +336,17 @@ export function registerDefaultCommands(): void {
       shortcut: formatShortcut("mod+,"),
       keywords: ["preferences", "config"],
       run: () => {
-        window.dispatchEvent(new CustomEvent("orchids:open-settings"));
+        window.dispatchEvent(new CustomEvent("lens:open-settings"));
       },
     },
     {
-      id: "orchids.ai.focusComposer",
+      id: "lens.ai.focusComposer",
       title: "AI: Focus Composer",
       category: "AI",
       icon: MessageSquare,
       shortcut: formatShortcut("mod+i"),
       run: () => {
-        window.dispatchEvent(new CustomEvent("orchids:focus-composer"));
+        window.dispatchEvent(new CustomEvent("lens:focus-composer"));
       },
     },
     {

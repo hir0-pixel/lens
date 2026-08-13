@@ -1,7 +1,7 @@
 export type AgentMode = "agent" | "claude-code";
 
 export type ModelProvider =
-  | "orchids"
+  | "lens"
   | "chatgpt"
   | "claude"
   | "gemini"

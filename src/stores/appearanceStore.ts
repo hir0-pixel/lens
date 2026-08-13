@@ -98,7 +98,7 @@ export const useAppearanceStore = create<AppearanceStore>()(
       apply: () => applyAppearance(snapshot(get())),
     }),
     {
-      name: "orchids-appearance",
+      name: "lens-appearance",
       onRehydrateStorage: () => (state) => {
         state?.apply();
       },

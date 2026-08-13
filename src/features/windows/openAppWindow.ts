@@ -43,7 +43,7 @@ export async function openIdeWindow(): Promise<void> {
       });
       ide.once("tauri://error", (e) => {
         console.error("Failed to create IDE window", e);
-        window.open(url, "orchids-ide", "width=1440,height=900");
+        window.open(url, "lens-ide", "width=1440,height=900");
       });
       return;
     } catch (err) {
@@ -51,7 +51,7 @@ export async function openIdeWindow(): Promise<void> {
     }
   }
 
-  const popup = window.open(url, "orchids-ide", "width=1440,height=900,menubar=no");
+  const popup = window.open(url, "lens-ide", "width=1440,height=900,menubar=no");
   popup?.focus();
 }
 
@@ -86,7 +86,7 @@ export async function openAgentsWindow(): Promise<void> {
   }
   window.open(
     `${window.location.origin}${window.location.pathname}?window=agents`,
-    "orchids-agents",
+    "lens-agents",
     "width=1440,height=900",
   );
 }

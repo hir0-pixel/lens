@@ -1,5 +1,5 @@
 /**
- * Orchids Design System — TypeScript tokens (mirror of CSS HSL system).
+ * Lens Design System — TypeScript tokens (mirror of CSS HSL system).
  * Prefer CSS vars in styles; use these for JS layout math.
  */
 
@@ -126,7 +126,7 @@ export const SEMANTIC = {
 } as const;
 
 export const PROVIDER_COLORS = {
-  orchids: "#8B5CF6",
+  lens: "#8B5CF6",
   anthropic: "#D97757",
   openai: "#10A37F",
   google: "#8E75B2",

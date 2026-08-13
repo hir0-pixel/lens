@@ -30,7 +30,7 @@ export const useConversationStore = create<ConversationState>()(
         }),
     }),
     {
-      name: "orchids-conversations-v2",
+      name: "lens-conversations-v2",
       partialize: (s) => ({ messagesByProject: s.messagesByProject }),
     },
   ),

@@ -71,7 +71,7 @@ export function ChatWindow({
                   role: "assistant",
                   content: streamingContent,
                   timestamp: "",
-                  model: "Orchids Agent",
+                  model: "Lens Agent",
                 }}
                 streaming
               />

@@ -41,10 +41,10 @@ export const MOCK_PROBLEMS: ProblemItem[] = [
 
 export const MOCK_OUTPUT_CHANNELS: OutputChannel[] = [
   {
-    id: "orchids",
-    name: "Orchids",
+    id: "lens",
+    name: "Lens",
     lines: [
-      "[info] Orchids IDE started",
+      "[info] Lens IDE started",
       "[info] Project: finance-dashboard",
       "[info] Terminal workspace initialized",
     ],

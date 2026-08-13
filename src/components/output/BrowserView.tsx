@@ -196,7 +196,7 @@ export default function BrowserView({
             </p>
             <p className="max-w-sm text-[12px] text-[var(--text-tertiary)]">
               Type a URL above and press Enter. If a local dev server is
-              running, Orchids will open it automatically when available.
+              running, Lens will open it automatically when available.
             </p>
           </div>
         )}

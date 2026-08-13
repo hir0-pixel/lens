@@ -171,7 +171,7 @@ export const useGitStore = create<GitState>()(
         const msg = state.commitMessage.trim();
         const desc = state.commitDescription.trim();
         const finalMessage = state.signOff
-          ? `${msg}${desc ? `\n\n${desc}` : ""}\n\nSigned-off-by: Maryam <maryam@orchids.app>`
+          ? `${msg}${desc ? `\n\n${desc}` : ""}\n\nSigned-off-by: Maryam <maryam@lens.app>`
           : msg;
 
         const newCommit: GitCommit = {
@@ -181,7 +181,7 @@ export const useGitStore = create<GitState>()(
           message: finalMessage.split("\n")[0],
           description: desc || undefined,
           author: "Maryam",
-          email: "maryam@orchids.app",
+          email: "maryam@lens.app",
           avatarColor: "#FCAA26",
           timestamp: new Date().toISOString(),
           relativeTime: "just now",
@@ -344,7 +344,7 @@ export const useGitStore = create<GitState>()(
       applyTemplate: (message) => set({ commitMessage: message }),
     }),
     {
-      name: "orchids-git",
+      name: "lens-git",
       partialize: (s) => ({
         activeRepoId: s.activeRepoId,
         diffMode: s.diffMode,

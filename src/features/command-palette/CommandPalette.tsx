@@ -193,14 +193,14 @@ export function CommandPalette() {
   function openFile(path: string) {
     pushRecentFile(path);
     close();
-    window.dispatchEvent(new CustomEvent("orchids:open-file", { detail: { path } }));
+    window.dispatchEvent(new CustomEvent("lens:open-file", { detail: { path } }));
   }
 
   function goToSymbol(file: string, line: number) {
     pushRecentFile(file);
     close();
     window.dispatchEvent(
-      new CustomEvent("orchids:open-file", { detail: { path: file, line } }),
+      new CustomEvent("lens:open-file", { detail: { path: file, line } }),
     );
   }
 
@@ -210,7 +210,7 @@ export function CommandPalette() {
     const file = useCommandStore.getState().lastOpenedFile ?? "src/App.tsx";
     close();
     window.dispatchEvent(
-      new CustomEvent("orchids:open-file", { detail: { path: file, line } }),
+      new CustomEvent("lens:open-file", { detail: { path: file, line } }),
     );
   }
 

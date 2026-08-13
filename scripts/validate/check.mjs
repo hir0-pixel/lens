@@ -23,7 +23,7 @@ function run(label, cmd, args) {
   console.log(`✓ ${label}`);
 }
 
-console.log("Orchids production validation");
+console.log("Lens production validation");
 console.log(`Root: ${root}`);
 
 if (!existsSync(path.join(root, "package.json"))) {

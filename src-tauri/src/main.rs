@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    orchids_desktop_lib::run()
+    lens_desktop_lib::run()
 }

@@ -28,17 +28,17 @@ export default function IdeWindowApp() {
     openTools("editor");
     window.setTimeout(() => {
       try {
-        const path = localStorage.getItem("orchids-ide-open-path");
+        const path = localStorage.getItem("lens-ide-open-path");
         if (path) {
           window.dispatchEvent(
-            new CustomEvent("orchids:open-file", { detail: { path } }),
+            new CustomEvent("lens:open-file", { detail: { path } }),
           );
-          localStorage.removeItem("orchids-ide-open-path");
+          localStorage.removeItem("lens-ide-open-path");
         } else {
-          window.dispatchEvent(new CustomEvent("orchids:focus-editor"));
+          window.dispatchEvent(new CustomEvent("lens:focus-editor"));
         }
       } catch {
-        window.dispatchEvent(new CustomEvent("orchids:focus-editor"));
+        window.dispatchEvent(new CustomEvent("lens:focus-editor"));
       }
     }, 50);
   }, [openExplorer, openTools]);
@@ -47,8 +47,8 @@ export default function IdeWindowApp() {
     function onSettings() {
       setSettingsOpen(true);
     }
-    window.addEventListener("orchids:open-settings", onSettings);
-    return () => window.removeEventListener("orchids:open-settings", onSettings);
+    window.addEventListener("lens:open-settings", onSettings);
+    return () => window.removeEventListener("lens:open-settings", onSettings);
   }, []);
 
   return (

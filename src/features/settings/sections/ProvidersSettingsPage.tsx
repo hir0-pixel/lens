@@ -66,7 +66,7 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
       </div>
 
       <div className="mt-3 space-y-2.5 border-t border-white/5 pt-3">
-        {provider.kind !== "orchids" && (
+        {provider.kind !== "lens" && (
           <div>
             <Label className="mb-1 block text-[11px] font-normal text-zinc-500">API Key</Label>
             <div className="flex gap-2">

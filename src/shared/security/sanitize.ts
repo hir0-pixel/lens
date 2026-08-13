@@ -17,7 +17,7 @@ export function sanitizeUrl(url: string): string {
 /** Soft-validate API key shape without rejecting legitimate keys */
 export function isPlausibleApiKey(key: string, kind?: string): boolean {
   const t = key.trim();
-  if (!t) return kind === "ollama" || kind === "orchids";
+  if (!t) return kind === "ollama" || kind === "lens";
   if (t.length < 8) return false;
   if (/\s/.test(t)) return false;
   return true;

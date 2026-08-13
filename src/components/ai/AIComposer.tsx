@@ -203,7 +203,7 @@ export const AIComposer = forwardRef<AIComposerHandle, AIComposerProps>(
 
           <div
             className={cn(
-              "orchids-composer-shell flex items-end gap-1 p-1.5",
+              "lens-composer-shell flex items-end gap-1 p-1.5",
               "focus-within:shadow-[var(--shadow-focus-ring)]",
             )}
             data-streaming={sending ? "true" : "false"}

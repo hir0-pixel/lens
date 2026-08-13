@@ -110,7 +110,7 @@ function FileGroup({
               line={m.line}
               onOpen={() =>
                 window.dispatchEvent(
-                  new CustomEvent("orchids:open-file", {
+                  new CustomEvent("lens:open-file", {
                     detail: { path: m.file, line: m.line },
                   }),
                 )
@@ -186,7 +186,7 @@ export function GlobalSearchPanel() {
     setReplaceCount(totalMatches);
     // Mock replace — dispatches event for future editor integration
     window.dispatchEvent(
-      new CustomEvent("orchids:replace-all", {
+      new CustomEvent("lens:replace-all", {
         detail: { query, replace, options },
       }),
     );

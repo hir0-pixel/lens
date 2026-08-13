@@ -73,7 +73,7 @@ export function WorkspaceNavRail({
           onClick={() => {
             setNavView("agents");
             onNewAgent?.();
-            window.dispatchEvent(new CustomEvent("orchids:new-agent"));
+            window.dispatchEvent(new CustomEvent("lens:new-agent"));
           }}
         >
           <MessageSquarePlus size={18} strokeWidth={1.75} />

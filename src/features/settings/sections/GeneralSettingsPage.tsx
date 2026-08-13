@@ -21,7 +21,7 @@ export function GeneralSettingsPage() {
         <SettingToggle
           id="g-startup"
           title="Show welcome on startup"
-          description="Display the welcome screen when Orchids launches"
+          description="Display the welcome screen when Lens launches"
           checked={general.showWelcomeOnStartup}
           onCheckedChange={(v) => update({ showWelcomeOnStartup: v })}
         />

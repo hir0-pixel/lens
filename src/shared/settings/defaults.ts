@@ -140,8 +140,8 @@ export const DEFAULT_SETTINGS: AppSettingsBundle = {
     blockTrackers: true,
   },
   ai: {
-    defaultProviderId: "orchids",
-    defaultModelId: "orchids-default",
+    defaultProviderId: "lens",
+    defaultModelId: "lens-default",
     temperature: 0.7,
     contextLength: 128000,
     streaming: true,

@@ -32,10 +32,10 @@ export function useAIKeyboardShortcuts({
     function onFocusEvent() {
       onFocusComposer();
     }
-    window.addEventListener("orchids:focus-composer", onFocusEvent);
+    window.addEventListener("lens:focus-composer", onFocusEvent);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("orchids:focus-composer", onFocusEvent);
+      window.removeEventListener("lens:focus-composer", onFocusEvent);
     };
   }, [enabled, onFocusComposer, onEscape]);
 }
