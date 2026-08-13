@@ -421,6 +421,12 @@
     box-shadow: var(--shadow-focus-ring);
   }
 
+  input:focus-visible,
+  textarea:focus-visible,
+  [contenteditable="true"]:focus-visible {
+    box-shadow: none;
+  }
+
   button:focus:not(:focus-visible),
   a:focus:not(:focus-visible) {
     outline: none;
@@ -1145,9 +1151,6 @@
     .text-zinc-500,
     .text-zinc-600 {
       color: var(--text-tertiary) !important;
-    }
-    [class*="bg-white/["] {
-      background-color: hsl(240 8% 88% / 0.55) !important;
     }
     [class*="hover:bg-white/["]:hover {
       background-color: var(--bg-hover) !important;

@@ -279,7 +279,7 @@ export function EmptySessionView({
               value={repoFilter}
               onChange={(e) => setRepoFilter(e.target.value)}
               placeholder="Filter repositories…"
-              className="h-7 w-full rounded-md border border-white/[0.08] bg-[#0a0a0a] px-2 text-[12px] text-[#d4d4d4] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="h-7 w-full rounded-md border border-white/[0.08] bg-[#0a0a0a] px-2 text-[12px] text-[#d4d4d4] placeholder:text-[#555] focus:outline-none"
               autoFocus
             />
           </div>

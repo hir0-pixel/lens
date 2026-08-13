@@ -24,7 +24,7 @@ export default function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent
-        className="sm:max-w-4xl gap-0 overflow-hidden p-0"
+        className="flex h-[min(720px,calc(100vh-2rem))] max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
         onEscapeKeyDown={(e) => {
           const q = useSettingsStore.getState().searchQuery.trim();
           if (q) {

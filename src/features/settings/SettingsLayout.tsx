@@ -237,8 +237,8 @@ export function SettingsLayout() {
   ).slice(0, 4);
 
   return (
-    <div className="flex h-[min(680px,75vh)] min-h-[480px]">
-      <aside className="flex w-[200px] shrink-0 flex-col border-r border-border bg-surface-0/40">
+    <div className="flex min-h-0 flex-1">
+      <aside className="flex min-h-0 w-[200px] shrink-0 flex-col border-r border-border bg-surface-0/40">
         <div className="sticky top-0 z-sticky border-b border-border p-2">
           <InputGroup className="h-8 border-border bg-surface-2 shadow-none">
             <InputGroupAddon
@@ -286,7 +286,7 @@ export function SettingsLayout() {
           </InputGroup>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           <nav className="p-1.5" aria-label="Settings categories">
             {favoriteNav.length > 0 && (
               <NavGroup label="Favorites">

@@ -106,7 +106,7 @@ export default function Composer({
         </div>
       )}
 
-      <div className="flex items-end gap-1.5 rounded-xl border border-white/10 bg-surface-2 p-1.5 focus-within:border-accent/50">
+      <div className="flex items-end gap-1.5 rounded-xl border border-white/10 bg-surface-2 p-1.5">
         <input
           ref={fileInputRef}
           type="file"
