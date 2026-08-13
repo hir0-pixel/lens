@@ -38,6 +38,7 @@ import { useGitStore } from "@/stores/gitStore";
 import type { GitChange, GitFileStatus } from "./types";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 const STATUS_LABEL: Record<GitFileStatus, string> = {
   modified: "M",
@@ -244,10 +245,10 @@ function ChangesTreeComponent() {
   const discard = useGitStore((s) => s.discard);
   const selectDiff = useGitStore((s) => s.selectDiff);
   const setShowConflicts = useGitStore((s) => s.setShowConflicts);
-  const staged = useGitStore((s) => s.getStaged());
-  const unstaged = useGitStore((s) => s.getUnstaged());
-  const conflicts = useGitStore((s) => s.getConflicts());
-  const untracked = useGitStore((s) => s.getUntracked());
+  const staged = useGitStore(useShallow((s) => s.getStaged()));
+  const unstaged = useGitStore(useShallow((s) => s.getUnstaged()));
+  const conflicts = useGitStore(useShallow((s) => s.getConflicts()));
+  const untracked = useGitStore(useShallow((s) => s.getUntracked()));
 
   return (
     <div className="py-1" role="tree" aria-label="Changes">

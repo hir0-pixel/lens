@@ -7,6 +7,8 @@ import {
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useAppearanceStore } from "@/stores/appearanceStore";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Kbd } from "@/components/ui/kbd";
 import { formatShortcut } from "@/features/keyboard/ShortcutRegistry";
 import { DEFAULT_KEYBINDINGS } from "@/features/keyboard/ShortcutRegistry";
 import { toast } from "sonner";
@@ -175,7 +177,7 @@ export function KeyboardSettingsPage() {
         title="Keyboard Shortcuts"
         description="Reference for primary Orchids / Cursor-aligned bindings. Full remapping coming soon."
       />
-      <div className="overflow-hidden rounded-lg border border-white/10 divide-y divide-white/5">
+      <Card className="gap-0 divide-y divide-white/5 overflow-hidden rounded-lg py-0">
         {DEFAULT_KEYBINDINGS.map((b) => (
           <div
             key={`${b.commandId}-${b.keys}`}
@@ -184,12 +186,12 @@ export function KeyboardSettingsPage() {
             <span className="truncate font-mono text-[11px] text-zinc-500">
               {b.commandId}
             </span>
-            <kbd className="shrink-0 rounded border border-white/10 bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-zinc-300">
+            <Kbd className="shrink-0 rounded border border-white/10 bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-zinc-300">
               {formatShortcut(b.keys)}
-            </kbd>
+            </Kbd>
           </div>
         ))}
-      </div>
+      </Card>
     </div>
   );
 }

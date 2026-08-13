@@ -1,5 +1,11 @@
-import Modal from "@/components/ui/Modal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SettingsLayout } from "@/features/settings/SettingsLayout";
+import { useSettingsStore } from "@/stores/settingsStore";
 import type { ProviderState } from "@/lib/types";
 
 interface SettingsDialogProps {
@@ -16,8 +22,22 @@ interface SettingsDialogProps {
  */
 export default function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   return (
-    <Modal open={open} onClose={onClose} title="Settings" size="xl">
-      <SettingsLayout />
-    </Modal>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        className="sm:max-w-4xl gap-0 overflow-hidden p-0"
+        onEscapeKeyDown={(e) => {
+          const q = useSettingsStore.getState().searchQuery.trim();
+          if (q) {
+            useSettingsStore.getState().setSearchQuery("");
+            e.preventDefault();
+          }
+        }}
+      >
+        <DialogHeader className="flex-row items-center justify-between border-b px-5 py-3 pr-14">
+          <DialogTitle className="text-[15px] font-semibold">Settings</DialogTitle>
+        </DialogHeader>
+        <SettingsLayout />
+      </DialogContent>
+    </Dialog>
   );
 }

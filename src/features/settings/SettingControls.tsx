@@ -1,5 +1,12 @@
 import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -43,9 +50,9 @@ export function SettingsGroup({
           {title}
         </h3>
       )}
-      <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
+      <Card className="gap-0 divide-y divide-border overflow-hidden py-0">
         {children}
-      </div>
+      </Card>
     </div>
   );
 }
@@ -62,18 +69,25 @@ export function SettingRow({
   id?: string;
 }) {
   return (
-    <div
+    <Field
       id={id}
-      className="flex items-start justify-between gap-4 bg-white/[0.02] px-3.5 py-3 transition-colors hover:bg-white/[0.04]"
+      orientation="horizontal"
+      className="items-start justify-between gap-4 bg-white/[0.02] px-3.5 py-3 transition-colors hover:bg-white/[0.04]"
     >
-      <div className="min-w-0 flex-1 pt-0.5">
-        <Label className="text-[13px] font-medium text-zinc-200">{title}</Label>
+      <FieldLabel className="flex-col items-start gap-1 pt-0.5">
+        <FieldTitle className="text-[13px] font-medium text-zinc-200">
+          {title}
+        </FieldTitle>
         {description && (
-          <p className="mt-0.5 text-[11.5px] leading-relaxed text-zinc-500">{description}</p>
+          <FieldDescription className="text-[11.5px] leading-relaxed text-zinc-500">
+            {description}
+          </FieldDescription>
         )}
-      </div>
-      <div className="flex shrink-0 items-center">{children}</div>
-    </div>
+      </FieldLabel>
+      <FieldContent className="flex-none flex-row items-center">
+        {children}
+      </FieldContent>
+    </Field>
   );
 }
 

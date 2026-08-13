@@ -7,6 +7,24 @@ import { openFolder, openFolderPath } from "@/features/projects/openFolder";
 import GithubIcon from "@/components/ui/GithubIcon";
 import { OrchidsWordmark } from "@/components/brand/OrchidsWordmark";
 import { CloneRepoDialog } from "./CloneRepoDialog";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface WelcomeScreenProps {
   planLabel?: string;
@@ -92,18 +110,20 @@ export function WelcomeScreen({
       <div className="relative z-[1] flex w-full max-w-[560px] flex-col items-center">
         <div className="mb-10 flex items-center gap-3">
           <OrchidsWordmark size="welcome" />
-          <div className="flex items-baseline gap-2 self-end pb-1">
-            <span className="text-[12px] text-[var(--text-tertiary)]">
+          <div className="flex items-end gap-2 self-end pb-1">
+            <Badge variant="secondary" className="h-auto px-1.5 py-0.5 text-[11px] leading-none">
               {planLabel}
-            </span>
-            <button
+            </Badge>
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onOpenSettings}
-              className="ml-1 inline-flex items-center gap-1 text-[12px] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)]"
+              className="ml-1 h-auto gap-1 px-1 text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
             >
               <Settings className="h-3 w-3" strokeWidth={1.75} />
               Settings
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -111,32 +131,44 @@ export function WelcomeScreen({
           {cards.map((card) => {
             const Icon = card.icon;
             return (
-              <button
+              <Card
                 key={card.id}
-                type="button"
-                disabled={card.disabled}
-                onClick={card.onClick}
                 className={cn(
-                  "group relative flex aspect-square flex-col items-start gap-3 rounded-[var(--radius-md)] bg-[var(--bg-surface-raised)] p-4 text-left transition-all duration-150",
-                  "border border-[var(--border-subtle)]",
+                  "aspect-square transition-all duration-150",
                   card.disabled
-                    ? "cursor-default opacity-70"
+                    ? "opacity-70"
                     : "hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]",
                 )}
               >
-                <Icon
-                  className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--accent-primary)]"
-                  strokeWidth={1.75}
-                />
-                <span className="text-[13px] font-semibold text-[var(--text-primary)]">
-                  {card.label}
-                </span>
-                {card.badge && (
-                  <span className="absolute bottom-3 left-4 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
-                    {card.badge}
-                  </span>
-                )}
-              </button>
+                <CardContent className="h-full p-0">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={card.disabled}
+                    onClick={card.onClick}
+                    className={cn(
+                      "group flex h-full w-full flex-col items-start justify-start gap-3 rounded-none p-4",
+                      card.disabled ? "cursor-default disabled:opacity-100" : "",
+                    )}
+                  >
+                    <Icon
+                      className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--accent-primary)]"
+                      strokeWidth={1.75}
+                    />
+                    <span className="text-[13px] font-semibold text-[var(--text-primary)]">
+                      {card.label}
+                    </span>
+                    {card.badge && (
+                      <Badge
+                        variant="secondary"
+                        className="mt-auto h-auto px-1 text-[10px] font-medium uppercase tracking-wide"
+                      >
+                        {card.badge}
+                      </Badge>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -147,28 +179,33 @@ export function WelcomeScreen({
               Recent projects
             </h2>
             {recentProjects.length > 5 && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowAllRecent((v) => !v)}
-                className="text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                className="h-auto px-1 text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
               >
                 {showAllRecent ? "Show less" : "View all"}
-              </button>
+              </Button>
             )}
           </div>
 
           {visibleRecent.length === 0 ? (
-            <p className="text-[13px] text-[var(--text-tertiary)]">
-              No recent projects yet. Open or clone a folder to get started.
-            </p>
+            <Alert variant="default" className="gap-1 bg-transparent px-0 py-0.5">
+              <AlertDescription className="text-[13px]">
+                No recent projects yet. Open or clone a folder to get started.
+              </AlertDescription>
+            </Alert>
           ) : (
             <ul className="flex flex-col gap-0.5">
               {visibleRecent.map((p) => (
                 <li key={p.path}>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => void openRecent(p.path)}
-                    className="flex w-full items-baseline justify-between gap-4 rounded-[var(--radius-sm)] px-2 py-2 text-left transition-colors hover:bg-[var(--bg-hover)]"
+                    className="h-auto w-full items-center justify-between gap-4 rounded-[var(--radius-sm)] px-2 py-2"
                   >
                     <span className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
                       {p.name}
@@ -176,7 +213,7 @@ export function WelcomeScreen({
                     <span className="max-w-[55%] truncate text-[11px] text-[var(--text-tertiary)]">
                       {p.path}
                     </span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -211,38 +248,28 @@ function ModalMissing({
   onRemove: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div
-        role="alertdialog"
-        className="w-full max-w-md rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] p-5 shadow-[var(--shadow-md)]"
-      >
-        <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">
-          Folder not found
-        </h3>
-        <p className="mt-2 text-[13px] text-[var(--text-secondary)]">
-          This path no longer exists on disk. Remove it from your recent list?
-        </p>
-        <p className="mt-2 truncate font-mono text-[11px] text-[var(--text-tertiary)]">
+    <Dialog open onOpenChange={(open) => !open && onDismiss()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Folder not found</DialogTitle>
+          <DialogDescription>
+            This path no longer exists on disk. Remove it from your recent
+            list?
+          </DialogDescription>
+        </DialogHeader>
+        <p className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">
           {path}
         </p>
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="h-8 rounded-[var(--radius-md)] px-3 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-          >
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={onDismiss}>
             Keep
-          </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="h-8 rounded-[var(--radius-md)] bg-[var(--accent-primary)] px-3 text-[12px] font-medium text-[var(--text-on-accent)]"
-          >
+          </Button>
+          <Button type="button" onClick={onRemove}>
             Remove from list
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

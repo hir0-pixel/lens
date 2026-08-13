@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Check, Loader2, Plug, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -15,6 +17,7 @@ import {
   SettingsSectionHeader,
 } from "../SettingControls";
 import { useProviderStore, type AiProviderConfig } from "@/stores/providerStore";
+import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { PROVIDER_COLORS } from "@/shared/design-system";
 
@@ -24,13 +27,13 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
   const updateProvider = useProviderStore((s) => s.updateProvider);
   const toggleProvider = useProviderStore((s) => s.toggleProvider);
   const testConnection = useProviderStore((s) => s.testConnection);
-  const models = useProviderStore((s) =>
+  const models = useProviderStore(useShallow((s) =>
     s.models.filter((m) => m.providerId === provider.id),
-  );
+  ));
   const [showKey, setShowKey] = useState(false);
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+    <Card className="gap-0 rounded-lg bg-white/[0.02] p-4 ring-white/10">
       <div className="flex items-center gap-3">
         <div
           className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold text-white"
@@ -65,7 +68,7 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
       <div className="mt-3 space-y-2.5 border-t border-white/5 pt-3">
         {provider.kind !== "orchids" && (
           <div>
-            <label className="mb-1 block text-[11px] text-zinc-500">API Key</label>
+            <Label className="mb-1 block text-[11px] font-normal text-zinc-500">API Key</Label>
             <div className="flex gap-2">
               <Input
                 type={showKey ? "text" : "password"}
@@ -88,7 +91,7 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
           </div>
         )}
         <div>
-          <label className="mb-1 block text-[11px] text-zinc-500">Base URL</label>
+          <Label className="mb-1 block text-[11px] font-normal text-zinc-500">Base URL</Label>
           <Input
             value={provider.baseUrl}
             onChange={(e) =>
@@ -99,9 +102,9 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
         </div>
         {(provider.kind === "openai" || provider.kind === "azure") && (
           <div>
-            <label className="mb-1 block text-[11px] text-zinc-500">
+            <Label className="mb-1 block text-[11px] font-normal text-zinc-500">
               Organization ID
-            </label>
+            </Label>
             <Input
               value={provider.organizationId ?? ""}
               onChange={(e) =>
@@ -114,9 +117,9 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
         )}
         {models.length > 0 && (
           <div>
-            <label className="mb-1 block text-[11px] text-zinc-500">
+            <Label className="mb-1 block text-[11px] font-normal text-zinc-500">
               Default model
-            </label>
+            </Label>
             <Select
               value={provider.defaultModelId ?? models[0].id}
               onValueChange={(v) =>
@@ -159,14 +162,14 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
           </Button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
 export function ProvidersSettingsPage() {
-  const providers = useProviderStore((s) =>
+  const providers = useProviderStore(useShallow((s) =>
     [...s.providers].sort((a, b) => a.priority - b.priority),
-  );
+  ));
 
   return (
     <div>
@@ -247,10 +250,12 @@ export function ModelsSettingsPage() {
                   key={m.id}
                   className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03]"
                 >
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={() => toggleFavoriteModel(m.id)}
-                    className="text-zinc-500 hover:text-accent"
+                    className="text-zinc-500 hover:bg-transparent hover:text-accent"
                     aria-label={m.favorite ? "Unfavorite" : "Favorite"}
                   >
                     <Star
@@ -259,7 +264,7 @@ export function ModelsSettingsPage() {
                         m.favorite && "fill-accent text-accent",
                       )}
                     />
-                  </button>
+                  </Button>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13px] text-zinc-200">{m.label}</div>
                     <div className="font-mono text-[10px] text-zinc-600">{m.id}</div>

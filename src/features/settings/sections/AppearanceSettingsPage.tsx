@@ -1,8 +1,10 @@
 import { Check } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
 import {
   SettingsGroup,
   SettingsSectionHeader,
   SettingRadio,
+  SettingRow,
   SettingSelect,
   SettingSlider,
   SettingToggle,
@@ -53,32 +55,30 @@ export function AppearanceSettingsPage() {
             { value: "system", label: "System" },
           ]}
         />
-        <div className="flex items-start justify-between gap-4 bg-white/[0.02] px-3.5 py-3">
-          <div>
-            <div className="text-[13px] font-medium text-zinc-200">Accent Color</div>
-            <p className="mt-0.5 text-[11.5px] text-zinc-500">
-              Orchids brand accent used across the IDE
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2" id="a-accent">
+        <SettingRow
+          id="a-accent"
+          title="Accent Color"
+          description="Orchids brand accent used across the IDE"
+        >
+          <div className="flex flex-wrap justify-end gap-2" id="a-accent">
             {ACCENTS.map((id) => (
-              <button
+              <Toggle
                 key={id}
                 type="button"
-                onClick={() => setAccent(id)}
+                pressed={accent === id}
+                onPressedChange={() => setAccent(id)}
+                aria-label={id}
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full border-2 transition-transform hover:scale-110",
+                  "size-7 min-w-0 rounded-full border-2 p-0 transition-transform hover:scale-110 hover:bg-transparent aria-pressed:bg-transparent",
                   accent === id ? "border-white" : "border-transparent",
                 )}
                 style={{ backgroundColor: ACCENT_COLORS[id] }}
-                aria-label={id}
-                aria-pressed={accent === id}
               >
                 {accent === id && <Check className="h-3.5 w-3.5 text-surface-0" />}
-              </button>
+              </Toggle>
             ))}
           </div>
-        </div>
+        </SettingRow>
         <SettingSelect
           id="a-density"
           title="UI Density"

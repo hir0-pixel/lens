@@ -8,7 +8,14 @@ import {
   type ComponentType,
 } from "react";
 import { Search, Star, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -233,9 +240,14 @@ export function SettingsLayout() {
     <div className="flex h-[min(680px,75vh)] min-h-[480px]">
       <aside className="flex w-[200px] shrink-0 flex-col border-r border-border bg-surface-0/40">
         <div className="sticky top-0 z-sticky border-b border-border p-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
-            <Input
+          <InputGroup className="h-8 border-border bg-surface-2 shadow-none">
+            <InputGroupAddon
+              align="inline-start"
+              className="pl-2.5 text-zinc-500"
+            >
+              <Search className="h-3.5 w-3.5" />
+            </InputGroupAddon>
+            <InputGroupInput
               ref={searchRef}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -251,23 +263,27 @@ export function SettingsLayout() {
                     });
                   }
                 }
-                if (e.key === "Escape") setSearchQuery("");
+                if (e.key === "Escape") {
+                  if (searchQuery) e.preventDefault();
+                  setSearchQuery("");
+                }
               }}
               placeholder="Search settings"
-              className="h-8 border-border bg-surface-2 pl-7 pr-7 text-[12px]"
+              className="h-8 text-[12px]"
               aria-label="Search settings"
             />
             {searchQuery && (
-              <button
-                type="button"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-500 hover:text-zinc-200"
+              <InputGroupButton
+                data-align="inline-end"
+                size="icon-xs"
+                className="mr-1 text-zinc-500 hover:text-zinc-200"
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
+                <X />
+              </InputGroupButton>
             )}
-          </div>
+          </InputGroup>
         </div>
 
         <ScrollArea className="flex-1">
@@ -326,12 +342,24 @@ export function SettingsLayout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-4 text-[12px] text-muted-foreground">
-          <span>Settings</span>
-          <span className="text-muted-foreground/40">/</span>
-          <span className="font-medium text-foreground/90">{navItem?.label}</span>
+          <Breadcrumb>
+            <BreadcrumbList className="gap-1 text-[12px] sm:gap-1.5">
+              <BreadcrumbItem>
+                <span className="text-muted-foreground">Settings</span>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="text-muted-foreground/40">
+                /
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbPage className="font-medium text-foreground/90">
+                  {navItem?.label}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             className="ml-auto h-7 w-7"
             onClick={() => toggleFavorite(activeSection)}
             aria-label="Toggle favorite"
@@ -360,10 +388,11 @@ export function SettingsLayout() {
               ) : (
                 <div className="space-y-1" role="listbox" aria-label="Search results">
                   {searchHits.map((hit) => (
-                    <button
+                    <Button
                       key={hit.id}
                       type="button"
                       role="option"
+                      variant="ghost"
                       onClick={() => {
                         const q = searchQuery;
                         goToSection(hit.section);
@@ -375,7 +404,7 @@ export function SettingsLayout() {
                           });
                         });
                       }}
-                      className="flex w-full flex-col rounded-lg border border-white/5 px-3 py-2.5 text-left hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                      className="h-auto w-full flex-col items-start gap-0.5 rounded-lg border border-white/5 px-3 py-2.5 text-left hover:bg-white/[0.04]"
                     >
                       <span className="text-[13px] text-zinc-200">
                         {highlightMatch(hit.title, searchQuery)}
@@ -384,7 +413,7 @@ export function SettingsLayout() {
                         {SETTINGS_NAV.find((n) => n.id === hit.section)?.label}
                         {hit.description ? ` · ${hit.description}` : ""}
                       </span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -442,23 +471,26 @@ function NavButton({
           : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
       )}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         ref={buttonRef}
         onClick={onSelect}
         aria-current={active ? "page" : undefined}
-        className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-[12.5px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent"
+        className="h-auto min-w-0 flex-1 justify-start gap-2 px-2 py-1.5 text-left text-[12.5px] font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-inset"
       >
         <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
         <span className="truncate">{item.label}</span>
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
         onClick={(e) => {
           e.stopPropagation();
           onToggleFavorite();
         }}
-        className="mr-1 rounded p-1 opacity-0 hover:bg-white/10 group-hover:opacity-100 focus-visible:opacity-100"
+        className="mr-1 opacity-0 hover:bg-white/10 group-hover:opacity-100 focus-visible:opacity-100"
         aria-label={favorited ? "Remove favorite" : "Add favorite"}
       >
         <Star
@@ -467,7 +499,7 @@ function NavButton({
             favorited && "fill-accent text-accent opacity-100",
           )}
         />
-      </button>
+      </Button>
     </div>
   );
 }

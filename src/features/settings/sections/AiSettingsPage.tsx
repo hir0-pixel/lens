@@ -7,11 +7,12 @@ import {
 } from "../SettingControls";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useProviderStore } from "@/stores/providerStore";
+import { useShallow } from "zustand/react/shallow";
 
 export function AiSettingsPage() {
   const ai = useSettingsStore((s) => s.ai);
   const update = useSettingsStore((s) => s.updateAi);
-  const providers = useProviderStore((s) => s.providers.filter((p) => p.enabled));
+  const providers = useProviderStore(useShallow((s) => s.providers.filter((p) => p.enabled)));
   const models = useProviderStore((s) => s.models);
 
   return (
