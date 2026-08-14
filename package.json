@@ -26,6 +26,8 @@
     "test:m01": "vitest run tests/security tests/integration/m01-workload-trust.test.ts",
     "verify:m01": "npm run generate && npm run typecheck && npm run lint && npm run test:m01",
     "test:m01-platform": "node platform/m01-preflight.mjs",
+    "test:m02": "vitest run tests/integration/m02-gateway-admission.test.ts",
+    "verify:m02": "npm run generate && npm run typecheck && npm run lint && npm run test:m02",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"
