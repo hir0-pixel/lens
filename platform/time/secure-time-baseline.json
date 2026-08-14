@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "owner": "platform/network",
+  "contract": "SECURE-TIME",
+  "servers": { "minimum": 3, "independentFailureDomains": true, "runtimePublicNtp": false, "authenticatedProtocol": "NTS-or-equivalent" },
+  "client": { "multipleSourceSelection": true, "monotonicDurations": true, "clockRollback": "deny-security-sensitive-actions", "uncertaintyExceeded": "deny-new-leases-fences-certificates-and-signatures" },
+  "changeControl": "privileged-change-fence-and-target-audit"
+}

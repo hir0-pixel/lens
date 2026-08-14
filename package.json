@@ -23,6 +23,7 @@
     "verify:m00": "node platform/build/workspace.mjs verify",
     "validate": "node scripts/validate/check.mjs",
     "test:m00-platform": "node platform/build/m00-preflight.mjs",
+    "test:m01-platform": "node platform/m01-preflight.mjs",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"
