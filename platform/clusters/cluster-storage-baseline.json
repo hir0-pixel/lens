@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "owner": "platform/clusters-and-storage",
+  "contract": "PLATFORM-HARDENING",
+  "clusters": ["production", "management-security", "untrusted-processing", "restore-cell"],
+  "separation": { "untrustedSharesControlPlaneCredentials": false, "untrustedSharesUnrestrictedNodesWithSecurity": false, "restoreCellHasProductionRoute": false, "restoreCellHasPublicOrOrdinaryUserRoute": false, "restoreCellTrustDomain": "separate" },
+  "kubernetes": {
+    "apiEtcdKubeletPublicRoute": false,
+    "anonymousAccess": false,
+    "sharedClusterAdmin": false,
+    "directKubectlAndSsh": false,
+    "rbac": "deny-by-default-namespace-service-account-action-scoped",
+    "defaultServiceAccountTokenAutomount": false,
+    "impersonation": "privileged-fenced-and-independently-audited",
+    "hostPathsAndDevices": "forbidden-except-named-infrastructure-profile",
+    "podSecurity": "restricted-equivalent",
+    "nonRoot": true,
+    "readOnlyRootFilesystem": true,
+    "dropCapabilities": true,
+    "seccompAndMacProfiles": true,
+    "admissionOutage": "block-new-workloads"
+  },
+  "nodes": { "immutableSignedImages": true, "secureMeasuredBoot": true, "tpmAttestation": true, "fullDiskEncryption": true, "coreDumpsForPlaintextProcesses": "disabled", "swapForPlaintextProcesses": "disabled", "manualDriftRepair": false },
+  "storage": { "protectedValuesEncryptedWithSecretsKeys": true, "directEtcdAccess": "cluster-root-only", "backups": "encrypted-offline-capable-immutable-malware-scanned-and-restore-tested", "backupOperatorsPlaintextAccess": false, "backupOperatorDecryptionAuthority": false, "restoreInspection": "restore-cell-current-pdp-governance-jit-independent-approval-and-audit-only", "classAReplication": "five-voter-2-2-1", "trafficReopen": "requires-recovery-manifest-quorum-current-revocation-normal-audit-admission-and-owner-quorums" }
+}

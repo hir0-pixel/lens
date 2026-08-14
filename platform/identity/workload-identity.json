@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "owner": "platform/identity",
+  "contracts": ["WORKLOAD-IDENTITY", "CRYPTOGRAPHIC-PROFILE"],
+  "trustDomain": "spiffe://platform.internal",
+  "issuance": {
+    "defaultCredential": "x509-svid-mtls",
+    "bearerJwtSvid": "forbidden-except-reviewed-profile",
+    "maxCertificateLifetimeSeconds": 900,
+    "renewal": "randomized-within-policy-window",
+    "expiredCredential": "deny",
+    "standingWorkloadCredentials": false,
+    "nodeAttestation": ["hardware-backed-measured-boot", "approved-immutable-node-image", "current-release-policy-head"],
+    "workloadAttestation": ["admitted-image-digest", "declared-service-account", "audience-bound-request"]
+  },
+  "delivery": {
+    "endpoint": "node-local-hardened-ipc",
+    "trustBundle": "versioned-signed-internal",
+    "revocation": "current-epoch-required",
+    "publicOcsp": false
+  },
+  "denials": {
+    "sandboxCredentialAccess": false,
+    "kubernetesControlPlaneCredential": false,
+    "bootstrapTokenInManifestOrImage": false,
+    "clientAssertedIdentity": false
+  }
+}

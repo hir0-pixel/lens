@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "owner": "platform/network",
+  "contract": "PLATFORM-HARDENING",
+  "enforcement": {
+    "defaultDeny": true,
+    "publicDefaultRoute": "forbidden",
+    "publicNat": "forbidden",
+    "publicDnsResolvers": "forbidden",
+    "explicitProxy": "forbidden",
+    "ipv6PublicEgress": "forbidden",
+    "runtimeExportPath": "forbidden",
+    "hostNetwork": "forbidden-except-named-infrastructure-profile",
+    "privilegedPod": "forbidden-except-named-infrastructure-profile"
+  },
+  "zones": [
+    "user-edge-static-only",
+    "runtime",
+    "data",
+    "security",
+    "management",
+    "bmc-oob",
+    "untrusted-processing",
+    "restore-cell"
+  ],
+  "requiredSeparations": [
+    ["runtime", "management"],
+    ["runtime", "untrusted-processing"],
+    ["security", "untrusted-processing"],
+    ["bmc-oob", "runtime"],
+    ["bmc-oob", "user-edge-static-only"],
+    ["restore-cell", "runtime"],
+    ["restore-cell", "user-edge-static-only"]
+  ],
+  "dns": {
+    "internalZonesOnly": true,
+    "externalNames": "sinkhole-and-alert",
+    "allowedZones": ["platform.internal", "build.internal"]
+  },
+  "egress": {
+    "allowedDestinations": ["npm-mirror.build.internal", "registry.build.internal"],
+    "appliesTo": ["isolated-build"],
+    "runtimeAllowedDestinations": []
+  },
+  "edge": {
+    "persistentData": "signed-static-ui-assets-only",
+    "forbiddenPersistence": ["prompts", "outputs", "documents", "memory", "sessions", "authorization", "secrets", "audit", "models", "indexes"]
+  },
+  "controlledTransfer": {
+    "runtimeInvocable": false,
+    "path": "separate-offline-dual-controlled",
+    "requires": ["data-owner-approval", "pdp-approval", "encryption", "recipient-media-binding", "audit-admission"]
+  },
+  "bmc": {
+    "publicRuntimeUserRoute": false,
+    "credentialModel": "unique-dynamic",
+    "managementSource": "allowlisted-pam-proxies-only",
+    "directAdministratorPath": false,
+    "vendorCloudManagement": false
+  },
+  "admission": {
+    "podNetworkPolicy": "default-deny",
+    "hostFirewall": "default-deny",
+    "borderFirewall": "default-deny",
+    "securityPolicyOutage": "block-new-workloads"
+  }
+}

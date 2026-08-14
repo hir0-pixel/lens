@@ -49,9 +49,14 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && moduleName !== "M00") {
-    fail(`M00 workspace only supports MODULE=M00 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 or MODULE=M01 (received ${moduleName}).`);
   }
+}
+
+function validateM00() {
+  validateModule();
+  if (moduleName === "M01") fail("M01 has no shared contract gate in the Engineer A lane.");
 }
 
 function bootstrap() {
@@ -119,14 +124,14 @@ function generate() {
 }
 
 function contractTest() {
-  validateModule();
+  validateM00();
   generate();
   run("Contract registry checks", ["run", "contracts:check"]);
   run("Generated client/server contract tests", ["exec", "vitest", "--", "run", "tests/contract"]);
 }
 
 function integrationTest() {
-  validateModule();
+  validateM00();
   generate();
   run("Generated client/server mTLS probe", ["exec", "vitest", "--", "run", "tests/integration/contract-probe.test.ts"]);
 }
@@ -134,6 +139,11 @@ function integrationTest() {
 function build() {
   validateModule();
   bootstrap();
+  if (moduleName === "M01") {
+    run("M01 platform trust preflight", ["run", "test:m01-platform"]);
+    console.log("M01 Engineer A platform baseline assembled. Shared admission, telemetry, and egress probes remain Engineer B integration inputs.");
+    return;
+  }
   generate();
   run("M00 platform preflight", ["run", "test:m00-platform"]);
   run("Lens web build", ["run", "build:web"]);

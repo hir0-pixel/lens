@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "owner": "platform/secrets",
+  "contract": "CRYPTOGRAPHIC-PROFILE",
+  "admissionEligible": false,
+  "status": "template-requires-independent-signature",
+  "transport": { "minimum": "TLS-1.3", "serviceAuthentication": "mutual-tls", "silentDowngrade": false },
+  "requirements": {
+    "approvedModule": "policy-selected-validated-module",
+    "customCryptography": false,
+    "unauthenticatedEncryption": false,
+    "hardCodedKeys": false,
+    "sharedEnvironmentWideKeys": false,
+    "unversionedCipherNegotiation": false
+  },
+  "keyPurposeSeparationRequired": true,
+  "changeControl": "signed-profile-plus-privileged-change-fence-plus-audit-admission",
+  "validation": "N/N-1-dual-trust-for-bounded-approved-epochs-only"
+}
