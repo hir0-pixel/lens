@@ -1,0 +1,13 @@
+{
+  "contract": "lens.contract-probe",
+  "version": "1.0.0",
+  "owner": "contract-probe-owner",
+  "clientWorkload": "employee-bff",
+  "api": "openapi/contract-probe.v1.json",
+  "events": "proto/events.v1.proto",
+  "eventSchema": "json-schema/event-envelope.v1.schema.json",
+  "errors": "errors/errors.v1.json",
+  "compatibility": "compatibility/v1.json",
+  "classification": "internal",
+  "requirements": ["ARCH-001", "ARCH-024", "DEL-04", "DEL-08", "DEL-09"]
+}
