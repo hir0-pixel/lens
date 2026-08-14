@@ -174,9 +174,7 @@ function build() {
     return;
   }
   if (moduleName === "M08") {
-    run("M08 Engineer B client preflight", ["run", "test:m08-client"]);
-    run("M08 Engineer B implementation verification", ["run", "verify:m08"]);
-    console.log("M08 Engineer B employee-client baseline assembled and verified against BFF contracts.");
+    buildImplementedModule("M08", "test:m08-bff", "verify:m08", "product-BFF and employee-client baseline");
     return;
   }
   generate();
@@ -197,6 +195,7 @@ function verify() {
   run("M07 Engineer B serving preflight", ["run", "test:m07-serving"]);
   run("M07 Engineer A registry preflight", ["run", "test:m07-registry"]);
   run("M08 Engineer B client preflight", ["run", "test:m08-client"]);
+  run("M08 Engineer A product-BFF preflight", ["run", "test:m08-bff"]);
   run("Generation", ["run", "generate"]);
   run("Contract registry checks", ["run", "contracts:check"]);
   run("Generated client provenance", ["run", "contracts:provenance"]);
