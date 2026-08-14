@@ -1,0 +1,10 @@
+# Replace each placeholder with an immutable internal digest before use.
+FROM ${INTERNAL_BUILD_IMAGE_DIGEST} AS build
+WORKDIR /workspace
+COPY --link . .
+RUN ./platform/build/isolated-service-build.sh
+
+FROM ${INTERNAL_RUNTIME_IMAGE_DIGEST}
+COPY --from=build /workspace/out/service /service
+USER 65532:65532
+ENTRYPOINT ["/service"]

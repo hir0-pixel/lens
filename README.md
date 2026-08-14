@@ -16,6 +16,12 @@ Frontend only: `npm run dev`
 | Command | Purpose |
 |---------|---------|
 | `npm run build` | Typecheck + production bundle |
+| `npm run bootstrap` | Verify the pinned, sovereign dependency-mirror build inputs |
+| `npm run generate` | Run contract generation when the contract workspace is present |
+| `npm run build -- --module M00` | Build the selected platform module (M00 build spine) |
+| `npm run test-contract -- --module M00` | Run the selected module's contract gate |
+| `npm run test-integration -- --module M00` | Run the selected module's integration gate |
+| `npm run verify` | Run the clean M00 build-spine verification gate |
 | `npm run test` | Unit + integration tests |
 | `npm run lint` | ESLint |
 | `npm run validate` | Full quality gate |

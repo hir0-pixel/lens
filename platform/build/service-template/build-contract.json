@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "serviceBoundary": {
+    "separateArtifact": true,
+    "generatedContractsOnly": true,
+    "crossServiceInternalImports": false,
+    "crossServiceDatabaseAccess": false
+  },
+  "isolatedBuild": {
+    "ephemeralSingleJobWorker": true,
+    "readOnlyInputs": true,
+    "noProductionCredentials": true,
+    "noCrossJobWritableCache": true,
+    "network": "digest-pinned-internal-mirrors-only"
+  },
+  "release": {
+    "digestPinned": true,
+    "requiresSbom": true,
+    "requiresProvenance": true,
+    "requiresIndependentReleaseSignature": true,
+    "directProductionDeployment": false
+  }
+}

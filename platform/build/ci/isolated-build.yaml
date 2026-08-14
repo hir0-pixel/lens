@@ -1,0 +1,33 @@
+version: 1
+name: sovereign-isolated-build
+owner: platform/build
+runner:
+  ephemeral: true
+  single_job: true
+  clean_workspace: true
+  source: read_only_reviewed_ref
+  writable_cache: forbidden
+  production_credentials: forbidden
+network:
+  default: deny
+  allow_digest_pinned_internal_mirrors: true
+  public_dns_proxy_and_resolvers: forbidden
+steps:
+  - command: npm run bootstrap
+  - command: npm ci --ignore-scripts
+  - command: npm run generate
+  - command: npm run build -- --module M00
+  - command: npm run lint
+  - command: npm run test
+  - command: npm run test-contract -- --module M00
+  - command: npm run test-integration -- --module M00
+  - command: platform-release-provenance --require-independent-signature
+outputs:
+  sbom: required
+  provenance: required
+  test_evidence: required
+  artifact_digests: required
+release:
+  build_worker_may_sign: false
+  separate_release_controller_required: true
+  direct_deployment: forbidden

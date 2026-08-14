@@ -29,15 +29,12 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-explicit-any": "warn",
       // Pre-existing patterns in shadcn + sync effects — track as warnings
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/purity": "warn",
       "react-hooks/exhaustive-deps": "warn",
     },
   },
   {
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: {
-      "react-hooks/purity": "off",
       "react-refresh/only-export-components": "off",
     },
   },

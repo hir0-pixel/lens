@@ -1,0 +1,153 @@
+#!/usr/bin/env node
+/**
+ * M00 workspace command surface.
+ *
+ * This intentionally contains no release signing implementation. Signing and
+ * admission are separate authorities; this script only creates/validates the
+ * inputs that those authorities must consume.
+ */
+import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const command = process.argv[2] ?? "build";
+const moduleIndex = process.argv.findIndex((argument) => argument === "--module");
+const moduleName =
+  process.env.MODULE ??
+  (moduleIndex >= 0 ? process.argv[moduleIndex + 1] : undefined);
+
+function fail(message) {
+  console.error(`M00 build spine: ${message}`);
+  process.exit(1);
+}
+
+function requireFile(relativePath) {
+  if (!existsSync(path.join(root, relativePath))) {
+    fail(`required file is missing: ${relativePath}`);
+  }
+}
+
+function run(label, args) {
+  console.log(`\n> ${label}`);
+  // npm is a .cmd shim on Windows. `call` is required here: without it cmd
+  // transfers control to npm.cmd and never returns to this runner.
+  const result = process.platform === "win32"
+    ? spawnSync("cmd.exe", ["/d", "/s", "/c", ["call", "npm.cmd", ...args].join(" ")], {
+        cwd: root,
+        stdio: "inherit",
+      })
+    : spawnSync("npm", args, { cwd: root, stdio: "inherit" });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+function validateModule() {
+  if (moduleName !== undefined && moduleName !== "M00") {
+    fail(`M00 workspace only supports MODULE=M00 (received ${moduleName}).`);
+  }
+}
+
+function bootstrap() {
+  for (const file of [
+    "package.json",
+    "package-lock.json",
+    ".npmrc",
+    "platform/build/dependency-mirrors.json",
+    "platform/build/service-template/build-contract.json",
+  ]) requireFile(file);
+
+  const mirrors = JSON.parse(
+    readFileSync(path.join(root, "platform/build/dependency-mirrors.json"), "utf8"),
+  );
+  if (mirrors.allowPublicFallback !== false || !mirrors.npm?.registry) {
+    fail("dependency mirror policy must define an internal registry and deny public fallback.");
+  }
+  if (!mirrors.npm.registry.startsWith("https://") || !mirrors.npm.registry.includes(".internal/")) {
+    fail("dependency mirror registry must be an HTTPS internal endpoint.");
+  }
+  const npmConfig = readFileSync(path.join(root, ".npmrc"), "utf8");
+  for (const requiredSetting of [
+    `registry=${mirrors.npm.registry}`,
+    "audit=false",
+    "fund=false",
+    "update-notifier=false",
+  ]) {
+    if (!npmConfig.includes(requiredSetting)) {
+      fail(`.npmrc is missing required sovereign setting: ${requiredSetting}`);
+    }
+  }
+
+  const lock = JSON.parse(readFileSync(path.join(root, "package-lock.json"), "utf8"));
+  const packages = Object.values(lock.packages ?? {});
+  const externalResolution = packages.find(
+    (entry) => entry?.resolved && !entry.resolved.startsWith(mirrors.npm.registry),
+  );
+  if (externalResolution) {
+    fail(`lockfile contains a non-mirrored dependency URL: ${externalResolution.resolved}`);
+  }
+  const unresolvedIntegrity = packages.find(
+    (entry) => entry?.resolved && !entry.integrity,
+  );
+  if (unresolvedIntegrity) {
+    fail("every mirrored package artifact must carry a lockfile integrity digest.");
+  }
+
+  console.log("Pinned lockfile and sovereign mirror policy are present.");
+  console.log("Install resolution is intentionally delegated to the isolated build worker.");
+}
+
+function generate() {
+  requireFile("platform/build/contract-generation.json");
+  const spec = JSON.parse(
+    readFileSync(path.join(root, "platform/build/contract-generation.json"), "utf8"),
+  );
+  if (!existsSync(path.join(root, spec.inputDirectory))) {
+    fail(`required generated-contract input is absent: ${spec.inputDirectory}/`);
+  }
+  if (!existsSync(path.join(root, spec.outputDirectory))) {
+    fail(`contract generator did not produce ${spec.outputDirectory}/`);
+  }
+  fail("no pinned generator command is registered; refusing to claim generated output is current.");
+}
+
+function contractTest() {
+  validateModule();
+  fail("generated client/server compatibility runner is not installed; contract gate cannot pass.");
+}
+
+function integrationTest() {
+  validateModule();
+  fail("mTLS generated client/server probe is not installed; integration gate cannot pass.");
+}
+
+function build() {
+  validateModule();
+  bootstrap();
+  run("M00 platform preflight", ["run", "test:m00-platform"]);
+  run("Lens web build", ["run", "build:web"]);
+  if (moduleName === "M00") console.log("M00 workspace/build-spine artifact assembled.");
+}
+
+function verify() {
+  bootstrap();
+  run("M00 platform preflight", ["run", "test:m00-platform"]);
+  run("Generation", ["run", "generate"]);
+  run("Contract gate", ["run", "test-contract", "--", "--module", "M00"]);
+  run("Typecheck", ["run", "typecheck"]);
+  run("Lint", ["run", "lint"]);
+  run("Unit tests", ["run", "test"]);
+  run("Production build", ["run", "build:web"]);
+  run("Integration preflight", ["run", "test-integration", "--", "--module", "M00"]);
+  console.log("\nM00 build-spine checks passed. Release signing/admission remain external, independent gates.");
+}
+
+switch (command) {
+  case "bootstrap": bootstrap(); break;
+  case "generate": generate(); break;
+  case "build": build(); break;
+  case "test-contract": contractTest(); break;
+  case "test-integration": integrationTest(); break;
+  case "verify": verify(); break;
+  default: fail(`unknown command: ${command}`);
+}

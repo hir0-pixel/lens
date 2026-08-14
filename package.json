@@ -4,8 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "bootstrap": "node platform/build/workspace.mjs bootstrap",
+    "generate": "node platform/build/workspace.mjs generate",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node platform/build/workspace.mjs build",
+    "build:web": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
@@ -14,6 +17,10 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "validate": "node scripts/validate/check.mjs",
+    "test-contract": "node platform/build/workspace.mjs test-contract",
+    "test-integration": "node platform/build/workspace.mjs test-integration",
+    "test:m00-platform": "node platform/build/m00-preflight.mjs",
+    "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"
   },

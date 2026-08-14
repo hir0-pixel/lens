@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "owner": "contracts",
+  "inputDirectory": "contracts",
+  "outputDirectory": "libs/generated-clients",
+  "mode": "isolated-worker-only",
+  "rules": [
+    "Schemas are immutable once published.",
+    "Generation uses only digest-pinned tool images from the internal mirror.",
+    "Generated output is verified before it is consumed by a service."
+  ]
+}

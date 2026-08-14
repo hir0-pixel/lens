@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "status": "placeholder-not-a-signature",
+  "owner": "platform/build",
+  "requiredForRelease": [
+    "source_commit",
+    "reviewed_ref",
+    "builder_identity",
+    "builder_image_digest",
+    "build_recipe_digest",
+    "material_digests",
+    "output_digests",
+    "sbom_digest",
+    "test_evidence_digest"
+  ],
+  "releaseSigning": "A separate release controller signs only a policy-approved immutable digest.",
+  "admission": "Deployment admission validates the exact provenance, evidence, policy revision, and revocation head."
+}

@@ -1,0 +1,20 @@
+{
+  "schemaId": "urn:sovereign:dependency-mirrors:v1",
+  "version": 1,
+  "owner": "platform/build",
+  "allowPublicFallback": false,
+  "npm": {
+    "registry": "https://npm-mirror.build.internal/",
+    "requiredLockfile": "package-lock.json",
+    "immutableArtifacts": true
+  },
+  "container": {
+    "registry": "registry.build.internal",
+    "digestOnlyPulls": true
+  },
+  "policy": {
+    "network": "deny-by-default",
+    "allowedBuildDestinations": ["npm-mirror.build.internal", "registry.build.internal"],
+    "publicResolvers": "forbidden"
+  }
+}
