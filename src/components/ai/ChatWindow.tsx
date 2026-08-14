@@ -64,18 +64,6 @@ export function ChatWindow({
               <ThinkingIndicator />
             )}
 
-            {streamingContent && (
-              <AIMessageBubble
-                message={{
-                  id: "streaming",
-                  role: "assistant",
-                  content: streamingContent,
-                  timestamp: "",
-                  model: "Lens Agent",
-                }}
-                streaming
-              />
-            )}
           </>
         )}
 

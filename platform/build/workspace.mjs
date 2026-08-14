@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00 through MODULE=M07 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 through MODULE=M08 (received ${moduleName}).`);
   }
 }
 
@@ -173,6 +173,12 @@ function build() {
     buildImplementedModule("M07", "test:m07-registry", "verify:m07", "model-registry and internal-serving baseline");
     return;
   }
+  if (moduleName === "M08") {
+    run("M08 Engineer B client preflight", ["run", "test:m08-client"]);
+    run("M08 Engineer B implementation verification", ["run", "verify:m08"]);
+    console.log("M08 Engineer B employee-client baseline assembled and verified against BFF contracts.");
+    return;
+  }
   generate();
   run("M00 platform preflight", ["run", "test:m00-platform"]);
   run("Lens web build", ["run", "build:web"]);
@@ -190,6 +196,7 @@ function verify() {
   run("M06 Engineer B RAG preflight", ["run", "test:m06-rag"]);
   run("M07 Engineer B serving preflight", ["run", "test:m07-serving"]);
   run("M07 Engineer A registry preflight", ["run", "test:m07-registry"]);
+  run("M08 Engineer B client preflight", ["run", "test:m08-client"]);
   run("Generation", ["run", "generate"]);
   run("Contract registry checks", ["run", "contracts:check"]);
   run("Generated client provenance", ["run", "contracts:provenance"]);

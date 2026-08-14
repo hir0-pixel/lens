@@ -46,6 +46,9 @@
     "test:m07-serving": "node platform/m07-preflight.mjs",
     "test:m07": "vitest run tests/unit/m07ModelRegistry.test.ts tests/integration/m07-serving.test.ts",
     "verify:m07": "npm run generate && npm run typecheck && npm run lint && npm run test:m07 && npm run test:m07-registry && npm run test:m07-serving",
+    "test:m08-client": "node platform/m08-preflight.mjs",
+    "test:m08": "vitest run tests/unit/m08EmployeeTurn.test.ts",
+    "verify:m08": "npm run generate && npm run typecheck && npm run lint && npm run test:m08 && npm run test:m08-client",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"
