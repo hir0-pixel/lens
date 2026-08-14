@@ -1,0 +1,22 @@
+{
+  "contract": "FAILURE-DOMAIN-CAPACITY",
+  "profileStatus": "template-requires-measured-deployment-evidence",
+  "synchronousCampus": {
+    "minimumIndependentFailureDomains": 3,
+    "criticalConsensus": {
+      "voters": 5,
+      "placement": "2-2-1",
+      "commitQuorum": 3,
+      "largestTwoVoterDomainLossRetainsQuorum": true
+    },
+    "twoBuildingRule": "independent-third-witness-or-primary-quorum-asynchronous-dr-never-symmetric-active-active"
+  },
+  "inventoryRequired": [
+    "buildings", "rooms", "powerFeeds", "coolingUnits", "racks", "topOfRackAndCoreSwitches", "wanPaths", "kubernetesZones", "storageVoters", "hsms", "gpuGroups", "sharedServiceDependencies"
+  ],
+  "largestCorrelatedLoss": "must-name-shared-power-network-and-operator-boundaries",
+  "reservedLanes": ["security-control", "revocation", "cancellation", "audit", "secrets", "incident", "recovery"],
+  "firstShedWork": ["batch-ingestion", "evaluation", "red-team", "embedding"],
+  "productionEvidence": "exact-topology-largest-domain-loss-peak-recovery-surge-quorum-fencing-and-no-overload-cascade",
+  "evidenceExpiry": "material-placement-hardware-firmware-model-or-workload-change"
+}
