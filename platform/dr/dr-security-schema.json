@@ -1,0 +1,14 @@
+{
+  "owner": "platform/dr",
+  "contract": "RESTORE-CELL-CONFIDENTIALITY",
+  "failureDomainCapacity": "largest-correlated-loss-inventoried-and-measured",
+  "quorum": "odd-voters-third-domain-or-primary-dr-no-two-site-symmetry",
+  "fencing": "generation-or-stonith-before-former-primary-rejoins",
+  "checkpoint": "audit-secrets-agent-tool-budget-complete-within-60-seconds",
+  "containment": "doc020-verified-signed-incident-coordinates-fenced-owner-actions-no-universal-account",
+  "privilegedChange": "operation-payload-target-device-independent-approver-bound-expiring-single-use-fence",
+  "restoreCell": "separate-trust-no-public-corporate-production-or-export-route",
+  "plaintext": "operators-encrypted-sets-only-inspection-current-pdp-audit-purpose-bound",
+  "reopen": "current-complete-independent-evidence-and-target-receipt-required",
+  "cleanup": "signed-acceptance-zeroize-or-quarantine"
+}

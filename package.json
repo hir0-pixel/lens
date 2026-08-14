@@ -53,6 +53,9 @@
     "test:m09-runtime": "node platform/m09-preflight.mjs",
     "test:m09": "vitest run tests/unit/m09AgentRuntime.test.ts",
     "verify:m09": "npm run generate && npm run typecheck && npm run lint && npm run test:m09 && npm run test:m09-runtime",
+    "test:m10-dr": "node platform/m10-preflight.mjs",
+    "test:m10": "vitest run tests/unit/m10RecoveryCoordinator.test.ts",
+    "verify:m10": "npm run generate && npm run typecheck && npm run lint && npm run test:m10 && npm run test:m10-dr",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"

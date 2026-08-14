@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00 through MODULE=M09 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 through MODULE=M10 (received ${moduleName}).`);
   }
 }
 
@@ -179,6 +179,10 @@ function build() {
   }
   if (moduleName === "M09") {
     buildImplementedModule("M09", "test:m09-runtime", "verify:m09", "agent-runtime baseline");
+    return;
+  }
+  if (moduleName === "M10") {
+    buildImplementedModule("M10", "test:m10-dr", "verify:m10", "HA topology and clean-room recovery baseline");
     return;
   }
   generate();
