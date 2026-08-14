@@ -32,6 +32,9 @@
     "test:m03-pdp": "node platform/m03-preflight.mjs",
     "test:m03": "vitest run tests/integration/m03-governance.test.ts tests/unit/m03Pdp.test.ts",
     "verify:m03": "npm run generate && npm run typecheck && npm run lint && npm run test:m03 && npm run test:m03-pdp",
+    "test:m04-memory": "node platform/m04-preflight.mjs",
+    "test:m04": "vitest run tests/unit/m04Memory.test.ts",
+    "verify:m04": "npm run generate && npm run typecheck && npm run lint && npm run test:m04 && npm run test:m04-memory",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"

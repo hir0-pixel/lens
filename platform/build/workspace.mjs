@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01", "M02", "M03"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00 through MODULE=M03 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 through MODULE=M04 (received ${moduleName}).`);
   }
 }
 
@@ -152,6 +152,11 @@ function build() {
   if (moduleName === "M03") {
     run("M03 PDP preflight", ["run", "test:m03-pdp"]);
     console.log("M03 Engineer A PDP policy and live-decision baseline assembled.");
+    return;
+  }
+  if (moduleName === "M04") {
+    run("M04 Memory preflight", ["run", "test:m04-memory"]);
+    console.log("M04 Engineer A durable Memory authority baseline assembled.");
     return;
   }
   generate();
