@@ -1,0 +1,25 @@
+{
+  "environment": "local",
+  "network": {
+    "default": "deny",
+    "publicDns": "forbidden",
+    "publicIp": "forbidden",
+    "proxy": "forbidden",
+    "webhooks": "forbidden",
+    "approvedServices": ["telemetry-collector.internal"]
+  },
+  "workloadTrust": {
+    "identitySource": "engineer-a-workload-identity-authority",
+    "identityLeaseMaxSeconds": 900,
+    "secretLeaseMaxSeconds": 900,
+    "attestationRequired": true,
+    "cryptoProfileRequired": true
+  },
+  "telemetry": {
+    "contentFree": true,
+    "auditSubstitute": false,
+    "maxRecords": 256,
+    "maxBytes": 262144,
+    "exporter": "telemetry-collector.internal"
+  }
+}

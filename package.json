@@ -23,6 +23,8 @@
     "verify:m00": "node platform/build/workspace.mjs verify",
     "validate": "node scripts/validate/check.mjs",
     "test:m00-platform": "node platform/build/m00-preflight.mjs",
+    "test:m01": "vitest run tests/security tests/integration/m01-workload-trust.test.ts",
+    "verify:m01": "npm run generate && npm run typecheck && npm run lint && npm run test:m01",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"

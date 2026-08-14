@@ -25,6 +25,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "libs"],
+  "include": ["src", "libs", "platform/observability"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
