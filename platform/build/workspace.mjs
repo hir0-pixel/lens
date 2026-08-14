@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00 through MODULE=M05 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05", "M06"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 through MODULE=M06 (received ${moduleName}).`);
   }
 }
 
@@ -163,6 +163,11 @@ function build() {
   }
   if (moduleName === "M05") {
     buildImplementedModule("M05", "test:m05-isolation", "verify:m05", "untrusted-content isolation baseline");
+    return;
+  }
+  if (moduleName === "M06") {
+    run("M06 retrieval preflight", ["run", "test:m06-retrieval"]);
+    console.log("M06 Engineer A retrieval and cache-control baseline assembled.");
     return;
   }
   generate();
