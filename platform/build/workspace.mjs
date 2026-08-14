@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00 or MODULE=M01 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00, MODULE=M01, or MODULE=M02 (received ${moduleName}).`);
   }
 }
 
@@ -142,6 +142,11 @@ function build() {
   if (moduleName === "M01") {
     run("M01 platform trust preflight", ["run", "test:m01-platform"]);
     console.log("M01 Engineer A platform baseline assembled. Shared admission, telemetry, and egress probes remain Engineer B integration inputs.");
+    return;
+  }
+  if (moduleName === "M02") {
+    run("M02 authority preflight", ["run", "test:m02-authorities"]);
+    console.log("M02 Engineer A identity, session, and audit authority baseline assembled.");
     return;
   }
   generate();

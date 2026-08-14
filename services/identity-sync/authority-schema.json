@@ -1,0 +1,1 @@
+{"owner":"services/identity-sync","transaction":"serializable-state-cursor-revision-outbox","securityFactStates":["active","disabled","recompute_pending","source_conflict","tombstoned"],"publicDirectoryRuntimeDependency":false}

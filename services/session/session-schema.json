@@ -1,0 +1,1 @@
+{"owner":"session-authority","strongReplicatedState":true,"opaqueSessionIds":true,"deviceBound":true,"clientKeyBound":true,"authorizationFactsInContext":false,"sessionMutationsRequireAuditAdmission":true,"outbox":true}
