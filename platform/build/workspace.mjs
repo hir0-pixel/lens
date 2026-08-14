@@ -178,11 +178,11 @@ function build() {
     return;
   }
   if (moduleName === "M09") {
-    buildImplementedModule("M09", "test:m09-runtime", "verify:m09", "agent-runtime baseline");
+    buildImplementedModule("M09", "test:m09-runtime", "verify:m09", "agent-runtime and tool-execution baseline");
     return;
   }
   if (moduleName === "M10") {
-    buildImplementedModule("M10", "test:m10-dr", "verify:m10", "HA topology and clean-room recovery baseline");
+    buildImplementedModule("M10", "test:m10-dr", "verify:m10", "HA recovery and production-admission baseline");
     return;
   }
   generate();
@@ -204,6 +204,8 @@ function verify() {
   run("M07 Engineer A registry preflight", ["run", "test:m07-registry"]);
   run("M08 Engineer B client preflight", ["run", "test:m08-client"]);
   run("M08 Engineer A product-BFF preflight", ["run", "test:m08-bff"]);
+  run("M09 runtime and tool-execution preflight", ["run", "test:m09-runtime"]);
+  run("M10 recovery and production-admission preflight", ["run", "test:m10-dr"]);
   run("Generation", ["run", "generate"]);
   run("Contract registry checks", ["run", "contracts:check"]);
   run("Generated client provenance", ["run", "contracts:provenance"]);

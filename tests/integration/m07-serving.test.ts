@@ -32,6 +32,16 @@ describe("M07 internal model serving", () => {
     const controller = new AbortController(); controller.abort();
     await expect(harness().generate(request(), controller.signal)).rejects.toMatchObject<Partial<ModelGatewayError>>({ code: "CANCELLED" });
   });
+  it("normalizes a runtime failure without exposing an implementation error", async () => {
+    const gateway = new ModelGateway(
+      { resolve: async () => ({ endpointRef: "inference-1", snapshotExpiresAt: 2_000, external: false }) },
+      { validate: async () => undefined, finalize: async () => undefined },
+      { reserve: async () => ({ reservationId: "reservation", requestDigest: "request-digest", endpointRef: "inference-1", fence: 1, expiresAt: 2_000 }), start: async () => undefined, release: async () => undefined },
+      { execute: async () => { throw new Error("runtime socket details"); } },
+      now,
+    );
+    await expect(gateway.generate(request(), new AbortController().signal)).rejects.toMatchObject<Partial<ModelGatewayError>>({ code: "DEPENDENCY_UNAVAILABLE" });
+  });
   it("rejects stale scheduler fences and releases only the matching lease", () => {
     const scheduler = new GpuScheduler(1, now); const lease = scheduler.reserve({ reservationId: "reservation-1", requestDigest: "digest", endpointRef: "endpoint", expiresAt: 2_000 });
     expect(() => scheduler.start(lease.reservationId, "digest", lease.fence + 1)).toThrow(SchedulerError);

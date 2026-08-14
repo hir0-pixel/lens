@@ -20,7 +20,11 @@ export class ModelGateway {
     catch (error) { if (error instanceof Error && error.message === "OVERLOADED") throw new ModelGatewayError("OVERLOADED"); throw new ModelGatewayError("DEPENDENCY_UNAVAILABLE"); }
     this.dispatched.add(input.requestId);
     try { await this.scheduler.start(lease.reservationId, input.requestDigest, lease.fence); const result = await this.runtime.execute({ reservationId: lease.reservationId, fence: lease.fence, scopeId: input.scopeId, chunks: input.chunks }, signal); await this.budgets.finalize({ reservationRef: input.budgetReservationRef, usageEventId: result.receipt.usageEventId, measuredCost: result.receipt.generatedTokens }); return { output: result.output, usageEventId: result.receipt.usageEventId }; }
-    catch (error) { if (signal.aborted || error instanceof Error && error.message === "CANCELLED") throw new ModelGatewayError("CANCELLED"); throw error; }
+    catch (error) {
+      if (signal.aborted || error instanceof Error && error.message === "CANCELLED") throw new ModelGatewayError("CANCELLED");
+      if (error instanceof ModelGatewayError) throw error;
+      throw new ModelGatewayError("DEPENDENCY_UNAVAILABLE");
+    }
     finally { await this.scheduler.release(lease.reservationId, lease.fence).catch(() => undefined); }
   }
 }
