@@ -50,6 +50,9 @@
     "test:m08-client": "node platform/m08-preflight.mjs",
     "test:m08": "vitest run tests/unit/m08ProductBff.test.ts tests/unit/m08EmployeeTurn.test.ts",
     "verify:m08": "npm run generate && npm run typecheck && npm run lint && npm run test:m08 && npm run test:m08-bff && npm run test:m08-client",
+    "test:m09-runtime": "node platform/m09-preflight.mjs",
+    "test:m09": "vitest run tests/unit/m09AgentRuntime.test.ts",
+    "verify:m09": "npm run generate && npm run typecheck && npm run lint && npm run test:m09 && npm run test:m09-runtime",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"
