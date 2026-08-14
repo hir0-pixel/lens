@@ -91,4 +91,27 @@ describe("M03 Governance authority", () => {
     expectErrorCode(() => governance.commitDisclosure("reservation-1", digest("b"), "release-fence-1"), "STALE_AUTHORITY");
     expectErrorCode(() => governance.getResourceSecurityFacts(Array.from({ length: 1001 }, (_, index) => `docver-${index}`)), "INVALID_ARGUMENT");
   });
+
+  it("returns a revision-pinned current snapshot for the documented 100, 500, and 1000-resource batches", () => {
+    for (const batchSize of [100, 500, 1000]) {
+      const governance = authority();
+      const references = Array.from({ length: batchSize }, (_, index) => `docver-${batchSize}-${index}`);
+      const expectedRevisions: Record<string, number> = {};
+      for (const documentVersionRef of references) {
+        governance.registerVersion({ documentVersionRef, classification: "internal", aclDigest: digest("e") });
+        expectedRevisions[documentVersionRef] = governance.mutateSecurity(
+          documentVersionRef,
+          { publication: "active", processing: "indexed", integrity: "valid" },
+          fence,
+        ).resourceSecurityRevision;
+      }
+
+      const facts = new PdpGovernanceConsumerSimulator(governance).readCurrentDocumentFacts(references, expectedRevisions);
+      expect(facts).toHaveLength(batchSize);
+      expect(facts.every((fact) => fact.retrievalEligible && fact.resourceSecurityRevision === expectedRevisions[fact.documentVersionRef])).toBe(true);
+
+      governance.mutateSecurity(references[0], { publication: "withdrawn" }, fence);
+      expectErrorCode(() => new PdpGovernanceConsumerSimulator(governance).readCurrentDocumentFacts(references, expectedRevisions), "STALE_AUTHORITY");
+    }
+  });
 });

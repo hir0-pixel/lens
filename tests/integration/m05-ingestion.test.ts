@@ -8,8 +8,9 @@ const request = (overrides: Partial<IngestionRequest> = {}): IngestionRequest =>
   ...overrides,
 });
 
-function service(options: { stale?: boolean } = {}) {
+function service(options: { stale?: boolean; failCommitOnce?: boolean } = {}) {
   const calls: string[] = [];
+  let failCommit = options.failCommitOnce ?? false;
   const ingestion = new IngestionService(
     {
       registerVersion: async () => { calls.push("register"); return { resourceSecurityRevision: 1 }; },
@@ -21,7 +22,17 @@ function service(options: { stale?: boolean } = {}) {
       withdrawVersion: async () => { calls.push("withdraw"); },
     },
     { embed: async () => { calls.push("embed"); return { profileRef: "embedding-profile-v1", vectorsDigest: digest("d") }; } },
-    { writeGeneration: async () => { calls.push("write"); }, commitGeneration: async () => { calls.push("commit"); }, removeGeneration: async () => { calls.push("remove"); } },
+    {
+      writeGeneration: async () => { calls.push("write"); },
+      commitGeneration: async () => {
+        calls.push("commit");
+        if (failCommit) {
+          failCommit = false;
+          throw new Error("serving index unavailable");
+        }
+      },
+      removeGeneration: async () => { calls.push("remove"); },
+    },
   );
   return { ingestion, calls };
 }
@@ -58,5 +69,15 @@ describe("M05 governed ingestion", () => {
     await expect(ingestion.ingest(request())).rejects.toMatchObject<Partial<IngestionError>>({ code: "STALE_AUTHORITY" });
     expect(ingestion.currentVersion("document-1")).toBeUndefined();
     expect(calls).not.toContain("commit");
+  });
+
+  it("compensates a post-activation index failure before permitting the immutable version to be retried", async () => {
+    const { ingestion, calls } = service({ failCommitOnce: true });
+    await expect(ingestion.ingest(request())).rejects.toThrow("serving index unavailable");
+    expect(calls).toEqual(["register", "embed", "write", "activate:1", "commit", "withdraw", "remove"]);
+    expect(ingestion.currentVersion("document-1")).toBeUndefined();
+
+    await expect(ingestion.ingest(request())).resolves.toMatchObject({ state: "COMMITTED" });
+    expect(ingestion.currentVersion("document-1")).toBe("docver-1");
   });
 });

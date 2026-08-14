@@ -136,32 +136,33 @@ function integrationTest() {
   run("Generated client/server mTLS probe", ["exec", "vitest", "--", "run", "tests/integration/contract-probe.test.ts"]);
 }
 
+function buildImplementedModule(name, preflightScript, verificationScript, description) {
+  run(`${name} platform-owner preflight`, ["run", preflightScript]);
+  run(`${name} integrated implementation verification`, ["run", verificationScript]);
+  console.log(`${name} ${description} assembled and verified across both owner lanes.`);
+}
+
 function build() {
   validateModule();
   bootstrap();
   if (moduleName === "M01") {
-    run("M01 platform trust preflight", ["run", "test:m01-platform"]);
-    console.log("M01 Engineer A platform baseline assembled. Shared admission, telemetry, and egress probes remain Engineer B integration inputs.");
+    buildImplementedModule("M01", "test:m01-platform", "verify:m01", "platform trust baseline");
     return;
   }
   if (moduleName === "M02") {
-    run("M02 authority preflight", ["run", "test:m02-authorities"]);
-    console.log("M02 Engineer A identity, session, and audit authority baseline assembled.");
+    buildImplementedModule("M02", "test:m02-authorities", "verify:m02", "identity, session, and audit authority baseline");
     return;
   }
   if (moduleName === "M03") {
-    run("M03 PDP preflight", ["run", "test:m03-pdp"]);
-    console.log("M03 Engineer A PDP policy and live-decision baseline assembled.");
+    buildImplementedModule("M03", "test:m03-pdp", "verify:m03", "PDP policy and live-decision baseline");
     return;
   }
   if (moduleName === "M04") {
-    run("M04 Memory preflight", ["run", "test:m04-memory"]);
-    console.log("M04 Engineer A durable Memory authority baseline assembled.");
+    buildImplementedModule("M04", "test:m04-memory", "verify:m04", "durable Memory authority baseline");
     return;
   }
   if (moduleName === "M05") {
-    run("M05 content-isolation preflight", ["run", "test:m05-isolation"]);
-    console.log("M05 Engineer A untrusted-content isolation baseline assembled.");
+    buildImplementedModule("M05", "test:m05-isolation", "verify:m05", "untrusted-content isolation baseline");
     return;
   }
   generate();
@@ -173,6 +174,11 @@ function build() {
 function verify() {
   bootstrap();
   run("M00 platform preflight", ["run", "test:m00-platform"]);
+  run("M01 platform-owner preflight", ["run", "test:m01-platform"]);
+  run("M02 platform-owner preflight", ["run", "test:m02-authorities"]);
+  run("M03 platform-owner preflight", ["run", "test:m03-pdp"]);
+  run("M04 platform-owner preflight", ["run", "test:m04-memory"]);
+  run("M05 platform-owner preflight", ["run", "test:m05-isolation"]);
   run("Generation", ["run", "generate"]);
   run("Contract registry checks", ["run", "contracts:check"]);
   run("Generated client provenance", ["run", "contracts:provenance"]);

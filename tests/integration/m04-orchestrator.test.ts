@@ -106,4 +106,31 @@ describe("M04 Orchestrator", () => {
     expect(second).toEqual({ status: { requestId: "request-1", turnId: "turn-1", state: "DENIED", code: "FORBIDDEN" } });
     expect(grounded.calls).not.toContain("generate");
   });
+
+  it("returns only a safe status when every protected dependency boundary fails", async () => {
+    const boundaries = [
+      "authorizeGenerate", "beginTurn", "resolveContext", "authorizeContextUse", "reserveBudget", "beginAgentRun",
+      "admitAudit", "closeAgentRun", "stageOutput", "reserveDisclosure", "authorizeOutput", "finalizeTurn", "commitDisclosure",
+    ] as const;
+
+    for (const boundary of boundaries) {
+      const failure = async () => { throw new Error(`${boundary} unavailable`); };
+      const { deps, calls } = dependencies(undefined, { [boundary]: failure } as unknown as Partial<OrchestratorDependencies>);
+      const result = await new Orchestrator(deps, { now: () => 1_000 }).execute(request({ requestId: `request-${boundary}` }));
+
+      expect(result.status).toMatchObject({ requestId: `request-${boundary}`, state: "FAILED", code: "DEPENDENCY_UNAVAILABLE" });
+      expect(result).not.toHaveProperty("output");
+      expect(calls).not.toContain("commit-disclosure");
+    }
+
+    const generationFailure = dependencies(undefined, {
+      generate: async function* () {
+        for (const chunk of [] as string[]) yield chunk;
+        throw new Error("generation unavailable");
+      },
+    });
+    const result = await new Orchestrator(generationFailure.deps, { now: () => 1_000 }).execute(request({ requestId: "request-generation" }));
+    expect(result).toEqual({ status: { requestId: "request-generation", turnId: "turn-1", state: "FAILED", code: "DEPENDENCY_UNAVAILABLE" } });
+    expect(generationFailure.calls).not.toContain("commit-disclosure");
+  });
 });

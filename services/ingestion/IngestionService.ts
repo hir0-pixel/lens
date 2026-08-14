@@ -1,4 +1,4 @@
-export type IngestionState = "DISCOVERED" | "QUARANTINED" | "COMMITTED" | "WITHDRAWN";
+export type IngestionState = "DISCOVERED" | "QUARANTINED" | "COMMITTED" | "WITHDRAWN" | "RECONCILIATION_REQUIRED";
 
 export class IngestionError extends Error {
   constructor(readonly code: "INVALID_ARGUMENT" | "CONFLICT" | "QUARANTINED" | "STALE_AUTHORITY" | "DEPENDENCY_UNAVAILABLE", message: string) {
@@ -79,6 +79,9 @@ export class IngestionService {
       if (existing.request.contentDigest !== request.contentDigest || existing.request.version !== request.version) {
         throw new IngestionError("CONFLICT", "The immutable version reference was reused.");
       }
+      if (existing.state === "RECONCILIATION_REQUIRED") {
+        throw new IngestionError("DEPENDENCY_UNAVAILABLE", "The previous publication attempt requires reconciliation.");
+      }
       return this.copy(existing);
     }
     if (request.parse.status === "quarantined") {
@@ -89,12 +92,15 @@ export class IngestionService {
 
     const record: VersionRecord = { request, state: "DISCOVERED" };
     this.versions.set(request.versionRef, record);
+    let generation: string | undefined;
+    let activatedRevision: number | undefined;
     try {
       const registered = await this.governance.registerVersion(request);
       const embedding = await this.embedding.embed({ versionRef: request.versionRef, chunks: request.parse.chunks });
-      const generation = `index:${request.versionRef}:${embedding.vectorsDigest}`;
+      generation = `index:${request.versionRef}:${embedding.vectorsDigest}`;
       await this.index.writeGeneration({ generation, versionRef: request.versionRef, chunks: request.parse.chunks, vectorsDigest: embedding.vectorsDigest, profileRef: embedding.profileRef });
       const published = await this.governance.activatePublishedVersion({ versionRef: request.versionRef, expectedResourceSecurityRevision: registered.resourceSecurityRevision, indexGeneration: generation });
+      activatedRevision = published.resourceSecurityRevision;
       await this.index.commitGeneration({ documentRef: request.documentRef, versionRef: request.versionRef, generation, resourceSecurityRevision: published.resourceSecurityRevision });
       const prior = this.current.get(request.documentRef);
       record.state = "COMMITTED";
@@ -105,6 +111,15 @@ export class IngestionService {
       if (prior && prior !== request.versionRef) this.emit("document.version.superseded", record);
       return this.copy(record);
     } catch (error) {
+      if (activatedRevision !== undefined && generation) {
+        try {
+          await this.governance.withdrawVersion({ versionRef: request.versionRef, expectedResourceSecurityRevision: activatedRevision });
+          await this.index.removeGeneration({ documentRef: request.documentRef, versionRef: request.versionRef, generation });
+        } catch {
+          record.state = "RECONCILIATION_REQUIRED";
+          throw new IngestionError("DEPENDENCY_UNAVAILABLE", "Publication cleanup could not be completed safely.");
+        }
+      }
       this.versions.delete(request.versionRef);
       throw error;
     }
