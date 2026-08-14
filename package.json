@@ -35,8 +35,9 @@
     "test:m04-memory": "node platform/m04-preflight.mjs",
     "test:m04": "vitest run tests/integration/m04-orchestrator.test.ts tests/unit/m04Memory.test.ts",
     "verify:m04": "npm run generate && npm run typecheck && npm run lint && npm run test:m04 && npm run test:m04-memory",
-    "test:m05": "vitest run tests/integration/m05-ingestion.test.ts",
-    "verify:m05": "npm run generate && npm run typecheck && npm run lint && npm run test:m05",
+    "test:m05-isolation": "node platform/m05-preflight.mjs",
+    "test:m05": "vitest run tests/integration/m05-ingestion.test.ts tests/unit/m05ContentIsolation.test.ts",
+    "verify:m05": "npm run generate && npm run typecheck && npm run lint && npm run test:m05 && npm run test:m05-isolation",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"

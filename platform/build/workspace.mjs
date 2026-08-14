@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00 through MODULE=M04 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 through MODULE=M05 (received ${moduleName}).`);
   }
 }
 
@@ -157,6 +157,11 @@ function build() {
   if (moduleName === "M04") {
     run("M04 Memory preflight", ["run", "test:m04-memory"]);
     console.log("M04 Engineer A durable Memory authority baseline assembled.");
+    return;
+  }
+  if (moduleName === "M05") {
+    run("M05 content-isolation preflight", ["run", "test:m05-isolation"]);
+    console.log("M05 Engineer A untrusted-content isolation baseline assembled.");
     return;
   }
   generate();
