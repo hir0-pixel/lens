@@ -1,0 +1,15 @@
+export type PolicyState = "draft" | "schema_validated" | "evaluated" | "security_approved" | "active" | "superseded" | "revoked";
+export interface StoredPolicy { digest: string; policyRevision: number; state: PolicyState; signed: boolean; schemaValid: boolean; staticAnalysisPassed: boolean; testsPassed: boolean; evidenceRefs: readonly string[]; authorRef: string; reviewerRef?: string; }
+export interface PolicyActivation { operatorRef: string; privilegedChangeFence: string; auditReceipt: string; compatibilityPassed: boolean; }
+export class PolicyStoreError extends Error { constructor(readonly code: "policy_exists" | "policy_not_found" | "activation_denied") { super(code); } }
+
+/** Immutable policy metadata and a strong active head; evaluation code remains in the PDP. */
+export class PolicyStore {
+  private readonly policies = new Map<string, StoredPolicy>();
+  private activeDigest?: string;
+  readonly outbox: { type: "policy_activated"; digest: string; policyRevision: number; auditReceipt: string }[] = [];
+  insert(bundle: Omit<StoredPolicy, "state">): void { if (this.policies.has(bundle.digest)) throw new PolicyStoreError("policy_exists"); this.policies.set(bundle.digest, { ...bundle, state: "draft", evidenceRefs: [...bundle.evidenceRefs] }); }
+  advance(digest: string, state: "schema_validated" | "evaluated" | "security_approved" | "revoked"): void { const policy = this.policies.get(digest); if (!policy) throw new PolicyStoreError("policy_not_found"); const valid = (policy.state === "draft" && state === "schema_validated") || (policy.state === "schema_validated" && state === "evaluated") || (policy.state === "evaluated" && state === "security_approved") || state === "revoked"; if (!valid || policy.state === "revoked") throw new PolicyStoreError("activation_denied"); policy.state = state; }
+  activate(digest: string, activation: PolicyActivation): StoredPolicy { const policy = this.policies.get(digest); if (!policy || !activation.privilegedChangeFence || !activation.auditReceipt || !activation.compatibilityPassed || !policy.signed || !policy.schemaValid || !policy.staticAnalysisPassed || !policy.testsPassed || policy.state !== "security_approved" || !policy.reviewerRef || policy.authorRef === policy.reviewerRef || policy.authorRef === activation.operatorRef || policy.reviewerRef === activation.operatorRef || (this.activeDigest !== undefined && policy.policyRevision <= this.policies.get(this.activeDigest)!.policyRevision)) throw new PolicyStoreError("activation_denied"); const former = this.activeDigest ? this.policies.get(this.activeDigest) : undefined; if (former) former.state = "superseded"; policy.state = "active"; this.activeDigest = digest; this.outbox.push({ type: "policy_activated", digest, policyRevision: policy.policyRevision, auditReceipt: activation.auditReceipt }); return { ...policy, evidenceRefs: [...policy.evidenceRefs] }; }
+  active(): StoredPolicy { const policy = this.activeDigest ? this.policies.get(this.activeDigest) : undefined; if (!policy) throw new PolicyStoreError("policy_not_found"); return { ...policy, evidenceRefs: [...policy.evidenceRefs] }; }
+}

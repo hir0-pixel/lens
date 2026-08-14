@@ -1,0 +1,1 @@
+{"owner":"services/pdp","soleDecisionAuthority":true,"liveOwnerFacts":true,"finalDecisionCache":false,"batchMaxResources":1000,"batchSnapshot":"single-committed-owner-snapshot","allowFence":"request-action-resource-revision-deadline-bound-one-use","policyActivation":"immutable-signed-bundle-independent-approval-audit-and-compatibility","audit":"one-compact-event-per-batch"}
