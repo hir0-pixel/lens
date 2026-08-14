@@ -1,0 +1,1 @@
+{"owner":"services/audit","appendOnly":true,"partitions":64,"replicasPerPartition":5,"writeQuorum":3,"placement":"2-2-1-independent-failure-domains","maximumEventBytes":65536,"witnesses":{"minimum":2,"independentAdministrativeDomains":true},"drCheckpointMaxSeconds":60,"acceptedEventDrops":0}
