@@ -166,7 +166,7 @@ function build() {
     return;
   }
   if (moduleName === "M06") {
-    buildImplementedModule("M06", "test:m06-rag", "verify:m06", "RAG composition baseline");
+    buildImplementedModule("M06", "test:m06-retrieval", "verify:m06", "retrieval, cache-control, and RAG composition baseline");
     return;
   }
   generate();
