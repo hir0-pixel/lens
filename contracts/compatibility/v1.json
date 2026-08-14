@@ -1,0 +1,11 @@
+{
+  "contract": "lens.contract-probe",
+  "current": "1.0.0",
+  "supported": ["1.0.0"],
+  "evolution": "additive-only",
+  "removedFields": [],
+  "nMinusOne": {
+    "status": "not-applicable",
+    "reason": "1.0.0 is the first published version"
+  }
+}

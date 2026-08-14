@@ -42,6 +42,12 @@ function run(label, args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+function runNode(label, args) {
+  console.log(`\n> ${label}`);
+  const result = spawnSync(process.execPath, args, { cwd: root, stdio: "inherit" });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
 function validateModule() {
   if (moduleName !== undefined && moduleName !== "M00") {
     fail(`M00 workspace only supports MODULE=M00 (received ${moduleName}).`);
@@ -105,25 +111,30 @@ function generate() {
   if (!existsSync(path.join(root, spec.inputDirectory))) {
     fail(`required generated-contract input is absent: ${spec.inputDirectory}/`);
   }
-  if (!existsSync(path.join(root, spec.outputDirectory))) {
-    fail(`contract generator did not produce ${spec.outputDirectory}/`);
+  requireFile("scripts/contracts/generate.mjs");
+  runNode("Contract generation", ["scripts/contracts/generate.mjs"]);
+  if (!existsSync(path.join(root, spec.outputDirectory, "index.ts"))) {
+    fail(`contract generator did not produce ${spec.outputDirectory}/index.ts`);
   }
-  fail("no pinned generator command is registered; refusing to claim generated output is current.");
 }
 
 function contractTest() {
   validateModule();
-  fail("generated client/server compatibility runner is not installed; contract gate cannot pass.");
+  generate();
+  run("Contract registry checks", ["run", "contracts:check"]);
+  run("Generated client/server contract tests", ["exec", "vitest", "--", "run", "tests/contract"]);
 }
 
 function integrationTest() {
   validateModule();
-  fail("mTLS generated client/server probe is not installed; integration gate cannot pass.");
+  generate();
+  run("Generated client/server mTLS probe", ["exec", "vitest", "--", "run", "tests/integration/contract-probe.test.ts"]);
 }
 
 function build() {
   validateModule();
   bootstrap();
+  generate();
   run("M00 platform preflight", ["run", "test:m00-platform"]);
   run("Lens web build", ["run", "build:web"]);
   if (moduleName === "M00") console.log("M00 workspace/build-spine artifact assembled.");
@@ -133,12 +144,14 @@ function verify() {
   bootstrap();
   run("M00 platform preflight", ["run", "test:m00-platform"]);
   run("Generation", ["run", "generate"]);
-  run("Contract gate", ["run", "test-contract", "--", "--module", "M00"]);
+  run("Contract registry checks", ["run", "contracts:check"]);
+  run("Generated client provenance", ["run", "contracts:provenance"]);
+  run("Contract gate", ["run", "test-contract"]);
   run("Typecheck", ["run", "typecheck"]);
   run("Lint", ["run", "lint"]);
   run("Unit tests", ["run", "test"]);
   run("Production build", ["run", "build:web"]);
-  run("Integration preflight", ["run", "test-integration", "--", "--module", "M00"]);
+  run("Integration gate", ["run", "test-integration"]);
   console.log("\nM00 build-spine checks passed. Release signing/admission remain external, independent gates.");
 }
 

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lens.contracts/event-envelope.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "aggregate_type", "aggregate_id", "aggregate_sequence", "event_type", "schema_version", "occurred_at", "committed_at", "producer_workload_id", "source_transaction_ref", "classification", "payload_digest", "trace_id", "operation_id"],
+  "properties": {
+    "event_id": { "type": "string", "minLength": 1 },
+    "aggregate_type": { "type": "string", "minLength": 1 },
+    "aggregate_id": { "type": "string", "minLength": 1 },
+    "aggregate_sequence": { "type": "integer", "minimum": 1 },
+    "event_type": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]*ed$" },
+    "schema_version": { "const": "1.0.0" },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "committed_at": { "type": "string", "format": "date-time" },
+    "producer_workload_id": { "type": "string", "minLength": 1 },
+    "source_transaction_ref": { "type": "string", "minLength": 1 },
+    "classification": { "enum": ["public", "internal", "confidential", "restricted"] },
+    "payload_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "trace_id": { "type": "string", "minLength": 1 },
+    "operation_id": { "type": "string", "minLength": 1 }
+  }
+}

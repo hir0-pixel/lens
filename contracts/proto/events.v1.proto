@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package lens.contracts.v1;
+
+// Additive-only event envelope. Field numbers are never reused.
+message EventEnvelope {
+  string event_id = 1;
+  string aggregate_type = 2;
+  string aggregate_id = 3;
+  uint64 aggregate_sequence = 4;
+  string event_type = 5;
+  string schema_version = 6;
+  string occurred_at = 7;
+  string committed_at = 8;
+  string producer_workload_id = 9;
+  string source_transaction_ref = 10;
+  string classification = 11;
+  string payload_digest = 12;
+  string trace_id = 13;
+  string operation_id = 14;
+}

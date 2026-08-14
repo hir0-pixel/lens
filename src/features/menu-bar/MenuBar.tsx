@@ -44,7 +44,7 @@ export function MenuBar({
           <DropdownMenuContent
             align="start"
             sideOffset={0}
-            className="min-w-[240px] rounded-none border-[var(--cursor-border)] bg-[var(--cursor-menu-bg,#1f1f1f)] p-0 text-[13px] shadow-[var(--shadow-overlay)] animate-cursor-fade"
+            className="min-w-[240px] rounded-none border-[var(--cursor-border)] bg-popover p-0 text-[13px] text-popover-foreground shadow-[var(--shadow-overlay)] animate-cursor-fade"
           >
             {menu.items.map((item) => (
               <MenuItemRow key={item.id} item={item} />
@@ -66,14 +66,14 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
       <DropdownMenuSub>
         <DropdownMenuSubTrigger
           disabled={item.disabled}
-          className="h-[26px] rounded-none px-3 text-[13px] focus:bg-[var(--cursor-focus)] focus:text-white data-[state=open]:bg-[var(--cursor-focus)] data-[state=open]:text-white"
+          className="h-[26px] rounded-none px-3 text-[13px] focus:bg-[var(--cursor-list-hover)] focus:text-[var(--cursor-fg)] data-[state=open]:bg-[var(--cursor-list-hover)] data-[state=open]:text-[var(--cursor-fg)]"
         >
           {item.icon && (
             <item.icon className="mr-2 h-3.5 w-3.5 opacity-80" strokeWidth={1.5} />
           )}
           <span className="flex-1">{item.label}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent className="min-w-[200px] rounded-none border-[var(--cursor-border)] bg-[var(--cursor-menu-bg,#1f1f1f)] p-0 text-[13px]">
+        <DropdownMenuSubContent className="min-w-[200px] rounded-none border-[var(--cursor-border)] bg-popover p-0 text-[13px] text-popover-foreground">
           {item.submenu.map((sub) => (
             <Fragment key={sub.id}>
               {sub.separator ? (
@@ -82,14 +82,14 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
                 <DropdownMenuItem
                   disabled={sub.disabled}
                   onSelect={() => sub.action?.()}
-                  className="h-[26px] rounded-none px-3 focus:bg-[var(--cursor-focus)] focus:text-white"
+                  className="h-[26px] rounded-none px-3 focus:bg-[var(--cursor-list-hover)] focus:text-[var(--cursor-fg)]"
                 >
                   {sub.icon && (
                     <sub.icon className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
                   )}
                   <span className="flex-1">{sub.label}</span>
                   {sub.shortcut && (
-                    <span className="ml-6 text-[11px] text-[var(--cursor-fg-muted)]">
+                    <span className="ml-6 text-[11px] text-[var(--cursor-fg-muted)] group-focus:text-[var(--cursor-fg)]">
                       {sub.shortcut}
                     </span>
                   )}
@@ -106,7 +106,7 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
     <DropdownMenuItem
       disabled={item.disabled}
       onSelect={() => item.action?.()}
-      className="h-[26px] gap-0 rounded-none px-3 text-[13px] focus:bg-[var(--cursor-focus)] focus:text-white data-[disabled]:opacity-40"
+      className="h-[26px] gap-0 rounded-none px-3 text-[13px] focus:bg-[var(--cursor-list-hover)] focus:text-[var(--cursor-fg)] data-[disabled]:opacity-40"
     >
       {item.icon ? (
         <item.icon className="mr-2 h-3.5 w-3.5 opacity-80" strokeWidth={1.5} />
@@ -115,7 +115,7 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
       )}
       <span className="flex-1">{item.label}</span>
       {item.shortcut && (
-        <span className="ml-8 text-[11px] tabular-nums text-[var(--cursor-fg-muted)] group-focus:text-white/80">
+        <span className="ml-8 text-[11px] tabular-nums text-[var(--cursor-fg-muted)] group-focus:text-[var(--cursor-fg)]">
           {item.shortcut}
         </span>
       )}

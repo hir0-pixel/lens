@@ -1,0 +1,24 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Lens Contract Probe API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/contract-probe": {
+      "post": {
+        "operationId": "submitContractProbe",
+        "x-owner": "contract-probe-owner",
+        "x-idempotency-required": true,
+        "x-deadline-required": true,
+        "responses": {
+          "200": { "description": "Accepted by the declared owner" },
+          "400": { "description": "Typed invalid argument error" },
+          "409": { "description": "Typed idempotency conflict" },
+          "499": { "description": "Typed cancellation error" },
+          "504": { "description": "Typed deadline error" }
+        }
+      }
+    }
+  }
+}
