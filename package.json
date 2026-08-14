@@ -38,6 +38,9 @@
     "test:m05-isolation": "node platform/m05-preflight.mjs",
     "test:m05": "vitest run tests/integration/m05-ingestion.test.ts tests/unit/m05ContentIsolation.test.ts",
     "verify:m05": "npm run generate && npm run typecheck && npm run lint && npm run test:m05 && npm run test:m05-isolation",
+    "test:m06-rag": "node platform/m06-preflight.mjs",
+    "test:m06": "vitest run tests/integration/m06-rag-composition.test.ts",
+    "verify:m06": "npm run generate && npm run typecheck && npm run lint && npm run test:m06 && npm run test:m06-rag",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"

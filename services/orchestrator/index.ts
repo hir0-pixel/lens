@@ -1,6 +1,19 @@
 export { FakeInferenceAdapter } from "./FakeInferenceAdapter";
 export { Orchestrator, type OrchestratorOptions } from "./Orchestrator";
 export {
+  RagComposition,
+  RagError,
+  type CitationReference,
+  type ContextAuthorizationManifest,
+  type ContextUseAuthorizer,
+  type RagContext,
+  type RagFailureCode,
+  type RetrievedContext,
+  type RetrievalPort,
+  type RetrievalRequest,
+  type RetrievalResult,
+} from "./RagComposition";
+export {
   OrchestratorError,
   type AgentRun,
   type ChatRequest,
