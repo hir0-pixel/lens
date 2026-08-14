@@ -42,9 +42,10 @@
     "test:m06-rag": "node platform/m06-preflight.mjs",
     "test:m06": "vitest run tests/unit/m06Retrieval.test.ts tests/integration/m06-rag-composition.test.ts",
     "verify:m06": "npm run generate && npm run typecheck && npm run lint && npm run test:m06 && npm run test:m06-retrieval && npm run test:m06-rag",
+    "test:m07-registry": "node platform/m07-preflight.mjs",
     "test:m07-serving": "node platform/m07-preflight.mjs",
-    "test:m07": "vitest run tests/integration/m07-serving.test.ts",
-    "verify:m07": "npm run generate && npm run typecheck && npm run lint && npm run test:m07 && npm run test:m07-serving",
+    "test:m07": "vitest run tests/unit/m07ModelRegistry.test.ts tests/integration/m07-serving.test.ts",
+    "verify:m07": "npm run generate && npm run typecheck && npm run lint && npm run test:m07 && npm run test:m07-registry && npm run test:m07-serving",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"

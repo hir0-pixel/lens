@@ -170,9 +170,7 @@ function build() {
     return;
   }
   if (moduleName === "M07") {
-    run("M07 Engineer B serving preflight", ["run", "test:m07-serving"]);
-    run("M07 Engineer B implementation verification", ["run", "verify:m07"]);
-    console.log("M07 Engineer B internal model-serving baseline assembled and verified against Registry contracts.");
+    buildImplementedModule("M07", "test:m07-registry", "verify:m07", "model-registry and internal-serving baseline");
     return;
   }
   generate();
@@ -191,6 +189,7 @@ function verify() {
   run("M05 platform-owner preflight", ["run", "test:m05-isolation"]);
   run("M06 Engineer B RAG preflight", ["run", "test:m06-rag"]);
   run("M07 Engineer B serving preflight", ["run", "test:m07-serving"]);
+  run("M07 Engineer A registry preflight", ["run", "test:m07-registry"]);
   run("Generation", ["run", "generate"]);
   run("Contract registry checks", ["run", "contracts:check"]);
   run("Generated client provenance", ["run", "contracts:provenance"]);
