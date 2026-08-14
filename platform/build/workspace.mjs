@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00 through MODULE=M08 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 through MODULE=M09 (received ${moduleName}).`);
   }
 }
 
@@ -175,6 +175,10 @@ function build() {
   }
   if (moduleName === "M08") {
     buildImplementedModule("M08", "test:m08-bff", "verify:m08", "product-BFF and employee-client baseline");
+    return;
+  }
+  if (moduleName === "M09") {
+    buildImplementedModule("M09", "test:m09-runtime", "verify:m09", "agent-runtime baseline");
     return;
   }
   generate();

@@ -1,0 +1,1 @@
+{"owner":"services/agent-runtime","contract":"AGENT-EXECUTION-ENVELOPE","catalog":"immutable-versioned-no-dynamic-discovery","envelope":"durable-conservative-aggregate-counters","stepFence":"exact-intent-expiring-one-use","approval":"exact-intent-separation-single-use","close":"monotonic-no-pending-or-unknown-completed","outcome":"ambiguous-remains-consumed"}
