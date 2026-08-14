@@ -29,6 +29,9 @@
     "test:m02": "vitest run tests/integration/m02-gateway-admission.test.ts",
     "verify:m02": "npm run generate && npm run typecheck && npm run lint && npm run test:m02",
     "test:m02-authorities": "node platform/m02-preflight.mjs",
+    "test:m03-pdp": "node platform/m03-preflight.mjs",
+    "test:m03": "vitest run tests/unit/m03Pdp.test.ts",
+    "verify:m03": "npm run generate && npm run typecheck && npm run lint && npm run test:m03 && npm run test:m03-pdp",
     "verify": "node platform/build/workspace.mjs verify",
     "release:checklist": "node scripts/release/print-checklist.mjs",
     "changelog:stub": "node scripts/release/changelog-stub.mjs"

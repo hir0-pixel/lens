@@ -49,8 +49,8 @@ function runNode(label, args) {
 }
 
 function validateModule() {
-  if (moduleName !== undefined && !["M00", "M01", "M02"].includes(moduleName)) {
-    fail(`workspace supports MODULE=M00, MODULE=M01, or MODULE=M02 (received ${moduleName}).`);
+  if (moduleName !== undefined && !["M00", "M01", "M02", "M03"].includes(moduleName)) {
+    fail(`workspace supports MODULE=M00 through MODULE=M03 (received ${moduleName}).`);
   }
 }
 
@@ -147,6 +147,11 @@ function build() {
   if (moduleName === "M02") {
     run("M02 authority preflight", ["run", "test:m02-authorities"]);
     console.log("M02 Engineer A identity, session, and audit authority baseline assembled.");
+    return;
+  }
+  if (moduleName === "M03") {
+    run("M03 PDP preflight", ["run", "test:m03-pdp"]);
+    console.log("M03 Engineer A PDP policy and live-decision baseline assembled.");
     return;
   }
   generate();
