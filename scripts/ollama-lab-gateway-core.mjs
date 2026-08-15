@@ -24,6 +24,17 @@ function requireLoopbackEndpoint(value) {
   return endpoint;
 }
 
+export function corsHeaders(origin, allowedOrigin) {
+  if (!allowedOrigin || origin !== allowedOrigin) return {};
+  return {
+    "access-control-allow-origin": allowedOrigin,
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-headers": "authorization, content-type",
+    "access-control-max-age": "600",
+    vary: "Origin",
+  };
+}
+
 /**
  * Non-production transport for public test prompts only. It is intentionally
  * separate from the authenticated, release-gated Lens product workflow.

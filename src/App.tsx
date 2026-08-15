@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import TitleBar from "./components/TitleBar";
 import { AgentWorkspace } from "./components/workspace/AgentWorkspace";
@@ -45,6 +45,7 @@ import { useSettingsStore } from "./stores/settingsStore";
 import { useSessionStore, type PlanStep } from "./stores/sessionStore";
 import { useTerminalStore } from "./stores/terminalStore";
 import type { SettingsSectionId } from "./shared/settings/defaults";
+import { generateLabGatewayResponse, getLabGatewayConfig } from "./shared/lab-gateway/client";
 
 const ProjectListView = lazy(
   () => import("./components/projects/ProjectListView"),
@@ -104,6 +105,7 @@ function AgentsApp() {
   const [credits, setCredits] = useState(2_000_000);
   const [, setSessionCredits] = useState(348_120);
   const [agentsDock, setAgentsDock] = useState<AgentsDockKind>(null);
+  const labGatewayAbort = useRef<AbortController | null>(null);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
@@ -245,7 +247,7 @@ function AgentsApp() {
     if (repo) useSessionStore.getState().openRepository(repo.id);
   }
 
-  function handleSend(
+  async function handleSend(
     text: string,
     attachments: Attachment[] = [],
     opts?: { planFirst?: boolean; modeOverride?: AIMode },
@@ -271,6 +273,28 @@ function AgentsApp() {
     };
     appendMessage(sess.id, userMsg);
     setSending(true);
+
+    const labGateway = getLabGatewayConfig();
+    if (labGateway && mode === "ask") {
+      const controller = new AbortController();
+      labGatewayAbort.current = controller;
+      try {
+        const content = await generateLabGatewayResponse(text, labGateway, controller.signal);
+        appendMessage(sess.id, {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          content,
+          timestamp: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+          model: "Llama 3.2 (LAN test)",
+        });
+      } catch {
+        if (!controller.signal.aborted) toast.error("The LAN test gateway is unavailable.");
+      } finally {
+        if (labGatewayAbort.current === controller) labGatewayAbort.current = null;
+        setSending(false);
+      }
+      return;
+    }
 
     if (opts?.planFirst) {
       const plan: PlanStep[] = [
@@ -418,7 +442,10 @@ function AgentsApp() {
           sending={sending}
           restoringId={restoringId}
           onSend={(text, attachments) => handleSend(text, attachments)}
-          onStop={() => setSending(false)}
+          onStop={() => {
+            labGatewayAbort.current?.abort();
+            setSending(false);
+          }}
           onRestoreCheckpoint={handleRestoreCheckpoint}
           onNewChat={() => newChat()}
           initialMode={session!.mode}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createOllamaLabGateway } from "../../scripts/ollama-lab-gateway-core.mjs";
+import { corsHeaders, createOllamaLabGateway } from "../../scripts/ollama-lab-gateway-core.mjs";
 
 const token = "a".repeat(32);
 const request = (overrides = {}) => ({
@@ -47,4 +47,9 @@ test("lab gateway rejects unauthenticated clients and malformed or non-public-te
 
 test("lab gateway refuses non-loopback model configuration", () => {
   assert.throws(() => createOllamaLabGateway({ mode: "public-test-only", accessToken: token, allowedClientIp: "10.164.13.99", model: "llama3.2", endpoint: "http://10.164.13.57:11434/api/generate" }));
+});
+
+test("lab gateway CORS is restricted to its configured website origin", () => {
+  assert.equal(corsHeaders("http://localhost:1420", "http://localhost:1420")["access-control-allow-origin"], "http://localhost:1420");
+  assert.deepEqual(corsHeaders("http://untrusted.example", "http://localhost:1420"), {});
 });

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
-import { createOllamaLabGateway } from "./ollama-lab-gateway-core.mjs";
+import { corsHeaders, createOllamaLabGateway } from "./ollama-lab-gateway-core.mjs";
 
 const port = Number.parseInt(process.env.LENS_LAB_GATEWAY_PORT ?? "8080", 10);
 if (process.env.NODE_ENV === "production" || process.env.LENS_LAB_GATEWAY_MODE !== "public-test-only" || !Number.isSafeInteger(port) || port < 1 || port > 65_535) {
@@ -13,12 +13,14 @@ const gateway = createOllamaLabGateway({
   allowedClientIp: process.env.LENS_LAB_ALLOWED_CLIENT_IP ?? "",
   model: process.env.LENS_OLLAMA_MODEL ?? "llama3.2",
 });
+const allowedOrigin = process.env.LENS_LAB_ALLOWED_ORIGIN;
 
-function write(response, result) {
+function write(response, result, headers = {}) {
   response.writeHead(result.status, {
     "cache-control": "no-store",
     "content-type": "application/json; charset=utf-8",
     "x-content-type-options": "nosniff",
+    ...headers,
   });
   response.end(JSON.stringify(result.body));
 }
@@ -35,6 +37,12 @@ async function readBody(request) {
 }
 
 const server = createServer(async (request, response) => {
+  const headers = corsHeaders(request.headers.origin, allowedOrigin);
+  if (request.method === "OPTIONS") {
+    if (!headers["access-control-allow-origin"]) return write(response, { status: 403, body: { error: { code: "FORBIDDEN" } } });
+    response.writeHead(204, headers);
+    return response.end();
+  }
   const controller = new AbortController();
   request.once("aborted", () => controller.abort());
   try {
@@ -47,9 +55,9 @@ const server = createServer(async (request, response) => {
       body,
       signal: controller.signal,
     });
-    write(response, result);
+    write(response, result, headers);
   } catch {
-    write(response, { status: 400, body: { error: { code: "INVALID_ARGUMENT" } } });
+    write(response, { status: 400, body: { error: { code: "INVALID_ARGUMENT" } }, }, headers);
   }
 });
 
