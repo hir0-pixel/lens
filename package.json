@@ -45,6 +45,7 @@
     "test:m07-registry": "node platform/m07-preflight.mjs",
     "test:m07-serving": "node platform/m07-preflight.mjs",
     "test:m07": "vitest run tests/unit/m07ModelRegistry.test.ts tests/unit/m07OllamaInferenceAdapter.test.ts tests/integration/m07-serving.test.ts",
+    "test:ollama-lab-gateway": "node --test tests/integration/ollama-lab-gateway.test.mjs && node --check scripts/ollama-lab-gateway.mjs",
     "verify:m07": "npm run generate && npm run typecheck && npm run lint && npm run test:m07 && npm run test:m07-registry && npm run test:m07-serving",
     "test:m08-bff": "node platform/m08-preflight.mjs",
     "test:m08-client": "node platform/m08-preflight.mjs",
