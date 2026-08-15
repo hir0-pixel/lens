@@ -17,6 +17,7 @@ function normalizeBaseUrl(value: string): string | undefined {
 
 /** Build-time public-test configuration. Never enable this in a production build. */
 export function getLabGatewayConfig(environment: Record<string, string | boolean | undefined> = import.meta.env): LabGatewayConfig | undefined {
+  if (environment.PROD === true) return undefined;
   const baseUrl = typeof environment.VITE_LENS_LAB_GATEWAY_URL === "string" ? normalizeBaseUrl(environment.VITE_LENS_LAB_GATEWAY_URL) : undefined;
   const accessToken = typeof environment.VITE_LENS_LAB_GATEWAY_TOKEN === "string" ? environment.VITE_LENS_LAB_GATEWAY_TOKEN.trim() : "";
   return baseUrl && accessToken.length >= 32 ? { baseUrl, accessToken } : undefined;

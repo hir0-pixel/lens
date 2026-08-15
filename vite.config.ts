@@ -1,5 +1,5 @@
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -7,7 +7,13 @@ import tailwindcss from "@tailwindcss/vite";
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig(async ({ mode }) => {
+  const environment = loadEnv(mode, process.cwd(), "");
+  if (mode === "production" && (environment.VITE_LENS_LAB_GATEWAY_URL || environment.VITE_LENS_LAB_GATEWAY_TOKEN)) {
+    throw new Error("VITE_LENS_LAB_* settings are public-test-only and cannot be included in a production build.");
+  }
+
+  return {
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -57,4 +63,5 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
-}));
+  };
+});

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
 import { corsHeaders, createOllamaLabGateway } from "./ollama-lab-gateway-core.mjs";
+import { createOllamaLabStore } from "./ollama-lab-store.mjs";
 
 const port = Number.parseInt(process.env.LENS_LAB_GATEWAY_PORT ?? "8080", 10);
 if (process.env.NODE_ENV === "production" || process.env.LENS_LAB_GATEWAY_MODE !== "public-test-only" || !Number.isSafeInteger(port) || port < 1 || port > 65_535) {
@@ -14,6 +15,7 @@ const gateway = createOllamaLabGateway({
   model: process.env.LENS_OLLAMA_MODEL ?? "llama3.2",
 });
 const allowedOrigin = process.env.LENS_LAB_ALLOWED_ORIGIN;
+const store = createOllamaLabStore(process.env.LENS_LAB_DATABASE_PATH ?? "data/lens-lab.sqlite");
 
 function write(response, result, headers = {}) {
   response.writeHead(result.status, {
@@ -55,6 +57,14 @@ const server = createServer(async (request, response) => {
       body,
       signal: controller.signal,
     });
+    if (result.status === 200) {
+      const payload = JSON.parse(body);
+      try {
+        store.recordTurn({ clientIp: request.socket.remoteAddress ?? "unknown", prompt: payload.prompt, output: result.body.output });
+      } catch {
+        return write(response, { status: 503, body: { error: { code: "DEPENDENCY_UNAVAILABLE" } } }, headers);
+      }
+    }
     write(response, result, headers);
   } catch {
     write(response, { status: 400, body: { error: { code: "INVALID_ARGUMENT" } }, }, headers);
@@ -65,4 +75,4 @@ server.headersTimeout = 10_000;
 server.requestTimeout = 65_000;
 server.keepAliveTimeout = 5_000;
 server.listen(port, "0.0.0.0", () => console.log(`Lens public-test gateway listening on port ${port}.`));
-for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => server.close(() => process.exit(0)));
+for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => server.close(() => { store.close(); process.exit(0); }));
