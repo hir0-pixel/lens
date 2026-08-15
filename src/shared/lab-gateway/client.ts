@@ -8,7 +8,8 @@ export class LabGatewayError extends Error {}
 function normalizeBaseUrl(value: string): string | undefined {
   try {
     const url = new URL(value);
-    if (url.protocol !== "http:" || url.username || url.password || url.search || url.hash) return undefined;
+    const isPrivateIpv4 = /^10\.|^127\.|^192\.168\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(url.hostname);
+    if (url.protocol !== "http:" || url.username || url.password || url.search || url.hash || (url.hostname !== "localhost" && url.hostname !== "[::1]" && !isPrivateIpv4)) return undefined;
     return url.toString().replace(/\/$/, "");
   } catch {
     return undefined;

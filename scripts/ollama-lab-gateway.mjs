@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
-import { corsHeaders, createOllamaLabGateway, securityHeaders } from "./ollama-lab-gateway-core.mjs";
+import { corsHeaders, createOllamaLabGateway, isAllowedLabOrigin, securityHeaders } from "./ollama-lab-gateway-core.mjs";
 import { createOllamaLabStore } from "./ollama-lab-store.mjs";
 
 const port = Number.parseInt(process.env.LENS_LAB_GATEWAY_PORT ?? "8080", 10);
@@ -19,6 +19,9 @@ const gateway = createOllamaLabGateway({
   },
 });
 const allowedOrigin = process.env.LENS_LAB_ALLOWED_ORIGIN;
+if (!isAllowedLabOrigin(allowedOrigin ?? "")) {
+  throw new Error("The public-test gateway origin must be a private-network HTTP origin.");
+}
 const store = createOllamaLabStore(process.env.LENS_LAB_DATABASE_PATH ?? "data/lens-lab.sqlite");
 
 function write(response, result, headers = {}) {

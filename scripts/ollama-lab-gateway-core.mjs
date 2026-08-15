@@ -16,6 +16,25 @@ function normalizeAddress(address) {
   return address.startsWith("::ffff:") ? address.slice(7) : address;
 }
 
+function isPrivateIpv4(address) {
+  const parts = address.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  return parts[0] === 10 || parts[0] === 127 || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || (parts[0] === 192 && parts[1] === 168);
+}
+
+function isPrivateLabHost(hostname) {
+  return hostname === "localhost" || hostname === "[::1]" || isPrivateIpv4(hostname);
+}
+
+export function isAllowedLabOrigin(value) {
+  try {
+    const origin = new URL(value);
+    return origin.protocol === "http:" && !origin.username && !origin.password && !origin.search && !origin.hash && isPrivateLabHost(origin.hostname) && origin.origin === value.replace(/\/$/, "");
+  } catch {
+    return false;
+  }
+}
+
 function requireLoopbackEndpoint(value) {
   const endpoint = new URL(value);
   if (endpoint.protocol !== "http:" || (endpoint.hostname !== "127.0.0.1" && endpoint.hostname !== "[::1]") || endpoint.pathname !== "/api/generate" || endpoint.search || endpoint.hash) {
@@ -25,7 +44,7 @@ function requireLoopbackEndpoint(value) {
 }
 
 export function corsHeaders(origin, allowedOrigin) {
-  if (!allowedOrigin || origin !== allowedOrigin) return {};
+  if (!isAllowedLabOrigin(allowedOrigin) || origin !== allowedOrigin) return {};
   return {
     "access-control-allow-origin": allowedOrigin,
     "access-control-allow-methods": "POST, OPTIONS",
@@ -50,7 +69,7 @@ export function securityHeaders() {
  * separate from the authenticated, release-gated Lens product workflow.
  */
 export function createOllamaLabGateway(options) {
-  if (options.mode !== "public-test-only" || !options.accessToken || options.accessToken.length < 32 || !options.allowedClientIp || !options.model) {
+  if (options.mode !== "public-test-only" || !options.accessToken || options.accessToken.length < 32 || !isPrivateIpv4(options.allowedClientIp) || !options.model) {
     throw new Error("Invalid lab gateway configuration.");
   }
   const endpoint = requireLoopbackEndpoint(options.endpoint ?? "http://127.0.0.1:11434/api/generate");

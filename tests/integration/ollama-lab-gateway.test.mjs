@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { corsHeaders, createOllamaLabGateway, securityHeaders } from "../../scripts/ollama-lab-gateway-core.mjs";
+import { corsHeaders, createOllamaLabGateway, isAllowedLabOrigin, securityHeaders } from "../../scripts/ollama-lab-gateway-core.mjs";
 
 const token = "a".repeat(32);
 const request = (overrides = {}) => ({
@@ -52,6 +52,8 @@ test("lab gateway refuses non-loopback model configuration", () => {
 test("lab gateway CORS is restricted to its configured website origin", () => {
   assert.equal(corsHeaders("http://localhost:1420", "http://localhost:1420")["access-control-allow-origin"], "http://localhost:1420");
   assert.deepEqual(corsHeaders("http://untrusted.example", "http://localhost:1420"), {});
+  assert.equal(isAllowedLabOrigin("http://10.164.13.233:1420"), true);
+  assert.equal(isAllowedLabOrigin("http://gateway.example"), false);
 });
 
 test("lab gateway sends browser hardening headers on every response", () => {
@@ -72,4 +74,8 @@ test("lab gateway bounds authenticated request bursts before they reach Ollama",
   });
   assert.equal((await gateway.handle(request())).status, 200);
   assert.deepEqual(await gateway.handle(request()), { status: 429, body: { error: { code: "RATE_LIMITED" } } });
+});
+
+test("lab gateway rejects a public-network client address", () => {
+  assert.throws(() => createOllamaLabGateway({ mode: "public-test-only", accessToken: token, allowedClientIp: "8.8.8.8", model: "llama3.2" }));
 });
