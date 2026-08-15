@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
-import { corsHeaders, createOllamaLabGateway } from "./ollama-lab-gateway-core.mjs";
+import { corsHeaders, createOllamaLabGateway, securityHeaders } from "./ollama-lab-gateway-core.mjs";
 import { createOllamaLabStore } from "./ollama-lab-store.mjs";
 
 const port = Number.parseInt(process.env.LENS_LAB_GATEWAY_PORT ?? "8080", 10);
@@ -25,7 +25,7 @@ function write(response, result, headers = {}) {
   response.writeHead(result.status, {
     "cache-control": "no-store",
     "content-type": "application/json; charset=utf-8",
-    "x-content-type-options": "nosniff",
+    ...securityHeaders(),
     ...headers,
   });
   response.end(JSON.stringify(result.body));

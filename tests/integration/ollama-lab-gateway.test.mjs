@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { corsHeaders, createOllamaLabGateway } from "../../scripts/ollama-lab-gateway-core.mjs";
+import { corsHeaders, createOllamaLabGateway, securityHeaders } from "../../scripts/ollama-lab-gateway-core.mjs";
 
 const token = "a".repeat(32);
 const request = (overrides = {}) => ({
@@ -52,6 +52,16 @@ test("lab gateway refuses non-loopback model configuration", () => {
 test("lab gateway CORS is restricted to its configured website origin", () => {
   assert.equal(corsHeaders("http://localhost:1420", "http://localhost:1420")["access-control-allow-origin"], "http://localhost:1420");
   assert.deepEqual(corsHeaders("http://untrusted.example", "http://localhost:1420"), {});
+});
+
+test("lab gateway sends browser hardening headers on every response", () => {
+  assert.deepEqual(securityHeaders(), {
+    "content-security-policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "permissions-policy": "accelerometer=(), camera=(), geolocation=(), microphone=()",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+  });
 });
 
 test("lab gateway bounds authenticated request bursts before they reach Ollama", async () => {

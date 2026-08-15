@@ -35,6 +35,16 @@ export function corsHeaders(origin, allowedOrigin) {
   };
 }
 
+export function securityHeaders() {
+  return {
+    "content-security-policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "permissions-policy": "accelerometer=(), camera=(), geolocation=(), microphone=()",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+  };
+}
+
 /**
  * Non-production transport for public test prompts only. It is intentionally
  * separate from the authenticated, release-gated Lens product workflow.
