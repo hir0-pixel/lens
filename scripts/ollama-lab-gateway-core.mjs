@@ -46,14 +46,33 @@ export function createOllamaLabGateway(options) {
   const endpoint = requireLoopbackEndpoint(options.endpoint ?? "http://127.0.0.1:11434/api/generate");
   const timeoutMs = options.timeoutMs ?? 60_000;
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) throw new Error("Invalid lab gateway timeout.");
+  const capacity = options.rateLimit?.capacity ?? 20;
+  const refillPerSecond = options.rateLimit?.refillPerSecond ?? 5;
+  if (!Number.isSafeInteger(capacity) || capacity < 1 || !Number.isFinite(refillPerSecond) || refillPerSecond < 0) throw new Error("Invalid lab gateway rate limit.");
   const fetcher = options.fetcher ?? fetch;
+  const now = options.now ?? (() => Date.now());
+  const buckets = new Map();
+
+  function consume(clientIp) {
+    const current = now();
+    const prior = buckets.get(clientIp) ?? { tokens: capacity, updatedAt: current };
+    const tokens = Math.min(capacity, prior.tokens + (current - prior.updatedAt) / 1_000 * refillPerSecond);
+    if (tokens < 1) {
+      buckets.set(clientIp, { tokens, updatedAt: current });
+      return false;
+    }
+    buckets.set(clientIp, { tokens: tokens - 1, updatedAt: current });
+    return true;
+  }
 
   return {
     async handle(request) {
-      if (normalizeAddress(request.remoteAddress ?? "") !== options.allowedClientIp) return error(403, "FORBIDDEN");
+      const clientIp = normalizeAddress(request.remoteAddress ?? "");
+      if (clientIp !== options.allowedClientIp) return error(403, "FORBIDDEN");
       if (request.method !== "POST" || request.path !== "/v1/lab/generate") return error(404, "NOT_FOUND");
       const authorization = request.authorization ?? "";
       if (!authorization.startsWith("Bearer ") || !matchesSecret(authorization.slice(7), options.accessToken)) return error(401, "UNAUTHENTICATED");
+      if (!consume(clientIp)) return error(429, "RATE_LIMITED");
 
       let body;
       try { body = JSON.parse(request.body); } catch { return error(400, "INVALID_ARGUMENT"); }

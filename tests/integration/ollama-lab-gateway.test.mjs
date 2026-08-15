@@ -53,3 +53,13 @@ test("lab gateway CORS is restricted to its configured website origin", () => {
   assert.equal(corsHeaders("http://localhost:1420", "http://localhost:1420")["access-control-allow-origin"], "http://localhost:1420");
   assert.deepEqual(corsHeaders("http://untrusted.example", "http://localhost:1420"), {});
 });
+
+test("lab gateway bounds authenticated request bursts before they reach Ollama", async () => {
+  const gateway = createOllamaLabGateway({
+    mode: "public-test-only", accessToken: token, allowedClientIp: "10.164.13.99", model: "llama3.2",
+    rateLimit: { capacity: 1, refillPerSecond: 0 },
+    fetcher: async () => ({ ok: true, json: async () => ({ response: "answer", done: true }) }),
+  });
+  assert.equal((await gateway.handle(request())).status, 200);
+  assert.deepEqual(await gateway.handle(request()), { status: 429, body: { error: { code: "RATE_LIMITED" } } });
+});

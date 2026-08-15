@@ -13,6 +13,10 @@ const gateway = createOllamaLabGateway({
   accessToken: process.env.LENS_LAB_GATEWAY_TOKEN ?? "",
   allowedClientIp: process.env.LENS_LAB_ALLOWED_CLIENT_IP ?? "",
   model: process.env.LENS_OLLAMA_MODEL ?? "llama3.2",
+  rateLimit: {
+    capacity: Number.parseInt(process.env.LENS_LAB_RATE_LIMIT_CAPACITY ?? "20", 10),
+    refillPerSecond: Number.parseFloat(process.env.LENS_LAB_RATE_LIMIT_REFILL_PER_SECOND ?? "5"),
+  },
 });
 const allowedOrigin = process.env.LENS_LAB_ALLOWED_ORIGIN;
 const store = createOllamaLabStore(process.env.LENS_LAB_DATABASE_PATH ?? "data/lens-lab.sqlite");
