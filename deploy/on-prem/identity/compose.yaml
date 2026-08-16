@@ -55,8 +55,31 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - identity_edge_data:/data
     networks:
+      identity_internal:
+        aliases:
+          - identity.platform.internal
+      identity_edge: {}
+
+  session_gateway:
+    image: node:24-alpine
+    restart: unless-stopped
+    working_dir: /app
+    command: node scripts/identity-session-gateway.mjs
+    environment:
+      NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
+      LENS_SESSION_GATEWAY_MODE: ${LENS_SESSION_GATEWAY_MODE}
+      LENS_SESSION_GATEWAY_PORT: ${LENS_SESSION_GATEWAY_PORT}
+      LENS_IDENTITY_ISSUER: ${LENS_IDENTITY_ISSUER}
+      LENS_SESSION_GATEWAY_CLIENT_ID: ${LENS_SESSION_GATEWAY_CLIENT_ID}
+      LENS_SESSION_GATEWAY_CLIENT_SECRET: ${LENS_SESSION_GATEWAY_CLIENT_SECRET}
+      LENS_SESSION_GATEWAY_ALLOWED_ORIGIN: ${LENS_SESSION_GATEWAY_ALLOWED_ORIGIN}
+      LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP: ${LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP}
+      LENS_SESSION_GATEWAY_REDIRECT_URI: ${LENS_SESSION_GATEWAY_REDIRECT_URI}
+    volumes:
+      - ../../..:/app:ro
+      - identity_edge_data:/caddy-data:ro
+    networks:
       - identity_internal
-      - identity_edge
 
 networks:
   identity_internal:

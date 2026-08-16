@@ -5,5 +5,5 @@ https://identity.platform.internal:8443 {
 
 https://lens-gateway.platform.internal:8444 {
   tls internal
-  reverse_proxy host.docker.internal:8081
+  reverse_proxy session_gateway:8081
 }

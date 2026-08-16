@@ -39,4 +39,4 @@ const server = createServer(async (request, response) => {
   return write(response, 404, { error: "NOT_FOUND" }, headers);
 });
 
-server.listen(port, "127.0.0.1", () => console.log(`Lens internal identity gateway listening on 127.0.0.1:${port}.`));
+server.listen(port, "0.0.0.0", () => console.log(`Lens internal identity gateway listening on port ${port}.`));
