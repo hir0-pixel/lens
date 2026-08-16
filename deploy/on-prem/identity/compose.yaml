@@ -35,16 +35,28 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:8180:8080"
     volumes:
       - ./lens-internal-realm.json:/opt/keycloak/data/import/lens-internal-realm.json:ro
     networks:
       - identity_internal
 
+  edge:
+    image: caddy:2.11.4-alpine
+    restart: unless-stopped
+    depends_on:
+      - keycloak
+    ports:
+      - "127.0.0.1:8180:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - identity_internal
+      - identity_edge
+
 networks:
   identity_internal:
     internal: true
+  identity_edge: {}
 
 volumes:
   identity_database:
