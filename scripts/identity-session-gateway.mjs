@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+import { createServer } from "node:http";
+import { createIdentitySessionGateway } from "./identity-session-gateway-core.mjs";
+
+const port = Number.parseInt(process.env.LENS_SESSION_GATEWAY_PORT ?? "8081", 10);
+const allowedOrigin = process.env.LENS_SESSION_GATEWAY_ALLOWED_ORIGIN ?? "";
+if (process.env.NODE_ENV === "production" || process.env.LENS_SESSION_GATEWAY_MODE !== "internal-test-only" || !Number.isSafeInteger(port) || port < 1 || port > 65535) throw new Error("This identity gateway is for internal testing only.");
+const gateway = createIdentitySessionGateway({ mode: process.env.LENS_SESSION_GATEWAY_MODE, issuer: process.env.LENS_IDENTITY_ISSUER ?? "", clientId: process.env.LENS_SESSION_GATEWAY_CLIENT_ID ?? "", clientSecret: process.env.LENS_SESSION_GATEWAY_CLIENT_SECRET ?? "", allowedClientIp: process.env.LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP ?? "", allowedOrigin, redirectUri: process.env.LENS_SESSION_GATEWAY_REDIRECT_URI ?? "" });
+
+const cors = (origin) => origin === allowedOrigin ? { "access-control-allow-origin": allowedOrigin, "access-control-allow-credentials": "true", "access-control-allow-headers": "content-type, x-lens-csrf", "access-control-allow-methods": "GET, POST, OPTIONS", vary: "Origin" } : {};
+const cookie = (request, key) => request.headers.cookie?.split(";").map((item) => item.trim().split("=")).find(([name]) => name === key)?.[1];
+const write = (response, status, body, headers = {}) => { response.writeHead(status, { "cache-control": "no-store", "content-type": "application/json; charset=utf-8", "content-security-policy": "default-src 'none'; frame-ancestors 'none'", "x-content-type-options": "nosniff", ...headers }); response.end(JSON.stringify(body)); };
+
+const server = createServer(async (request, response) => {
+  const origin = request.headers.origin;
+  const headers = cors(origin);
+  const path = new URL(request.url ?? "/", "http://gateway.internal").pathname;
+  if (request.method === "OPTIONS") return Object.keys(headers).length ? (response.writeHead(204, headers), response.end()) : write(response, 403, { error: "FORBIDDEN" });
+  if (request.method === "GET" && path === "/auth/login") return response.writeHead(302, { location: gateway.beginLogin(), "cache-control": "no-store" }), response.end();
+  if (request.method === "GET" && path === "/auth/callback") {
+    try {
+      const url = new URL(request.url ?? "/", "http://gateway.internal");
+      const session = await gateway.finishLogin({ state: url.searchParams.get("state") ?? "", code: url.searchParams.get("code") ?? "" });
+      response.writeHead(302, { location: allowedOrigin, "set-cookie": `lens_internal_session=${session.sessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=1800`, "cache-control": "no-store" });
+      return response.end();
+    } catch { return write(response, 401, { error: "UNAUTHENTICATED" }); }
+  }
+  if (origin !== allowedOrigin) return write(response, 403, { error: "FORBIDDEN" });
+  if (request.method === "GET" && path === "/v1/session") {
+    const session = gateway.bootstrapSession(cookie(request, "lens_internal_session"));
+    return session ? write(response, 200, session, headers) : write(response, 401, { error: "UNAUTHENTICATED" }, headers);
+  }
+  if (request.method === "POST" && path === "/auth/logout") {
+    const session = gateway.session(cookie(request, "lens_internal_session"), request.headers["x-lens-csrf"]);
+    if (!session) return write(response, 401, { error: "UNAUTHENTICATED" }, headers);
+    gateway.revoke(cookie(request, "lens_internal_session"));
+    return write(response, 204, {}, { ...headers, "set-cookie": "lens_internal_session=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0" });
+  }
+  return write(response, 404, { error: "NOT_FOUND" }, headers);
+});
+
+server.listen(port, "127.0.0.1", () => console.log(`Lens internal identity gateway listening on 127.0.0.1:${port}.`));

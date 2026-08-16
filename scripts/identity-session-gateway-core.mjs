@@ -71,6 +71,11 @@ export function createIdentitySessionGateway(options) {
       if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return undefined;
       return { subjectRef: value.subjectRef, expiresAt: value.expiresAt };
     },
+    bootstrapSession(cookieValue) {
+      cleanup();
+      const value = sessions.get(cookieValue ?? "");
+      return value ? { subjectRef: value.subjectRef, csrfToken: value.csrfToken, expiresAt: value.expiresAt } : undefined;
+    },
     revoke(cookieValue) { if (cookieValue) sessions.delete(cookieValue); },
   };
 }

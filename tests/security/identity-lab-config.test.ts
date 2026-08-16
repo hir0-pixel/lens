@@ -10,8 +10,10 @@ describe("identity lab configuration", () => {
     expect(compose).toContain("KC_HOSTNAME: https://identity.platform.internal:8443");
     expect(compose).toContain('KC_PROXY_HEADERS: xforwarded');
     expect(compose).toContain('"127.0.0.1:8443:8443"');
+    expect(compose).toContain('"127.0.0.1:8444:8444"');
     expect(compose).toContain("internal: true");
     expect(caddyfile).toContain("https://identity.platform.internal:8443");
     expect(caddyfile).toContain("tls internal");
+    expect(caddyfile).toContain("https://lens-gateway.platform.internal:8444");
   });
 });
