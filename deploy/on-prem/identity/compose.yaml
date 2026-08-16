@@ -32,6 +32,9 @@ services:
       KC_DB_PASSWORD: ${LENS_IDENTITY_DATABASE_PASSWORD}
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
+      KC_HOSTNAME: https://identity.platform.internal:8443
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
     depends_on:
       database:
         condition: service_healthy
@@ -46,9 +49,10 @@ services:
     depends_on:
       - keycloak
     ports:
-      - "127.0.0.1:8180:8080"
+      - "127.0.0.1:8443:8443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - identity_edge_data:/data
     networks:
       - identity_internal
       - identity_edge
@@ -60,3 +64,4 @@ networks:
 
 volumes:
   identity_database:
+  identity_edge_data:
