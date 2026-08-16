@@ -10,7 +10,9 @@ https://lens-gateway.platform.internal:8444 {
 
 :8082 {
   handle /v1/lab/generate {
-    reverse_proxy host.docker.internal:8080
+    reverse_proxy host.docker.internal:8080 {
+      header_up X-Lens-Edge-Relay {$LENS_EDGE_RELAY_TOKEN}
+    }
   }
   handle {
     respond 404

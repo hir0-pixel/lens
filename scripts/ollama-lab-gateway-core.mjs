@@ -82,6 +82,8 @@ export function createOllamaLabGateway(options) {
   if (options.mode !== "public-test-only" || !options.accessToken || options.accessToken.length < 32 || !isPrivateIpv4(options.allowedClientIp) || !options.model) {
     throw new Error("Invalid lab gateway configuration.");
   }
+  const trustedRelayToken = options.trustedRelayToken?.trim() ?? "";
+  if (trustedRelayToken && trustedRelayToken.length < 32) throw new Error("Invalid trusted relay configuration.");
   const endpoint = requireLoopbackEndpoint(options.endpoint ?? "http://127.0.0.1:11434/api/generate");
   const timeoutMs = options.timeoutMs ?? 60_000;
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) throw new Error("Invalid lab gateway timeout.");
@@ -107,7 +109,8 @@ export function createOllamaLabGateway(options) {
   return {
     async handle(request) {
       const clientIp = normalizeAddress(request.remoteAddress ?? "");
-      if (clientIp !== options.allowedClientIp && !matchesSubnet(clientIp, options.allowedInternalSubnet)) return error(403, "FORBIDDEN");
+      const trustedRelay = trustedRelayToken.length >= 32 && typeof request.relayToken === "string" && matchesSecret(request.relayToken, trustedRelayToken);
+      if (clientIp !== options.allowedClientIp && !matchesSubnet(clientIp, options.allowedInternalSubnet) && !trustedRelay) return error(403, "FORBIDDEN");
       if (request.method !== "POST" || request.path !== "/v1/lab/generate") return error(404, "NOT_FOUND");
       const authorization = request.authorization ?? "";
       if (!authorization.startsWith("Bearer ") || !matchesSecret(authorization.slice(7), options.accessToken)) return error(401, "UNAUTHENTICATED");

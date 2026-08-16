@@ -85,3 +85,11 @@ test("lab gateway admits only the configured private container subnet", async ()
   assert.equal((await gateway.handle(request({ remoteAddress: "172.18.0.5" }))).status, 200);
   assert.equal((await gateway.handle(request({ remoteAddress: "172.19.0.5" }))).status, 403);
 });
+
+test("lab gateway admits a NAT-translated edge only with its distinct relay credential", async () => {
+  const relayToken = "r".repeat(32);
+  const gateway = createOllamaLabGateway({ mode: "public-test-only", accessToken: token, allowedClientIp: "10.164.13.99", trustedRelayToken: relayToken, model: "llama3.2", fetcher: async () => ({ ok: true, json: async () => ({ response: "answer", done: true }) }) });
+  assert.equal((await gateway.handle(request({ remoteAddress: "192.168.65.254", relayToken }))).status, 200);
+  assert.equal((await gateway.handle(request({ remoteAddress: "192.168.65.254", relayToken: "wrong" }))).status, 403);
+  assert.throws(() => createOllamaLabGateway({ mode: "public-test-only", accessToken: token, allowedClientIp: "10.164.13.99", trustedRelayToken: "short", model: "llama3.2" }));
+});

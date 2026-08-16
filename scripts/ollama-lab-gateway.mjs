@@ -13,6 +13,7 @@ const gateway = createOllamaLabGateway({
   accessToken: process.env.LENS_LAB_GATEWAY_TOKEN ?? "",
   allowedClientIp: process.env.LENS_LAB_ALLOWED_CLIENT_IP ?? "",
   allowedInternalSubnet: process.env.LENS_LAB_ALLOWED_INTERNAL_SUBNET,
+  trustedRelayToken: process.env.LENS_EDGE_RELAY_TOKEN,
   model: process.env.LENS_OLLAMA_MODEL ?? "llama3.2",
   rateLimit: {
     capacity: Number.parseInt(process.env.LENS_LAB_RATE_LIMIT_CAPACITY ?? "20", 10),
@@ -57,10 +58,12 @@ const server = createServer(async (request, response) => {
   request.once("aborted", () => controller.abort());
   try {
     const body = await readBody(request);
+    const relayHeader = request.headers["x-lens-edge-relay"];
     const result = await gateway.handle({
       method: request.method ?? "",
       path: new URL(request.url ?? "/", "http://gateway.internal").pathname,
       authorization: request.headers.authorization,
+      relayToken: Array.isArray(relayHeader) ? relayHeader[0] : relayHeader,
       remoteAddress: request.socket.remoteAddress,
       body,
       signal: controller.signal,

@@ -50,6 +50,8 @@ services:
       - keycloak
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    environment:
+      LENS_EDGE_RELAY_TOKEN: ${LENS_EDGE_RELAY_TOKEN}
     ports:
       - "${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8443:8443"
       - "${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8444:8444"

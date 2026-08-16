@@ -16,12 +16,15 @@ describe("identity lab configuration", () => {
     const sessionStart = compose.indexOf("  session_gateway:");
     const sessionGateway = compose.slice(sessionStart, compose.indexOf("\nnetworks:\n", sessionStart));
     expect(edge).toContain('"host.docker.internal:host-gateway"');
+    expect(edge).toContain("LENS_EDGE_RELAY_TOKEN: ${LENS_EDGE_RELAY_TOKEN}");
     expect(sessionGateway).not.toContain("extra_hosts:");
+    expect(sessionGateway).not.toContain("LENS_EDGE_RELAY_TOKEN");
     expect(sessionGateway).toContain("- identity_internal");
     expect(caddyfile).toContain("https://identity.platform.internal:8443");
     expect(caddyfile).toContain("tls internal");
     expect(caddyfile).toContain("https://lens-gateway.platform.internal:8444");
     expect(caddyfile).toContain("handle /v1/lab/generate");
     expect(caddyfile).toContain("reverse_proxy host.docker.internal:8080");
+    expect(caddyfile).toContain("header_up X-Lens-Edge-Relay {$LENS_EDGE_RELAY_TOKEN}");
   });
 });
