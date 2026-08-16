@@ -7,3 +7,12 @@ https://lens-gateway.platform.internal:8444 {
   tls internal
   reverse_proxy session_gateway:8081
 }
+
+:8082 {
+  handle /v1/lab/generate {
+    reverse_proxy host.docker.internal:8080
+  }
+  handle {
+    respond 404
+  }
+}

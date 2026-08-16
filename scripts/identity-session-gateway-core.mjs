@@ -18,8 +18,8 @@ export function requireInternalIssuer(value) {
 
 export function requireInternalModelBridge(value) {
   const url = new URL(value);
-  if (url.protocol !== "http:" || url.hostname !== "host.docker.internal" || url.port !== "8080" || url.pathname !== "/v1/lab/generate" || url.search || url.hash || url.username || url.password) {
-    throw new Error("The model bridge must use the approved host-only lab gateway URL.");
+  if (url.protocol !== "http:" || url.hostname !== "edge" || url.port !== "8082" || url.pathname !== "/v1/lab/generate" || url.search || url.hash || url.username || url.password) {
+    throw new Error("The model bridge must use the approved internal edge relay URL.");
   }
   return url.toString();
 }

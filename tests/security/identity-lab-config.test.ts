@@ -12,9 +12,16 @@ describe("identity lab configuration", () => {
     expect(compose).toContain('"${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8444:8444"');
     expect(compose).toContain('"${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8443:8443"');
     expect(compose).toContain("internal: true");
-    expect(compose).toContain('"host.docker.internal:host-gateway"');
+    const edge = compose.slice(compose.indexOf("  edge:"), compose.indexOf("  session_gateway:"));
+    const sessionStart = compose.indexOf("  session_gateway:");
+    const sessionGateway = compose.slice(sessionStart, compose.indexOf("\nnetworks:\n", sessionStart));
+    expect(edge).toContain('"host.docker.internal:host-gateway"');
+    expect(sessionGateway).not.toContain("extra_hosts:");
+    expect(sessionGateway).toContain("- identity_internal");
     expect(caddyfile).toContain("https://identity.platform.internal:8443");
     expect(caddyfile).toContain("tls internal");
     expect(caddyfile).toContain("https://lens-gateway.platform.internal:8444");
+    expect(caddyfile).toContain("handle /v1/lab/generate");
+    expect(caddyfile).toContain("reverse_proxy host.docker.internal:8080");
   });
 });
