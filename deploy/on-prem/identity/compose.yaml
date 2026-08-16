@@ -49,8 +49,8 @@ services:
     depends_on:
       - keycloak
     ports:
-      - "127.0.0.1:8443:8443"
-      - "127.0.0.1:8444:8444"
+      - "${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8443:8443"
+      - "${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8444:8444"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - identity_edge_data:/data
@@ -75,6 +75,8 @@ services:
       LENS_SESSION_GATEWAY_ALLOWED_ORIGIN: ${LENS_SESSION_GATEWAY_ALLOWED_ORIGIN}
       LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP: ${LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP}
       LENS_SESSION_GATEWAY_REDIRECT_URI: ${LENS_SESSION_GATEWAY_REDIRECT_URI}
+      LENS_INTERNAL_MODEL_BRIDGE_URL: ${LENS_INTERNAL_MODEL_BRIDGE_URL}
+      LENS_INTERNAL_MODEL_BRIDGE_TOKEN: ${LENS_INTERNAL_MODEL_BRIDGE_TOKEN}
     volumes:
       - ../../..:/app:ro
       - identity_edge_data:/caddy-data:ro

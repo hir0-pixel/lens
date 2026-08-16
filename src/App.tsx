@@ -46,6 +46,12 @@ import { useSessionStore, type PlanStep } from "./stores/sessionStore";
 import { useTerminalStore } from "./stores/terminalStore";
 import type { SettingsSectionId } from "./shared/settings/defaults";
 import { generateLabGatewayResponse, getLabGatewayConfig } from "./shared/lab-gateway/client";
+import {
+  beginIdentityLogin,
+  generateIdentityGatewayResponse,
+  getIdentityGatewayConfig,
+  IdentityLoginRequiredError,
+} from "./shared/identity-gateway/client";
 
 const ProjectListView = lazy(
   () => import("./components/projects/ProjectListView"),
@@ -274,21 +280,28 @@ function AgentsApp() {
     appendMessage(sess.id, userMsg);
     setSending(true);
 
+    const identityGateway = getIdentityGatewayConfig();
     const labGateway = getLabGatewayConfig();
-    if (labGateway && mode === "ask") {
+    if ((identityGateway || labGateway) && mode === "ask") {
       const controller = new AbortController();
       labGatewayAbort.current = controller;
       try {
-        const content = await generateLabGatewayResponse(text, labGateway, controller.signal);
+        const content = identityGateway
+          ? await generateIdentityGatewayResponse(text, identityGateway, controller.signal)
+          : await generateLabGatewayResponse(text, labGateway!, controller.signal);
         appendMessage(sess.id, {
           id: `a-${Date.now()}`,
           role: "assistant",
           content,
           timestamp: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-          model: "Llama 3.2 (LAN test)",
+          model: identityGateway ? "Llama 3.2 (authenticated LAN test)" : "Llama 3.2 (LAN test)",
         });
-      } catch {
-        if (!controller.signal.aborted) toast.error("The LAN test gateway is unavailable.");
+      } catch (error) {
+        if (error instanceof IdentityLoginRequiredError && identityGateway) {
+          beginIdentityLogin(identityGateway);
+        } else if (!controller.signal.aborted) {
+          toast.error("The authenticated LAN test gateway is unavailable.");
+        }
       } finally {
         if (labGatewayAbort.current === controller) labGatewayAbort.current = null;
         setSending(false);

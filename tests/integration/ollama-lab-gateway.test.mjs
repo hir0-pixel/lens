@@ -79,3 +79,9 @@ test("lab gateway bounds authenticated request bursts before they reach Ollama",
 test("lab gateway rejects a public-network client address", () => {
   assert.throws(() => createOllamaLabGateway({ mode: "public-test-only", accessToken: token, allowedClientIp: "8.8.8.8", model: "llama3.2" }));
 });
+
+test("lab gateway admits only the configured private container subnet", async () => {
+  const gateway = createOllamaLabGateway({ mode: "public-test-only", accessToken: token, allowedClientIp: "10.164.13.99", allowedInternalSubnet: "172.18.0.0/16", model: "llama3.2", fetcher: async () => ({ ok: true, json: async () => ({ response: "answer", done: true }) }) });
+  assert.equal((await gateway.handle(request({ remoteAddress: "172.18.0.5" }))).status, 200);
+  assert.equal((await gateway.handle(request({ remoteAddress: "172.19.0.5" }))).status, 403);
+});

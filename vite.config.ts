@@ -9,8 +9,8 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async ({ mode }) => {
   const environment = loadEnv(mode, process.cwd(), "");
-  if (mode === "production" && (environment.VITE_LENS_LAB_GATEWAY_URL || environment.VITE_LENS_LAB_GATEWAY_TOKEN)) {
-    throw new Error("VITE_LENS_LAB_* settings are public-test-only and cannot be included in a production build.");
+  if (mode === "production" && (environment.VITE_LENS_LAB_GATEWAY_URL || environment.VITE_LENS_LAB_GATEWAY_TOKEN || environment.VITE_LENS_SESSION_GATEWAY_URL)) {
+    throw new Error("VITE_LENS_LAB_* and VITE_LENS_SESSION_GATEWAY_URL settings are test-only and cannot be included in a production build.");
   }
 
   return {

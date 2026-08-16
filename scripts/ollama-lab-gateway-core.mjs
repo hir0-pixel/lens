@@ -22,6 +22,16 @@ function isPrivateIpv4(address) {
   return parts[0] === 10 || parts[0] === 127 || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || (parts[0] === 192 && parts[1] === 168);
 }
 
+function matchesSubnet(address, subnet) {
+  const match = /^(\d+\.\d+\.\d+\.\d+)\/(\d{1,2})$/.exec(subnet ?? "");
+  if (!match || !isPrivateIpv4(address)) return false;
+  const bits = Number(match[2]);
+  if (bits < 8 || bits > 30) return false;
+  const toNumber = (value) => value.split(".").reduce((total, part) => (total << 8) + Number(part), 0) >>> 0;
+  const mask = (0xffffffff << (32 - bits)) >>> 0;
+  return (toNumber(address) & mask) === (toNumber(match[1]) & mask);
+}
+
 function isPrivateLabHost(hostname) {
   return hostname === "localhost" || hostname === "[::1]" || isPrivateIpv4(hostname);
 }
@@ -97,7 +107,7 @@ export function createOllamaLabGateway(options) {
   return {
     async handle(request) {
       const clientIp = normalizeAddress(request.remoteAddress ?? "");
-      if (clientIp !== options.allowedClientIp) return error(403, "FORBIDDEN");
+      if (clientIp !== options.allowedClientIp && !matchesSubnet(clientIp, options.allowedInternalSubnet)) return error(403, "FORBIDDEN");
       if (request.method !== "POST" || request.path !== "/v1/lab/generate") return error(404, "NOT_FOUND");
       const authorization = request.authorization ?? "";
       if (!authorization.startsWith("Bearer ") || !matchesSecret(authorization.slice(7), options.accessToken)) return error(401, "UNAUTHENTICATED");

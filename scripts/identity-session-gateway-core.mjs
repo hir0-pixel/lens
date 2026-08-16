@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const PENDING_TTL_MS = 5 * 60 * 1000;
+const MAX_PROMPT_LENGTH = 12_000;
 
 function base64url(bytes) { return Buffer.from(bytes).toString("base64url"); }
 function privateIpv4(value) {
@@ -15,9 +16,36 @@ export function requireInternalIssuer(value) {
   return url.toString().replace(/\/$/, "");
 }
 
+export function requireInternalModelBridge(value) {
+  const url = new URL(value);
+  if (url.protocol !== "http:" || url.hostname !== "host.docker.internal" || url.port !== "8080" || url.pathname !== "/v1/lab/generate" || url.search || url.hash || url.username || url.password) {
+    throw new Error("The model bridge must use the approved host-only lab gateway URL.");
+  }
+  return url.toString();
+}
+
+function requireLocalTestOrigin(value) {
+  const url = new URL(value);
+  if (url.protocol !== "http:" || url.hostname !== "localhost" || url.port !== "1420" || (url.pathname !== "/" && url.pathname !== "") || url.search || url.hash || url.username || url.password) {
+    throw new Error("The allowed origin must be the local test application.");
+  }
+  return url.origin;
+}
+
+function requireInternalRedirect(value) {
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.hostname !== "lens-gateway.platform.internal" || url.port !== "8444" || url.pathname !== "/auth/callback" || url.search || url.hash || url.username || url.password) {
+    throw new Error("The redirect URI must use the internal session gateway callback.");
+  }
+  return url.toString();
+}
+
 export function createIdentitySessionGateway(options) {
   const issuer = requireInternalIssuer(options.issuer);
-  if (options.mode !== "internal-test-only" || !options.clientId || !options.clientSecret || options.clientSecret.length < 32 || !privateIpv4(options.allowedClientIp) || !options.allowedOrigin) throw new Error("Invalid identity session gateway configuration.");
+  const modelBridgeUrl = requireInternalModelBridge(options.modelBridgeUrl);
+  const allowedOrigin = requireLocalTestOrigin(options.allowedOrigin);
+  const redirectUri = requireInternalRedirect(options.redirectUri);
+  if (options.mode !== "internal-test-only" || !options.clientId || !options.clientSecret || options.clientSecret.length < 32 || !privateIpv4(options.allowedClientIp) || !options.modelBridgeToken || options.modelBridgeToken.length < 32) throw new Error("Invalid identity session gateway configuration.");
   const now = options.now ?? (() => Date.now());
   const fetcher = options.fetcher ?? fetch;
   const random = options.random ?? ((size) => randomBytes(size));
@@ -39,7 +67,7 @@ export function createIdentitySessionGateway(options) {
       const nonce = newValue();
       pending.set(state, { verifier, nonce, expiresAt: now() + PENDING_TTL_MS });
       const url = new URL(`${issuer}/protocol/openid-connect/auth`);
-      url.search = new URLSearchParams({ client_id: options.clientId, response_type: "code", redirect_uri: options.redirectUri, scope: "openid", state, nonce, code_challenge: challenge, code_challenge_method: "S256" }).toString();
+      url.search = new URLSearchParams({ client_id: options.clientId, response_type: "code", redirect_uri: redirectUri, scope: "openid", state, nonce, code_challenge: challenge, code_challenge_method: "S256" }).toString();
       return url.toString();
     },
     async finishLogin(input) {
@@ -47,7 +75,7 @@ export function createIdentitySessionGateway(options) {
       const flow = pending.get(input.state);
       pending.delete(input.state);
       if (!flow || !input.code || input.code.length > 4096) throw new Error("LOGIN_INVALID");
-      const body = new URLSearchParams({ grant_type: "authorization_code", code: input.code, redirect_uri: options.redirectUri, client_id: options.clientId, code_verifier: flow.verifier });
+      const body = new URLSearchParams({ grant_type: "authorization_code", code: input.code, redirect_uri: redirectUri, client_id: options.clientId, code_verifier: flow.verifier });
       const token = await fetcher(`${issuer}/protocol/openid-connect/token`, { method: "POST", headers: { authorization: `Basic ${Buffer.from(`${options.clientId}:${options.clientSecret}`).toString("base64")}`, "content-type": "application/x-www-form-urlencoded", accept: "application/json" }, body });
       if (!token.ok) throw new Error("LOGIN_INVALID");
       const tokenPayload = await token.json();
@@ -75,6 +103,30 @@ export function createIdentitySessionGateway(options) {
       cleanup();
       const value = sessions.get(cookieValue ?? "");
       return value ? { subjectRef: value.subjectRef, csrfToken: value.csrfToken, expiresAt: value.expiresAt } : undefined;
+    },
+    async generate(cookieValue, csrfToken, input, signal) {
+      cleanup();
+      const value = sessions.get(cookieValue ?? "");
+      const actual = Buffer.from(csrfToken ?? "");
+      const expected = Buffer.from(value?.csrfToken ?? "");
+      if (!value || actual.length === 0 || actual.length !== expected.length || !timingSafeEqual(actual, expected)) return { status: 401, body: { error: "UNAUTHENTICATED" } };
+      if (!input || input.publicTest !== true || typeof input.prompt !== "string" || input.prompt.trim().length === 0 || input.prompt.length > MAX_PROMPT_LENGTH) {
+        return { status: 400, body: { error: "INVALID_REQUEST" } };
+      }
+      try {
+        const upstream = await fetcher(modelBridgeUrl, {
+          method: "POST",
+          headers: { authorization: `Bearer ${options.modelBridgeToken}`, "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ publicTest: true, prompt: input.prompt }),
+          signal,
+        });
+        if (!upstream.ok) return { status: 503, body: { error: "DEPENDENCY_UNAVAILABLE" } };
+        const payload = await upstream.json();
+        if (!payload || typeof payload.output !== "string" || payload.output.length > 1_000_000) return { status: 503, body: { error: "DEPENDENCY_UNAVAILABLE" } };
+        return { status: 200, body: { output: payload.output } };
+      } catch {
+        return { status: 503, body: { error: "DEPENDENCY_UNAVAILABLE" } };
+      }
     },
     revoke(cookieValue) { if (cookieValue) sessions.delete(cookieValue); },
   };
