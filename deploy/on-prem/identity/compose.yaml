@@ -65,6 +65,8 @@ services:
     restart: unless-stopped
     working_dir: /app
     command: node scripts/identity-session-gateway.mjs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
       LENS_SESSION_GATEWAY_MODE: ${LENS_SESSION_GATEWAY_MODE}
