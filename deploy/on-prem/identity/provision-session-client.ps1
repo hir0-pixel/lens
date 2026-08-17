@@ -1,10 +1,14 @@
 [CmdletBinding()]
 param(
-  [string]$EnvironmentFile = (Join-Path $PSScriptRoot ".env.local")
+  [string]$EnvironmentFile
 )
 
 $ErrorActionPreference = "Stop"
-$composeFile = Join-Path $PSScriptRoot "compose.yaml"
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+if ([string]::IsNullOrWhiteSpace($EnvironmentFile)) {
+  $EnvironmentFile = Join-Path $scriptRoot ".env.local"
+}
+$composeFile = Join-Path $scriptRoot "compose.yaml"
 
 if (-not (Test-Path -LiteralPath $EnvironmentFile)) {
   throw "Identity environment file not found: $EnvironmentFile"
@@ -85,6 +89,7 @@ else
 fi
 
 '@
+$provision = $provision.Replace("`r`n", "`n").Replace("`r", "`n")
 
 $provision | docker exec -i `
   -e "LENS_ADMIN_USERNAME=$($settings.LENS_IDENTITY_ADMIN_USERNAME)" `

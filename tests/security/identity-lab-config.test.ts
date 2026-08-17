@@ -7,6 +7,7 @@ describe("identity lab configuration", () => {
     const compose = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/compose.yaml"), "utf8");
     const caddyfile = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/Caddyfile"), "utf8");
     const realm = JSON.parse(readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/lens-internal-realm.json"), "utf8"));
+    const provisioner = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/provision-session-client.ps1"), "utf8");
 
     expect(compose).toContain("KC_HOSTNAME: https://identity.platform.internal:8443");
     expect(compose).toContain('KC_PROXY_HEADERS: xforwarded');
@@ -47,5 +48,8 @@ describe("identity lab configuration", () => {
         attributes: { "pkce.code.challenge.method": "S256" },
       }),
     ]);
+    expect(provisioner).toContain("$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path");
+    expect(provisioner).toContain('$provision = $provision.Replace("`r`n", "`n").Replace("`r", "`n")');
+    expect(provisioner.match(/param\([\s\S]*?\)/)?.[0]).not.toContain("$PSScriptRoot");
   });
 });
