@@ -51,6 +51,9 @@ describe("identity lab configuration", () => {
     ]);
     expect(provisioner).toContain("$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path");
     expect(provisioner).toContain('$provision = $provision.Replace("`r`n", "`n").Replace("`r", "`n")');
+    expect(provisioner).toContain("[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($provision))");
+    expect(provisioner).toContain("printf '%s' '$encodedProvision' | base64 -d | /bin/sh");
+    expect(provisioner).not.toContain("$provision | docker exec -i");
     expect(provisioner.match(/param\([\s\S]*?\)/)?.[0]).not.toContain("$PSScriptRoot");
     expect(provisioner).toContain("--client \"$LENS_ADMIN_CLIENT_ID\" --secret \"$LENS_ADMIN_CLIENT_SECRET\"");
     expect(provisioner).toContain("trap cleanup EXIT");

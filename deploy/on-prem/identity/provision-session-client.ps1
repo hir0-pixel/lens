@@ -117,8 +117,9 @@ fi
 
 '@
 $provision = $provision.Replace("`r`n", "`n").Replace("`r", "`n")
+$encodedProvision = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($provision))
 
-$provision | docker exec -i `
+docker exec `
   -e "LENS_ADMIN_USERNAME=$($settings.LENS_IDENTITY_ADMIN_USERNAME)" `
   -e "LENS_ADMIN_PASSWORD=$($settings.LENS_IDENTITY_ADMIN_PASSWORD)" `
   -e "LENS_ADMIN_CLIENT_ID=$AdminClientId" `
@@ -128,7 +129,7 @@ $provision | docker exec -i `
   -e "LENS_CLIENT_SECRET=$($settings.LENS_SESSION_GATEWAY_CLIENT_SECRET)" `
   -e "LENS_ALLOWED_ORIGIN=$($settings.LENS_SESSION_GATEWAY_ALLOWED_ORIGIN)" `
   -e "LENS_REDIRECT_URI=$($settings.LENS_SESSION_GATEWAY_REDIRECT_URI)" `
-  $container /bin/sh -s
+  $container /bin/sh -c "printf '%s' '$encodedProvision' | base64 -d | /bin/sh"
 
 if ($LASTEXITCODE -ne 0) {
   throw "Keycloak client provisioning failed."
