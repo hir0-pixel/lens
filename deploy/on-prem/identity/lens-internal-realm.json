@@ -17,5 +17,31 @@
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 5,
-  "passwordPolicy": "length(14) and digits(1) and upperCase(1) and lowerCase(1) and specialChars(1) and notUsername()"
+  "passwordPolicy": "length(14) and digits(1) and upperCase(1) and lowerCase(1) and specialChars(1) and notUsername()",
+  "clients": [
+    {
+      "clientId": "lens-session-gateway",
+      "name": "Lens Session Gateway",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${LENS_SESSION_GATEWAY_CLIENT_SECRET}",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
+      "redirectUris": [
+        "https://lens-gateway.platform.internal:8444/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:1420"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
 }
