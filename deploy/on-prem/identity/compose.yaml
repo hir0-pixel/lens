@@ -21,7 +21,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.0
     restart: unless-stopped
-    command: start-dev --import-realm
+    command: start --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${LENS_IDENTITY_ADMIN_USERNAME}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${LENS_IDENTITY_ADMIN_PASSWORD}
@@ -34,13 +34,20 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
       KC_HOSTNAME: https://identity.platform.internal:8443
+      KC_HOSTNAME_STRICT: "true"
       KC_HTTP_ENABLED: "true"
+      KC_HTTP_MANAGEMENT_HEALTH_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
     depends_on:
       database:
         condition: service_healthy
     volumes:
       - ./lens-internal-realm.json:/opt/keycloak/data/import/lens-internal-realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "{ printf 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&0; grep -q 'HTTP/1.0 200'; } 0<>/dev/tcp/127.0.0.1/9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     networks:
       - identity_internal
 
@@ -48,7 +55,8 @@ services:
     image: caddy:2.11.4-alpine
     restart: unless-stopped
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
@@ -71,6 +79,11 @@ services:
     restart: unless-stopped
     working_dir: /app
     command: node scripts/identity-session-gateway.mjs
+    depends_on:
+      edge:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
     environment:
       NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
       LENS_SESSION_GATEWAY_MODE: ${LENS_SESSION_GATEWAY_MODE}
@@ -78,6 +91,7 @@ services:
       LENS_IDENTITY_ISSUER: ${LENS_IDENTITY_ISSUER}
       LENS_SESSION_GATEWAY_CLIENT_ID: ${LENS_SESSION_GATEWAY_CLIENT_ID}
       LENS_SESSION_GATEWAY_CLIENT_SECRET: ${LENS_SESSION_GATEWAY_CLIENT_SECRET}
+      LENS_SESSION_GATEWAY_COOKIE_SECRET: ${LENS_SESSION_GATEWAY_COOKIE_SECRET}
       LENS_SESSION_GATEWAY_ALLOWED_ORIGIN: ${LENS_SESSION_GATEWAY_ALLOWED_ORIGIN}
       LENS_SESSION_GATEWAY_EDGE_TOKEN: ${LENS_SESSION_GATEWAY_EDGE_TOKEN}
       LENS_SESSION_GATEWAY_REDIRECT_URI: ${LENS_SESSION_GATEWAY_REDIRECT_URI}
@@ -86,6 +100,11 @@ services:
     volumes:
       - ../../..:/app:ro
       - identity_edge_data:/caddy-data:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
     networks:
       - identity_internal
 

@@ -9,10 +9,18 @@ describe("identity lab configuration", () => {
     const realm = JSON.parse(readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/lens-internal-realm.json"), "utf8"));
     const provisioner = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/provision-session-client.ps1"), "utf8");
     const recovery = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/recover-session-client.ps1"), "utf8");
+    const preparation = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/prepare-production-pilot.ps1"), "utf8");
+    const backup = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/backup-identity.ps1"), "utf8");
+    const restore = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/verify-identity-backup.ps1"), "utf8");
+    const readiness = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/run-production-pilot-readiness.ps1"), "utf8");
 
     expect(compose).toContain("KC_HOSTNAME: https://identity.platform.internal:8443");
     expect(compose).toContain('KC_PROXY_HEADERS: xforwarded');
+    expect(compose).toContain("command: start --import-realm");
+    expect(compose).not.toContain("start-dev");
+    expect(compose).toContain('KC_HOSTNAME_STRICT: "true"');
     expect(compose).toContain("LENS_SESSION_GATEWAY_CLIENT_SECRET: ${LENS_SESSION_GATEWAY_CLIENT_SECRET}");
+    expect(compose).toContain("LENS_SESSION_GATEWAY_COOKIE_SECRET: ${LENS_SESSION_GATEWAY_COOKIE_SECRET}");
     expect(compose).toContain('"${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8444:8444"');
     expect(compose).toContain('"${LENS_IDENTITY_BIND_ADDRESS:-127.0.0.1}:8443:8443"');
     expect(compose).toContain("internal: true");
@@ -25,10 +33,14 @@ describe("identity lab configuration", () => {
     expect(sessionGateway).not.toContain("extra_hosts:");
     expect(sessionGateway).not.toContain("LENS_EDGE_RELAY_TOKEN");
     expect(sessionGateway).toContain("LENS_SESSION_GATEWAY_EDGE_TOKEN: ${LENS_SESSION_GATEWAY_EDGE_TOKEN}");
+    expect(sessionGateway).toContain("LENS_SESSION_GATEWAY_COOKIE_SECRET: ${LENS_SESSION_GATEWAY_COOKIE_SECRET}");
+    expect(sessionGateway).toContain("/health/live");
     expect(sessionGateway).not.toContain("LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP");
     expect(sessionGateway).toContain("- identity_internal");
     expect(caddyfile).toContain("https://identity.platform.internal:8443");
     expect(caddyfile).toContain("tls internal");
+    expect(caddyfile.match(/protocols tls1\.3/g)).toHaveLength(2);
+    expect(caddyfile).toContain('Strict-Transport-Security "max-age=31536000"');
     expect(caddyfile).toContain("https://lens-gateway.platform.internal:8444");
     expect(caddyfile).toContain("header_up X-Lens-Identity-Edge {$LENS_SESSION_GATEWAY_EDGE_TOKEN}");
     expect(caddyfile).toContain("handle /v1/lab/generate");
@@ -63,5 +75,14 @@ describe("identity lab configuration", () => {
     expect(recovery).toContain("-RemoveAdminClientAfterProvisioning");
     expect(recovery).toContain("finally {");
     expect(recovery.match(/param\([\s\S]*?\)/)?.[0]).not.toContain("$PSScriptRoot");
+    expect(preparation).toContain("LENS_SESSION_GATEWAY_COOKIE_SECRET");
+    expect(preparation).toContain("value was not displayed");
+    expect(backup).toContain("EncryptedDestinationConfirmed");
+    expect(backup).toContain("pg_dump --format=custom");
+    expect(restore).toContain("--tmpfs /var/lib/postgresql/data");
+    expect(restore).toContain("pg_restore --exit-on-error");
+    expect(readiness).toContain("identity-pilot-evidence.mjs");
+    expect(readiness).toContain("ConvertFrom-Json");
+    expect(readiness).not.toContain("LENS_INTERNAL_MODEL_BRIDGE_TOKEN=");
   });
 });

@@ -1,10 +1,24 @@
 https://identity.platform.internal:8443 {
-  tls internal
+  tls internal {
+    protocols tls1.3
+  }
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer"
+  }
   reverse_proxy keycloak:8080
 }
 
 https://lens-gateway.platform.internal:8444 {
-  tls internal
+  tls internal {
+    protocols tls1.3
+  }
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer"
+  }
   reverse_proxy session_gateway:8081 {
     header_up X-Lens-Identity-Edge {$LENS_SESSION_GATEWAY_EDGE_TOKEN}
   }
