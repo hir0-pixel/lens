@@ -5,9 +5,12 @@ const PENDING_TTL_MS = 5 * 60 * 1000;
 const MAX_PROMPT_LENGTH = 12_000;
 
 function base64url(bytes) { return Buffer.from(bytes).toString("base64url"); }
-function privateIpv4(value) {
-  const p = value.split(".").map(Number);
-  return p.length === 4 && p.every((n) => Number.isInteger(n) && n >= 0 && n <= 255) && (p[0] === 10 || p[0] === 127 || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) || (p[0] === 192 && p[1] === 168));
+
+export function validEdgeCredential(value, expected) {
+  if (typeof value !== "string" || typeof expected !== "string" || expected.length < 32) return false;
+  const actual = Buffer.from(value);
+  const trusted = Buffer.from(expected);
+  return actual.length === trusted.length && timingSafeEqual(actual, trusted);
 }
 
 export function requireInternalIssuer(value) {
@@ -45,7 +48,7 @@ export function createIdentitySessionGateway(options) {
   const modelBridgeUrl = requireInternalModelBridge(options.modelBridgeUrl);
   const allowedOrigin = requireLocalTestOrigin(options.allowedOrigin);
   const redirectUri = requireInternalRedirect(options.redirectUri);
-  if (options.mode !== "internal-test-only" || !options.clientId || !options.clientSecret || options.clientSecret.length < 32 || !privateIpv4(options.allowedClientIp) || !options.modelBridgeToken || options.modelBridgeToken.length < 32) throw new Error("Invalid identity session gateway configuration.");
+  if (options.mode !== "internal-test-only" || !options.clientId || !options.clientSecret || options.clientSecret.length < 32 || !options.edgeToken || options.edgeToken.length < 32 || !options.modelBridgeToken || options.modelBridgeToken.length < 32) throw new Error("Invalid identity session gateway configuration.");
   const now = options.now ?? (() => Date.now());
   const fetcher = options.fetcher ?? fetch;
   const random = options.random ?? ((size) => randomBytes(size));

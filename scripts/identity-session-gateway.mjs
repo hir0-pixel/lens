@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
-import { createIdentitySessionGateway } from "./identity-session-gateway-core.mjs";
+import { createIdentitySessionGateway, validEdgeCredential } from "./identity-session-gateway-core.mjs";
 
 const port = Number.parseInt(process.env.LENS_SESSION_GATEWAY_PORT ?? "8081", 10);
 const allowedOrigin = process.env.LENS_SESSION_GATEWAY_ALLOWED_ORIGIN ?? "";
-const allowedClientIp = process.env.LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP ?? "";
+const edgeToken = process.env.LENS_SESSION_GATEWAY_EDGE_TOKEN ?? "";
 if (process.env.NODE_ENV === "production" || process.env.LENS_SESSION_GATEWAY_MODE !== "internal-test-only" || !Number.isSafeInteger(port) || port < 1 || port > 65535) throw new Error("This identity gateway is for internal testing only.");
-const gateway = createIdentitySessionGateway({ mode: process.env.LENS_SESSION_GATEWAY_MODE, issuer: process.env.LENS_IDENTITY_ISSUER ?? "", clientId: process.env.LENS_SESSION_GATEWAY_CLIENT_ID ?? "", clientSecret: process.env.LENS_SESSION_GATEWAY_CLIENT_SECRET ?? "", allowedClientIp: process.env.LENS_SESSION_GATEWAY_ALLOWED_CLIENT_IP ?? "", allowedOrigin, redirectUri: process.env.LENS_SESSION_GATEWAY_REDIRECT_URI ?? "", modelBridgeUrl: process.env.LENS_INTERNAL_MODEL_BRIDGE_URL ?? "", modelBridgeToken: process.env.LENS_INTERNAL_MODEL_BRIDGE_TOKEN ?? "" });
+const gateway = createIdentitySessionGateway({ mode: process.env.LENS_SESSION_GATEWAY_MODE, issuer: process.env.LENS_IDENTITY_ISSUER ?? "", clientId: process.env.LENS_SESSION_GATEWAY_CLIENT_ID ?? "", clientSecret: process.env.LENS_SESSION_GATEWAY_CLIENT_SECRET ?? "", edgeToken, allowedOrigin, redirectUri: process.env.LENS_SESSION_GATEWAY_REDIRECT_URI ?? "", modelBridgeUrl: process.env.LENS_INTERNAL_MODEL_BRIDGE_URL ?? "", modelBridgeToken: process.env.LENS_INTERNAL_MODEL_BRIDGE_TOKEN ?? "" });
 
 const cors = (origin) => origin === allowedOrigin ? { "access-control-allow-origin": allowedOrigin, "access-control-allow-credentials": "true", "access-control-allow-headers": "content-type, x-lens-csrf", "access-control-allow-methods": "GET, POST, OPTIONS", vary: "Origin" } : {};
 const cookie = (request, key) => request.headers.cookie?.split(";").map((item) => item.trim().split("=")).find(([name]) => name === key)?.[1];
@@ -21,14 +21,9 @@ const readJson = async (request, maxBytes = 16_384) => {
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 };
-const clientIp = (request) => {
-  const forwarded = request.headers["x-forwarded-for"];
-  const value = (Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(",")[0])?.trim() ?? request.socket.remoteAddress ?? "";
-  return value.startsWith("::ffff:") ? value.slice(7) : value;
-};
-
 const server = createServer(async (request, response) => {
-  if (clientIp(request) !== allowedClientIp) return write(response, 403, { error: "FORBIDDEN" });
+  const edgeCredential = request.headers["x-lens-identity-edge"];
+  if (!validEdgeCredential(Array.isArray(edgeCredential) ? edgeCredential[0] : edgeCredential, edgeToken)) return write(response, 403, { error: "FORBIDDEN" });
   const origin = request.headers.origin;
   const headers = cors(origin);
   const path = new URL(request.url ?? "/", "http://gateway.internal").pathname;

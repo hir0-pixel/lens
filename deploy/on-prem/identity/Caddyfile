@@ -5,7 +5,9 @@ https://identity.platform.internal:8443 {
 
 https://lens-gateway.platform.internal:8444 {
   tls internal
-  reverse_proxy session_gateway:8081
+  reverse_proxy session_gateway:8081 {
+    header_up X-Lens-Identity-Edge {$LENS_SESSION_GATEWAY_EDGE_TOKEN}
+  }
 }
 
 :8082 {
