@@ -8,6 +8,7 @@ describe("identity lab configuration", () => {
     const caddyfile = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/Caddyfile"), "utf8");
     const realm = JSON.parse(readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/lens-internal-realm.json"), "utf8"));
     const provisioner = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/provision-session-client.ps1"), "utf8");
+    const recovery = readFileSync(resolve(process.cwd(), "deploy/on-prem/identity/recover-session-client.ps1"), "utf8");
 
     expect(compose).toContain("KC_HOSTNAME: https://identity.platform.internal:8443");
     expect(compose).toContain('KC_PROXY_HEADERS: xforwarded');
@@ -51,5 +52,13 @@ describe("identity lab configuration", () => {
     expect(provisioner).toContain("$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path");
     expect(provisioner).toContain('$provision = $provision.Replace("`r`n", "`n").Replace("`r", "`n")');
     expect(provisioner.match(/param\([\s\S]*?\)/)?.[0]).not.toContain("$PSScriptRoot");
+    expect(provisioner).toContain("--client \"$LENS_ADMIN_CLIENT_ID\" --secret \"$LENS_ADMIN_CLIENT_SECRET\"");
+    expect(provisioner).toContain("trap cleanup EXIT");
+    expect(provisioner).toContain('"$KCADM" delete "clients/$admin_uuid"');
+    expect(recovery).toContain("bootstrap-admin service");
+    expect(recovery).toContain("--client-secret:env KC_TEMP_ADMIN_CLIENT_SECRET");
+    expect(recovery).toContain("-RemoveAdminClientAfterProvisioning");
+    expect(recovery).toContain("finally {");
+    expect(recovery.match(/param\([\s\S]*?\)/)?.[0]).not.toContain("$PSScriptRoot");
   });
 });

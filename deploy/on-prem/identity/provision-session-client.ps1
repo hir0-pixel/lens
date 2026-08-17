@@ -1,6 +1,9 @@
 [CmdletBinding()]
 param(
-  [string]$EnvironmentFile
+  [string]$EnvironmentFile,
+  [string]$AdminClientId,
+  [string]$AdminClientSecret,
+  [switch]$RemoveAdminClientAfterProvisioning
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,13 +31,18 @@ foreach ($line in Get-Content -LiteralPath $EnvironmentFile) {
 }
 
 $required = @(
-  "LENS_IDENTITY_ADMIN_USERNAME",
-  "LENS_IDENTITY_ADMIN_PASSWORD",
   "LENS_SESSION_GATEWAY_CLIENT_ID",
   "LENS_SESSION_GATEWAY_CLIENT_SECRET",
   "LENS_SESSION_GATEWAY_ALLOWED_ORIGIN",
   "LENS_SESSION_GATEWAY_REDIRECT_URI"
 )
+$useAdminClient = -not [string]::IsNullOrWhiteSpace($AdminClientId) -or -not [string]::IsNullOrWhiteSpace($AdminClientSecret)
+if ($useAdminClient -and ([string]::IsNullOrWhiteSpace($AdminClientId) -or [string]::IsNullOrWhiteSpace($AdminClientSecret))) {
+  throw "Both temporary admin client values are required."
+}
+if (-not $useAdminClient) {
+  $required = @("LENS_IDENTITY_ADMIN_USERNAME", "LENS_IDENTITY_ADMIN_PASSWORD") + $required
+}
 foreach ($name in $required) {
   if (-not $settings.ContainsKey($name) -or [string]::IsNullOrWhiteSpace($settings[$name])) {
     throw "Required identity setting is missing: $name"
@@ -53,9 +61,28 @@ $provision = @'
 set -eu
 KCADM=/opt/keycloak/bin/kcadm.sh
 CONFIG=/tmp/lens-kcadm.config
-trap 'rm -f "$CONFIG"' EXIT
+cleanup() {
+  status=$?
+  set +e
+  if [ "${LENS_REMOVE_ADMIN_CLIENT:-0}" = "1" ] && [ -f "$CONFIG" ]; then
+    admin_uuid="$("$KCADM" get clients --config "$CONFIG" -r master -q "clientId=$LENS_ADMIN_CLIENT_ID" --fields id --format csv --noquotes 2>/dev/null | tail -n 1 | tr -d '\r')"
+    if [ -n "$admin_uuid" ] && [ "$admin_uuid" != "id" ] && "$KCADM" delete "clients/$admin_uuid" --config "$CONFIG" -r master >/dev/null 2>&1; then
+      echo "Temporary admin service account removed."
+    else
+      echo "Temporary admin service account cleanup failed." >&2
+      if [ "$status" -eq 0 ]; then status=1; fi
+    fi
+  fi
+  rm -f "$CONFIG"
+  exit "$status"
+}
+trap cleanup EXIT
 
-"$KCADM" config credentials --config "$CONFIG" --server http://localhost:8080 --realm master --user "$LENS_ADMIN_USERNAME" --password "$LENS_ADMIN_PASSWORD" >/dev/null
+if [ -n "${LENS_ADMIN_CLIENT_ID:-}" ]; then
+  "$KCADM" config credentials --config "$CONFIG" --server http://localhost:8080 --realm master --client "$LENS_ADMIN_CLIENT_ID" --secret "$LENS_ADMIN_CLIENT_SECRET" >/dev/null
+else
+  "$KCADM" config credentials --config "$CONFIG" --server http://localhost:8080 --realm master --user "$LENS_ADMIN_USERNAME" --password "$LENS_ADMIN_PASSWORD" >/dev/null
+fi
 
 client_uuid="$("$KCADM" get clients --config "$CONFIG" -r lens-internal -q "clientId=$LENS_CLIENT_ID" --fields id --format csv --noquotes | tail -n 1 | tr -d '\r')"
 if [ "$client_uuid" = "id" ]; then client_uuid=""; fi
@@ -94,6 +121,9 @@ $provision = $provision.Replace("`r`n", "`n").Replace("`r", "`n")
 $provision | docker exec -i `
   -e "LENS_ADMIN_USERNAME=$($settings.LENS_IDENTITY_ADMIN_USERNAME)" `
   -e "LENS_ADMIN_PASSWORD=$($settings.LENS_IDENTITY_ADMIN_PASSWORD)" `
+  -e "LENS_ADMIN_CLIENT_ID=$AdminClientId" `
+  -e "LENS_ADMIN_CLIENT_SECRET=$AdminClientSecret" `
+  -e "LENS_REMOVE_ADMIN_CLIENT=$(if ($RemoveAdminClientAfterProvisioning) { '1' } else { '0' })" `
   -e "LENS_CLIENT_ID=$($settings.LENS_SESSION_GATEWAY_CLIENT_ID)" `
   -e "LENS_CLIENT_SECRET=$($settings.LENS_SESSION_GATEWAY_CLIENT_SECRET)" `
   -e "LENS_ALLOWED_ORIGIN=$($settings.LENS_SESSION_GATEWAY_ALLOWED_ORIGIN)" `
