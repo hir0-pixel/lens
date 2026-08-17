@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { ChatMessage, Project } from "../../lib/types";
 import { AIMessageBubble } from "./AIMessageBubble";
 import { AgentWorkflow, ThinkingIndicator } from "./AgentWorkflow";
-import { EmptyState } from "./EmptyState";
+import { ChatEmptyState } from "./ChatEmptyState";
 
 interface ChatWindowProps {
   messages: ChatMessage[];
@@ -34,13 +34,7 @@ export function ChatWindow({
   }, [messages.length, sending, streamingContent]);
 
   if (messages.length === 0 && !sending) {
-    return (
-      <EmptyState
-        onPromptSelect={onPromptSelect}
-        recentWorkspaces={recentWorkspaces}
-        onWorkspaceSelect={onWorkspaceSelect}
-      />
-    );
+    return <ChatEmptyState />;
   }
 
   return (
