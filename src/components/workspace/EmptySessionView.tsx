@@ -18,9 +18,13 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AIMode, Attachment, Model } from "@/lib/types";
+import type { AIMode, Attachment, Model, ChatMessage } from "@/lib/types";
 import { MODELS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { ChatWindow } from "@/components/ai/ChatWindow";
+import { AgentPlanPanel, type PlanStep } from "@/components/ai/AgentPlanPanel";
+import { ReviewChangesPanel } from "@/components/ai/ReviewChangesPanel";
+import { MOCK_DIFF } from "@/components/ai/mock-data";
 import { ProviderDot } from "@/shared/design-system/ProviderDot";
 import { revealInFolder } from "@/features/projects/revealInFolder";
 import {
@@ -60,6 +64,10 @@ type LocationScope = "this-pc" | "cloud";
 
 interface EmptySessionViewProps {
   model: Model;
+  messages: ChatMessage[];
+  sending: boolean;
+  restoringId: string | null;
+  planSteps?: PlanStep[];
   onSend: (
     text: string,
     mode: AIMode,
@@ -67,6 +75,8 @@ interface EmptySessionViewProps {
     attachments?: Attachment[],
     opts?: { planFirst?: boolean },
   ) => void;
+  onStop?: () => void;
+  onRestoreCheckpoint?: (id: string) => void;
   onOpenSettings?: (section?: string) => void;
   onOpenAutomations?: () => void;
   onAddFolder?: () => void;
@@ -79,7 +89,13 @@ interface EmptySessionViewProps {
  */
 export function EmptySessionView({
   model: fallbackModel,
+  messages,
+  sending,
+  restoringId,
+  planSteps,
   onSend,
+  onStop,
+  onRestoreCheckpoint,
   onOpenSettings,
   onOpenAutomations,
   onAddFolder,
@@ -209,6 +225,260 @@ export function EmptySessionView({
   }
 
   void tick;
+
+  const hasMessages = messages && messages.length > 0;
+
+  function renderContextDropdowns() {
+    return (
+      <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#6b6b6b]">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 hover:text-[#9a9a9a]"
+            >
+              <span className="max-w-[160px] truncate">
+                {activeRepo?.name ?? "No project"}
+              </span>
+              <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuItem
+              onClick={() => {
+                const sess = ensureSession();
+                setSessionRepo(sess.id, null);
+              }}
+            >
+              No project
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {repositories.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => {
+                  const sess = ensureSession();
+                  setSessionRepo(sess.id, p.id);
+                }}
+              >
+                <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                {p.name}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onAddFolder?.()}>
+              <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+              Open folder…
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 hover:text-[#9a9a9a]"
+            >
+              {location === "this-pc" ? (
+                <Monitor className="h-3 w-3" strokeWidth={1.5} />
+              ) : (
+                <Cloud className="h-3 w-3" strokeWidth={1.5} />
+              )}
+              <span>
+                {location === "this-pc" ? "This PC" : "Cloud Agents"}
+              </span>
+              <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={() => setLocation("this-pc")}>
+              <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+              This PC
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled
+              className="cursor-not-allowed opacity-50"
+              title="Cloud Agents require a connected Lens account"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+              Cloud Agents
+              <span className="ml-auto text-[10px] uppercase text-[var(--text-tertiary)]">
+                Soon
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  }
+
+  function renderInputCard() {
+    return (
+      <div className="rounded-xl border border-white/[0.1] bg-[#1a1a1a]">
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-3 pt-3">
+            {attachments.map((a) => (
+              <span
+                key={a.id}
+                className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-1 text-[11px] text-[#b0b0b0]"
+              >
+                <Paperclip className="h-3 w-3" strokeWidth={1.5} />
+                <span className="max-w-[120px] truncate">{a.name}</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${a.name}`}
+                  onClick={() =>
+                    setAttachments((prev) =>
+                      prev.filter((x) => x.id !== a.id),
+                    )
+                  }
+                >
+                  <X className="h-3 w-3" strokeWidth={2} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          rows={1}
+          placeholder={hasMessages ? "Ask about this codebase..." : "Ask questions"}
+          className="max-h-[160px] min-h-[48px] w-full resize-none border-0 bg-transparent px-4 pt-3.5 text-[14px] text-[#e8e8e8] placeholder:text-[#5a5a5a] focus:outline-none"
+        />
+        <div className="flex items-center gap-1.5 px-3 pb-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              onFilesPicked(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#8a8a8a] hover:bg-white/[0.06]"
+                aria-label="Attach"
+              >
+                <Plus className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                Attach files…
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openCommands()}>
+                <Search className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                Add context…
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-7 items-center gap-1 rounded-full bg-[#1e3a2f] px-2.5 text-[12px] font-medium text-[#3ecf8e]"
+              >
+                {MODES.find((m) => m.id === mode)?.label ?? "Ask"}
+                <X
+                  className="h-3 w-3 opacity-70"
+                  strokeWidth={2}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const sess = ensureSession();
+                    setSessionMode(sess.id, "ask");
+                  }}
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-36">
+              {MODES.map((m) => (
+                <DropdownMenuItem
+                  key={m.id}
+                  onClick={() => {
+                    const sess = ensureSession();
+                    setSessionMode(sess.id, m.id);
+                  }}
+                >
+                  {m.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-7 max-w-[200px] items-center gap-1.5 rounded-md px-2 text-[12px] text-[#b0b0b0] hover:bg-white/[0.06]"
+              >
+                <ProviderDot provider={activeModel.provider} />
+                <span className="truncate">{activeModel.label}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {MODELS.map((m) => (
+                <DropdownMenuItem
+                  key={m.id}
+                  onClick={() => {
+                    const sess = ensureSession();
+                    setSessionModel(sess.id, m.id);
+                  }}
+                >
+                  <ProviderDot provider={m.provider} className="mr-2" />
+                  {m.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="flex-1" />
+
+          <button
+            type="button"
+            disabled
+            className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-md text-[#555]"
+            aria-label="Voice input coming soon"
+            title="Voice input coming soon"
+          >
+            <Mic className="h-4 w-4" strokeWidth={1.5} />
+          </button>
+
+          <button
+            type="button"
+            onClick={sending ? onStop : () => submit()}
+            disabled={!sending && !canSend}
+            className={cn(
+              "ml-1 h-7 rounded-full px-3 text-[12px] font-medium",
+              sending
+                ? "bg-[#ef4444] text-white hover:bg-[#dc2626]"
+                : canSend
+                  ? "bg-[#e8e8e8] text-[#0a0a0a] hover:bg-white"
+                  : "cursor-not-allowed bg-white/[0.06] text-[#555]",
+            )}
+          >
+            {sending ? "Stop" : "Send"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 bg-[#0a0a0a]">
@@ -422,280 +692,137 @@ export function EmptySessionView({
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col bg-[#0a0a0a]">
-        <div className="flex flex-1 flex-col items-center justify-center px-6">
-          <div className="w-full max-w-[620px]">
-            <div className="mb-3 flex flex-wrap items-center gap-4 text-[12px] text-[#6b6b6b]">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 hover:text-[#9a9a9a]"
-                  >
-                    <span className="max-w-[160px] truncate">
-                      {activeRepo?.name ?? "No project"}
-                    </span>
-                    <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const sess = ensureSession();
-                      setSessionRepo(sess.id, null);
-                    }}
-                  >
-                    No project
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {repositories.map((p) => (
-                    <DropdownMenuItem
-                      key={p.id}
-                      onClick={() => {
-                        const sess = ensureSession();
-                        setSessionRepo(sess.id, p.id);
-                      }}
-                    >
-                      <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                      {p.name}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onAddFolder?.()}>
-                    <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                    Open folder…
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 hover:text-[#9a9a9a]"
-                  >
-                    {location === "this-pc" ? (
-                      <Monitor className="h-3 w-3" strokeWidth={1.5} />
-                    ) : (
-                      <Cloud className="h-3 w-3" strokeWidth={1.5} />
-                    )}
-                    <span>
-                      {location === "this-pc" ? "This PC" : "Cloud Agents"}
-                    </span>
-                    <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  <DropdownMenuItem onClick={() => setLocation("this-pc")}>
-                    <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                    This PC
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled
-                    className="cursor-not-allowed opacity-50"
-                    title="Cloud Agents require a connected Lens account"
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                    Cloud Agents
-                    <span className="ml-auto text-[10px] uppercase text-[var(--text-tertiary)]">
-                      Soon
-                    </span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div className="rounded-xl border border-white/[0.1] bg-[#1a1a1a]">
-              {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 px-3 pt-3">
-                  {attachments.map((a) => (
-                    <span
-                      key={a.id}
-                      className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-1 text-[11px] text-[#b0b0b0]"
-                    >
-                      <Paperclip className="h-3 w-3" strokeWidth={1.5} />
-                      <span className="max-w-[120px] truncate">{a.name}</span>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${a.name}`}
-                        onClick={() =>
-                          setAttachments((prev) =>
-                            prev.filter((x) => x.id !== a.id),
-                          )
-                        }
-                      >
-                        <X className="h-3 w-3" strokeWidth={2} />
-                      </button>
-                    </span>
-                  ))}
+        {!hasMessages ? (
+          <>
+            <div className="flex flex-1 flex-col items-center justify-center px-6">
+              <div className="w-full max-w-[620px]">
+                <div className="mb-3 flex flex-wrap items-center gap-4 text-[12px] text-[#6b6b6b]">
+                  {renderContextDropdowns()}
                 </div>
-              )}
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    submit();
-                  }
-                }}
-                rows={1}
-                placeholder="Ask questions"
-                className="max-h-[160px] min-h-[48px] w-full resize-none border-0 bg-transparent px-4 pt-3.5 text-[14px] text-[#e8e8e8] placeholder:text-[#5a5a5a] focus:outline-none"
-              />
-              <div className="flex items-center gap-1.5 px-3 pb-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    onFilesPicked(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-[#8a8a8a] hover:bg-white/[0.06]"
-                      aria-label="Attach"
-                    >
-                      <Plus className="h-4 w-4" strokeWidth={1.5} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                      Attach files…
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => openCommands()}>
-                      <Search className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                      Add context…
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex h-7 items-center gap-1 rounded-full bg-[#1e3a2f] px-2.5 text-[12px] font-medium text-[#3ecf8e]"
-                    >
-                      {MODES.find((m) => m.id === mode)?.label ?? "Ask"}
-                      <X
-                        className="h-3 w-3 opacity-70"
-                        strokeWidth={2}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const sess = ensureSession();
-                          setSessionMode(sess.id, "ask");
-                        }}
-                      />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-36">
-                    {MODES.map((m) => (
-                      <DropdownMenuItem
-                        key={m.id}
-                        onClick={() => {
-                          const sess = ensureSession();
-                          setSessionMode(sess.id, m.id);
-                        }}
-                      >
-                        {m.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {renderInputCard()}
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex h-7 max-w-[200px] items-center gap-1.5 rounded-md px-2 text-[12px] text-[#b0b0b0] hover:bg-white/[0.06]"
-                    >
-                      <ProviderDot provider={activeModel.provider} />
-                      <span className="truncate">{activeModel.label}</span>
-                      <ChevronDown className="h-3 w-3 opacity-50" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-56">
-                    {MODELS.map((m) => (
-                      <DropdownMenuItem
-                        key={m.id}
-                        onClick={() => {
-                          const sess = ensureSession();
-                          setSessionModel(sess.id, m.id);
-                        }}
-                      >
-                        <ProviderDot provider={m.provider} className="mr-2" />
-                        {m.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <div className="flex-1" />
-
-                <button
-                  type="button"
-                  disabled
-                  className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-md text-[#555]"
-                  aria-label="Voice input coming soon"
-                  title="Voice input coming soon"
-                >
-                  <Mic className="h-4 w-4" strokeWidth={1.5} />
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!canSend}
-                  onClick={() => submit()}
-                  className={cn(
-                    "ml-1 h-7 rounded-full px-3 text-[12px] font-medium",
-                    canSend
-                      ? "bg-[#e8e8e8] text-[#0a0a0a] hover:bg-white"
-                      : "cursor-not-allowed bg-white/[0.06] text-[#555]",
-                  )}
-                >
-                  Send
-                </button>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={planNewIdea}
+                    className="inline-flex h-8 items-center gap-2 rounded-full border border-white/[0.1] px-3.5 text-[12px] text-[#b0b0b0] hover:bg-white/[0.04] hover:text-[#e8e8e8]"
+                  >
+                    Plan New Idea
+                    <span className="text-[11px] tabular-nums text-[#555]">⇧Tab</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onMultitask}
+                    className="inline-flex h-8 items-center rounded-full border border-white/[0.1] px-3.5 text-[12px] text-[#b0b0b0] hover:bg-white/[0.04] hover:text-[#e8e8e8]"
+                  >
+                    Multitask
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <div className="flex shrink-0 items-center justify-center px-6 pb-6">
               <button
                 type="button"
-                onClick={planNewIdea}
-                className="inline-flex h-8 items-center gap-2 rounded-full border border-white/[0.1] px-3.5 text-[12px] text-[#b0b0b0] hover:bg-white/[0.04] hover:text-[#e8e8e8]"
+                onClick={onImport}
+                className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] text-[#555] hover:bg-white/[0.03] hover:text-[#8a8a8a]"
               >
-                Plan New Idea
-                <span className="text-[11px] tabular-nums text-[#555]">⇧Tab</span>
-              </button>
-              <button
-                type="button"
-                onClick={onMultitask}
-                className="inline-flex h-8 items-center rounded-full border border-white/[0.1] px-3.5 text-[12px] text-[#b0b0b0] hover:bg-white/[0.04] hover:text-[#e8e8e8]"
-              >
-                Multitask
+                <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                <span>Import conversations — sync chats and continue them here</span>
               </button>
             </div>
-          </div>
-        </div>
+          </>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] bg-[#141414] px-4">
+              <div className="flex items-center gap-3">
+                <span className="text-[14px] font-semibold text-[#e8e8e8]">
+                  {session?.title ?? "Chat"}
+                </span>
+                <span className="text-[#333]">|</span>
+                {renderContextDropdowns()}
+              </div>
 
-        <div className="flex shrink-0 items-center justify-center px-6 pb-6">
-          <button
-            type="button"
-            onClick={onImport}
-            className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] text-[#555] hover:bg-white/[0.03] hover:text-[#8a8a8a]"
-          >
-            <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-            <span>Import conversations — sync chats and continue them here</span>
-          </button>
-        </div>
+              <div className="flex items-center gap-1.5">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-7 w-7 items-center justify-center rounded text-[#8a8a8a] hover:bg-white/[0.06]"
+                      aria-label="Session options"
+                    >
+                      <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const newTitle = window.prompt("Rename session", session?.title ?? "Chat");
+                        if (newTitle?.trim()) {
+                          useSessionStore.getState().renameSession(session!.id, newTitle.trim());
+                        }
+                      }}
+                    >
+                      Rename session
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-red-500 focus:text-red-500"
+                      onClick={() => {
+                        if (confirm("Are you sure you want to delete this session?")) {
+                          useSessionStore.getState().closeSessionTab(session!.id);
+                        }
+                      }}
+                    >
+                      Delete session
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            {/* Scrollable messages and panels */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                {/* Agent plan progress */}
+                {(mode === "agent" || (planSteps && planSteps.length > 0)) && planSteps && planSteps.length > 0 && (
+                  <div className="mb-4">
+                    <AgentPlanPanel steps={planSteps} forceOpen={sending} />
+                  </div>
+                )}
+
+                {/* Scoped edits diff panel */}
+                {(mode === "agent" || mode === "edit") && messages.length > 0 && (
+                  <div className="mb-4">
+                    <ReviewChangesPanel files={MOCK_DIFF} />
+                  </div>
+                )}
+
+                {/* Chat Message list */}
+                <ChatWindow
+                  messages={messages}
+                  sending={sending}
+                  restoringId={restoringId}
+                  onRestoreCheckpoint={onRestoreCheckpoint ?? (() => {})}
+                  onPromptSelect={(prompt) => {
+                    setText(prompt);
+                  }}
+                  streamingContent=""
+                  pendingToolCalls={undefined}
+                />
+              </div>
+            </div>
+
+            {/* Input area anchored at the bottom */}
+            <div className="border-t border-white/[0.06] bg-[#0a0a0a] px-4 py-3">
+              <div className="mx-auto w-full max-w-[800px]">
+                {renderInputCard()}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import TitleBar from "./components/TitleBar";
-import { AgentWorkspace } from "./components/workspace/AgentWorkspace";
 import { EmptySessionView } from "./components/workspace/EmptySessionView";
 import { SessionTabStrip } from "./components/workspace/SessionTabStrip";
 import {
@@ -237,16 +236,9 @@ function AgentsApp() {
     };
   }, [newChat, closeWorkspace]);
 
-  const showEmptyHome =
+  const showWorkspace =
     !showWelcome &&
-    view === "workspace" &&
-    (!session || session.messages.length === 0);
-
-  const showAgentChat =
-    !showWelcome &&
-    view === "workspace" &&
-    !!session &&
-    session.messages.length > 0;
+    view === "workspace";
 
   function switchProject(p: Project) {
     const repo = repositories.find((r) => r.id === p.id);
@@ -427,11 +419,20 @@ function AgentsApp() {
     <ErrorBoundary fallbackTitle="Welcome crashed">
       <WelcomeScreen planLabel="Pro" onOpenSettings={openSettings} />
     </ErrorBoundary>
-  ) : showEmptyHome ? (
-    <ErrorBoundary fallbackTitle="Home crashed">
+  ) : showWorkspace ? (
+    <ErrorBoundary fallbackTitle="Workspace crashed">
       <EmptySessionView
         model={model}
+        messages={session?.messages ?? []}
+        sending={sending}
+        restoringId={restoringId}
+        planSteps={session?.plan}
         onSend={handleEmptySend}
+        onStop={() => {
+          labGatewayAbort.current?.abort();
+          setSending(false);
+        }}
+        onRestoreCheckpoint={handleRestoreCheckpoint}
         onOpenSettings={openSettings}
         onOpenAutomations={() => setAutomationsOpen(true)}
         onAddFolder={() => void openFolder()}
@@ -443,29 +444,6 @@ function AgentsApp() {
         }}
         onImport={() => setImportOpen(true)}
       />
-    </ErrorBoundary>
-  ) : showAgentChat ? (
-    <ErrorBoundary fallbackTitle="Agent crashed">
-      <div className="flex min-h-0 flex-1 flex-col bg-background">
-        <AgentWorkspace
-          project={project}
-          projects={projects}
-          onProjectChange={switchProject}
-          messages={session!.messages}
-          sending={sending}
-          restoringId={restoringId}
-          onSend={(text, attachments) => handleSend(text, attachments)}
-          onStop={() => {
-            labGatewayAbort.current?.abort();
-            setSending(false);
-          }}
-          onRestoreCheckpoint={handleRestoreCheckpoint}
-          onNewChat={() => newChat()}
-          initialMode={session!.mode}
-          planSteps={session!.plan}
-          onModeChange={(mode) => setSessionMode(session!.id, mode)}
-        />
-      </div>
     </ErrorBoundary>
   ) : (
     <Suspense fallback={<WorkbenchSkeleton variant="cards" rows={6} />}>
