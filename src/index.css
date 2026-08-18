@@ -224,7 +224,7 @@
     --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.3);
     --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.4);
     --shadow-overlay: var(--shadow-md);
-    --shadow-focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--accent-primary);
+    --shadow-focus-ring: none;
 
     /* —— Typography —— */
     --font-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -416,9 +416,8 @@
     border-color: var(--border-default);
   }
 
-  :focus-visible {
+:focus-visible {
     outline: none;
-    box-shadow: var(--shadow-focus-ring);
   }
 
   input:focus-visible,
@@ -652,8 +651,7 @@
   }
   .cursor-input:focus {
     outline: none;
-    box-shadow: var(--shadow-focus-ring);
-    border-color: var(--border-focus);
+    border-color: var(--border-strong);
   }
 
   .cursor-menu-item {
