@@ -208,6 +208,29 @@ function AgentsApp() {
       setAgentsDock("browser");
       setView("workspace");
     }
+    function onToggleAgentsDock() {
+      setAgentsDock((k) => (k ? null : "picker"));
+      setView("workspace");
+    }
+    function onOpenAgentsTab(e: Event) {
+      const kind = (e as CustomEvent<{ kind?: AgentsDockKind }>).detail?.kind;
+      if (!kind || kind === "picker") {
+        setAgentsDock("picker");
+      } else {
+        if (kind === "terminal") {
+          const term = useTerminalStore.getState();
+          if (!term.activeSessionId) {
+            const repos = useSessionStore.getState().repositories;
+            const activeId = useSessionStore.getState().activeRepositoryId;
+            const cwd =
+              repos.find((r) => r.id === activeId)?.path ?? term.defaultCwd;
+            term.createSession({ cwd });
+          }
+        }
+        setAgentsDock(kind);
+      }
+      setView("workspace");
+    }
     function onShowWelcome() {
       closeWorkspace();
       setAgentsDock(null);
@@ -223,6 +246,8 @@ function AgentsApp() {
     window.addEventListener("lens:open-ide", onOpenIde);
     window.addEventListener("lens:open-terminal", onOpenTerminal);
     window.addEventListener("lens:open-browser", onOpenBrowser);
+    window.addEventListener("lens:toggle-agents-dock", onToggleAgentsDock);
+    window.addEventListener("lens:open-agents-tab", onOpenAgentsTab);
     window.addEventListener("lens:show-welcome", onShowWelcome);
     window.addEventListener("lens:project-opened", onProjectOpened);
     return () => {
@@ -231,6 +256,8 @@ function AgentsApp() {
       window.removeEventListener("lens:open-ide", onOpenIde);
       window.removeEventListener("lens:open-terminal", onOpenTerminal);
       window.removeEventListener("lens:open-browser", onOpenBrowser);
+      window.removeEventListener("lens:toggle-agents-dock", onToggleAgentsDock);
+      window.removeEventListener("lens:open-agents-tab", onOpenAgentsTab);
       window.removeEventListener("lens:show-welcome", onShowWelcome);
       window.removeEventListener("lens:project-opened", onProjectOpened);
     };
@@ -340,7 +367,16 @@ function AgentsApp() {
 
     setTimeout(() => {
       let content: string;
-      if (mode === "ask") {
+      const greeting = /^(hi|hello|hey|yo)\b/i.test(text.trim());
+      const repoName =
+        repositories.find((r) => r.id === sess!.repoId)?.name ??
+        repositories.find(
+          (r) => r.id === useSessionStore.getState().activeRepositoryId,
+        )?.name ??
+        "lens";
+      if (greeting && mode !== "edit") {
+        content = `Hi! I'm Lens, ready to help with your project in \`${repoName}\`. What would you like to work on?`;
+      } else if (mode === "ask") {
         content =
           "Here's what I found — Ask mode is read-only, so I won't change any files.";
       } else if (mode === "edit" && !allowScopedEdit) {
@@ -470,12 +506,27 @@ function AgentsApp() {
         onOpenSettings={() => openSettings()}
         variant="agents"
         onIdeWindow={() => void openIdeWindow()}
+        onOpenTerminal={() => {
+          window.dispatchEvent(new CustomEvent("lens:open-terminal"));
+        }}
+        sidePaneOpen={agentsDock !== null}
+        onToggleSidePane={() =>
+          setAgentsDock((k) => (k ? null : "picker"))
+        }
       />
       <SessionTabStrip />
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">{mainContent}</div>
-        <AgentsSideDock kind={agentsDock} onClose={() => setAgentsDock(null)} />
+        <AgentsSideDock
+          kind={agentsDock}
+          onClose={() => setAgentsDock(null)}
+          onOpenTab={(tab) =>
+            window.dispatchEvent(
+              new CustomEvent("lens:open-agents-tab", { detail: { kind: tab } }),
+            )
+          }
+        />
       </div>
 
       <WorkbenchOverlays />

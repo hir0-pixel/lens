@@ -58,6 +58,9 @@ export default function IdeWindowApp() {
         variant="ide"
         onOpenSettings={() => setSettingsOpen(true)}
         onAgentsWindow={() => void openAgentsWindow()}
+        onOpenTerminal={() => {
+          window.dispatchEvent(new CustomEvent("lens:toggle-panel"));
+        }}
       />
 
       <div className="flex min-h-0 flex-1">

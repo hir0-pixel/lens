@@ -56,7 +56,7 @@ function CodeBlock({
   if (!match) {
     return (
       <code
-        className="rounded bg-white/10 px-1 py-0.5 font-mono text-[12px] text-accent-300"
+        className="mx-0.5 inline-flex translate-y-px items-center rounded-[6px] border border-white/[0.1] bg-[#2a2a2a] px-[6px] py-[1px] font-[inherit] text-[13px] leading-[1.3] text-[#d8d8d8]"
         {...props}
       >
         {children}
@@ -114,7 +114,7 @@ export function MarkdownContent({ content, streaming, className }: MarkdownConte
     <div
       className={cn(
         "prose prose-invert prose-sm max-w-none",
-        "[&_p]:my-2 [&_p]:leading-relaxed [&_p]:text-zinc-300",
+        "[&_p]:my-1.5 [&_p]:text-[14.5px] [&_p]:leading-[1.55] [&_p]:text-[#d4d4d4]",
         "[&_strong]:font-semibold [&_strong]:text-zinc-100",
         "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:text-zinc-300",
         "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:text-zinc-300",

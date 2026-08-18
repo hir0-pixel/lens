@@ -1,17 +1,13 @@
 import { useState } from "react";
 import {
-  Bot,
-  Copy,
   Check,
-  History,
+  ChevronRight,
+  Copy,
   Image as ImageIcon,
-  RotateCcw,
-  User,
   Video,
 } from "lucide-react";
 import type { ChatMessage } from "../../lib/types";
 import { cn } from "../../lib/utils";
-import { Button } from "../ui/button";
 import { AgentWorkflow } from "./AgentWorkflow";
 import { DiffViewer } from "./DiffViewer";
 import { MarkdownContent } from "./MarkdownContent";
@@ -23,17 +19,25 @@ interface AIMessageBubbleProps {
   streaming?: boolean;
 }
 
+function workedLabel(message: ChatMessage) {
+  const total = message.toolCalls?.reduce(
+    (sum, call) => sum + (call.durationMs ?? 0),
+    0,
+  );
+  const seconds = Math.max(1, Math.round((total || 3000) / 1000));
+  return `Worked for ${seconds}s`;
+}
+
 /**
- * Spec §5.2 — user right-aligned raised surface; AI left transparent (panel-native).
+ * Cursor-style transcript: user is a compact right pill; assistant is
+ * flush text with a collapsible “Worked for Xs” line — no avatars.
  */
 export function AIMessageBubble({
   message,
-  restoring,
-  onRestore,
   streaming,
 }: AIMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
-  const [showCheckpointTip, setShowCheckpointTip] = useState(false);
+  const [traceOpen, setTraceOpen] = useState(false);
 
   async function copyContent() {
     await navigator.clipboard.writeText(message.content);
@@ -43,137 +47,99 @@ export function AIMessageBubble({
 
   if (message.role === "user") {
     return (
-      <div className="flex flex-col items-end gap-2 animate-cursor-fade">
-        {message.attachments && message.attachments.length > 0 && (
-          <div className="flex flex-wrap justify-end gap-1.5">
-            {message.attachments.map((att) => (
-              <div
-                key={att.id}
-                className="group relative overflow-hidden rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--bg-surface-raised)]"
-                title={att.name}
-              >
-                {att.preview ? (
-                  <img
-                    src={att.preview}
-                    alt={att.name}
-                    className="h-16 w-16 object-cover"
-                  />
-                ) : (
-                  <div className="flex h-12 w-12 items-center justify-center">
-                    {att.kind === "image" && (
-                      <ImageIcon className="h-4 w-4 text-[var(--accent-primary)]" />
-                    )}
-                    {att.kind === "video" && (
-                      <Video className="h-4 w-4 text-[var(--info)]" />
-                    )}
-                  </div>
-                )}
-                <div className="absolute inset-x-0 bottom-0 truncate bg-[hsl(0_0%_0%/0.7)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                  {att.name}
+      <div className="flex justify-end">
+        <div className="flex max-w-[min(72%,520px)] flex-col items-end gap-2">
+          {message.attachments && message.attachments.length > 0 && (
+            <div className="flex flex-wrap justify-end gap-1.5">
+              {message.attachments.map((att) => (
+                <div
+                  key={att.id}
+                  className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#2a2a2a]"
+                  title={att.name}
+                >
+                  {att.preview ? (
+                    <img
+                      src={att.preview}
+                      alt={att.name}
+                      className="h-16 w-16 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 items-center gap-2 px-3">
+                      {att.kind === "image" ? (
+                        <ImageIcon className="h-3.5 w-3.5 text-[#8a8a8a]" />
+                      ) : att.kind === "video" ? (
+                        <Video className="h-3.5 w-3.5 text-[#8a8a8a]" />
+                      ) : null}
+                      <span className="max-w-[140px] truncate text-[12px] text-[#c8c8c8]">
+                        {att.name}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex max-w-[92%] items-end gap-2">
-          <div className="rounded-[var(--radius-card)] bg-[var(--bg-surface-raised)] px-3 py-2 text-[13px] leading-5 text-[var(--text-primary)]">
-            {message.content}
-            <div className="mt-1 text-right text-[10px] text-[var(--text-tertiary)]">
-              {message.timestamp}
+              ))}
             </div>
-          </div>
-          <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--bg-hover)] text-[var(--text-tertiary)]"
-            aria-hidden
-          >
-            <User className="h-3.5 w-3.5" />
+          )}
+          <div className="rounded-[18px] bg-[#2f2f2f] px-3.5 py-2 text-[14px] leading-[1.45] text-[#ececec]">
+            {message.content}
           </div>
         </div>
-
-        {message.checkpoint && (
-          <button
-            type="button"
-            onClick={() => onRestore?.(message.checkpoint!)}
-            disabled={restoring}
-            className="group flex items-center gap-1.5 rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-2 py-1 text-[11px] text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] disabled:opacity-60"
-            onMouseEnter={() => setShowCheckpointTip(true)}
-            onMouseLeave={() => setShowCheckpointTip(false)}
-          >
-            {restoring ? (
-              <RotateCcw className="h-3 w-3 animate-spin" />
-            ) : (
-              <History className="h-3 w-3" />
-            )}
-            <span>Restore checkpoint</span>
-            {showCheckpointTip && !restoring && (
-              <span className="ml-1 hidden text-[10px] text-[var(--text-tertiary)] lg:inline">
-                snapshots at this turn
-              </span>
-            )}
-          </button>
-        )}
       </div>
     );
   }
 
+  const hasTrace =
+    (message.toolCalls && message.toolCalls.length > 0) ||
+    (message.fileEdits && message.fileEdits.length > 0);
+
   return (
-    <div className="flex items-start gap-2 animate-cursor-fade">
-      <div
-        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary-muted)] text-[var(--accent-primary)]"
-        aria-hidden
+    <div className="group flex flex-col items-start">
+      <button
+        type="button"
+        onClick={() => hasTrace && setTraceOpen((v) => !v)}
+        className={cn(
+          "mb-2 inline-flex items-center gap-1 text-[12.5px] text-[#8a8a8a]",
+          hasTrace && "hover:text-[#c4c4c4]",
+        )}
       >
-        <Bot className="h-3.5 w-3.5" />
+        {streaming ? "Working" : workedLabel(message)}
+        <ChevronRight
+          className={cn(
+            "h-3 w-3 transition-transform",
+            traceOpen && "rotate-90",
+          )}
+          strokeWidth={2}
+        />
+      </button>
+
+      {traceOpen && hasTrace && (
+        <div className="mb-3 w-full">
+          {message.toolCalls && message.toolCalls.length > 0 && (
+            <AgentWorkflow calls={message.toolCalls} />
+          )}
+          {message.fileEdits && message.fileEdits.length > 0 && (
+            <div className="mt-2">
+              <DiffViewer edits={message.fileEdits} />
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="w-full text-[14.5px] leading-[1.55] text-[#d4d4d4]">
+        <MarkdownContent content={message.content} streaming={streaming} />
       </div>
 
-      <div className="group min-w-0 flex-1 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] font-medium text-[var(--text-primary)]">
-            Lens
-          </span>
-          {streaming && (
-            <span className="lens-thinking-glow" title="Streaming">
-              <span className="lens-thinking-dot" />
-            </span>
-          )}
-          {message.model && (
-            <span className="rounded-[var(--radius-pill)] bg-[var(--bg-hover)] px-1.5 py-0.5 text-[10px] text-[var(--text-tertiary)]">
-              {message.model}
-            </span>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={copyContent}
-            className={cn(
-              "ml-auto h-6 w-6 opacity-0 transition-opacity duration-[var(--duration-instant)] group-hover:opacity-100",
-            )}
-            aria-label="Copy message"
-          >
-            {copied ? (
-              <Check className="h-3 w-3 text-[var(--success)]" />
-            ) : (
-              <Copy className="h-3 w-3 text-[var(--text-tertiary)]" />
-            )}
-          </Button>
-        </div>
-
-        <div className="bg-transparent text-[13px] leading-5 text-[var(--text-primary)]">
-          <MarkdownContent content={message.content} streaming={streaming} />
-        </div>
-
-        {message.toolCalls && message.toolCalls.length > 0 && (
-          <AgentWorkflow calls={message.toolCalls} />
+      <button
+        type="button"
+        onClick={copyContent}
+        className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[11px] text-[#6a6a6a] opacity-0 transition-opacity hover:bg-white/[0.04] hover:text-[#c4c4c4] group-hover:opacity-100"
+        aria-label="Copy message"
+      >
+        {copied ? (
+          <Check className="h-3 w-3 text-[#3fb950]" />
+        ) : (
+          <Copy className="h-3 w-3" />
         )}
-
-        {message.fileEdits && message.fileEdits.length > 0 && (
-          <DiffViewer edits={message.fileEdits} />
-        )}
-
-        <div className="text-[10px] text-[var(--text-tertiary)]">
-          {message.timestamp}
-        </div>
-      </div>
+      </button>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Minus, Square, X } from "lucide-react";
+import { Copy, Minus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 async function withWindow(
@@ -32,7 +32,7 @@ export function WindowControls() {
           })
         }
       >
-        <Square className="h-2.5 w-2.5" strokeWidth={1.75} />
+        <Copy className="h-2.5 w-2.5" strokeWidth={1.75} />
       </WinBtn>
       <WinBtn
         label="Close"

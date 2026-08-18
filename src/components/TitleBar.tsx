@@ -1,10 +1,12 @@
-import { ArrowLeft, ArrowRight, SquareArrowOutUpRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, SquareArrowOutUpRight, SquareTerminal } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { MenuBar } from "@/features/menu-bar/MenuBar";
 import { WindowControls } from "@/features/shell/WindowControls";
+import { TitleBarOverflowMenu } from "@/features/shell/TitleBarOverflowMenu";
+import { WorkspaceLauncher } from "@/features/shell/WorkspaceLauncher";
 import { MENU_BAR } from "@/features/menu-bar/menuRegistry";
 import { useSessionStore } from "@/stores/sessionStore";
-import { openIdeWindow, openAgentsWindow } from "@/features/windows/openAppWindow";
+import { openAgentsWindow } from "@/features/windows/openAppWindow";
 import { LensWordmark } from "@/components/brand/LensWordmark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +18,9 @@ interface TitleBarProps {
   variant?: "agents" | "ide";
   onAgentsWindow?: () => void;
   onIdeWindow?: () => void;
+  onOpenTerminal?: () => void;
+  sidePaneOpen?: boolean;
+  onToggleSidePane?: () => void;
 }
 
 const AGENT_MENUS = MENU_BAR.filter((m) =>
@@ -30,7 +35,9 @@ export default function TitleBar({
   onOpenSettings,
   variant = "agents",
   onAgentsWindow,
-  onIdeWindow,
+  onOpenTerminal,
+  sidePaneOpen = false,
+  onToggleSidePane,
 }: TitleBarProps) {
   const isAgents = variant === "agents";
   const historyIndex = useSessionStore((s) => s.historyIndex);
@@ -108,21 +115,7 @@ export default function TitleBar({
         </Button>
 
         {isAgents ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="mx-1 h-full text-[12px]"
-            aria-label="Open IDE"
-            title="Open IDE in a new window"
-            onClick={() => {
-              if (onIdeWindow) onIdeWindow();
-              else void openIdeWindow();
-            }}
-          >
-            IDE
-            <SquareArrowOutUpRight className="h-3 w-3" strokeWidth={1.5} />
-          </Button>
+          <WorkspaceLauncher />
         ) : (
           <Button
             type="button"
@@ -141,6 +134,44 @@ export default function TitleBar({
           </Button>
         )}
 
+        <button
+          type="button"
+          aria-label="Open terminal"
+          title="Terminal"
+          className="flex h-full w-8 items-center justify-center text-[#c8c8c8] hover:bg-white/[0.08] hover:text-white"
+          onClick={() => {
+            if (onOpenTerminal) {
+              onOpenTerminal();
+              return;
+            }
+            window.dispatchEvent(
+              new CustomEvent(
+                isAgents ? "lens:open-terminal" : "lens:toggle-panel",
+              ),
+            );
+          }}
+        >
+          <SquareTerminal className="h-4 w-4" strokeWidth={1.6} />
+        </button>
+        {isAgents && (
+          <button
+            type="button"
+            aria-label="Toggle side pane"
+            title="Side pane"
+            className={cn(
+              "flex h-full w-8 items-center justify-center hover:bg-white/[0.08] hover:text-white",
+              sidePaneOpen ? "text-white" : "text-[#c8c8c8]",
+            )}
+            onClick={() => {
+              if (onToggleSidePane) onToggleSidePane();
+              else window.dispatchEvent(new CustomEvent("lens:toggle-agents-dock"));
+            }}
+          >
+            <SidePaneGlyph active={sidePaneOpen} />
+          </button>
+        )}
+        <TitleBarOverflowMenu />
+
         {!isAgents && (
           <Button
             type="button"
@@ -156,5 +187,36 @@ export default function TitleBar({
         <WindowControls />
       </div>
     </header>
+  );
+}
+
+function SidePaneGlyph({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      className={active ? "text-white" : "text-[#c8c8c8]"}
+      aria-hidden
+    >
+      <rect
+        x="1.5"
+        y="1.5"
+        width="13"
+        height="13"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path d="M5.5 2v12" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M10.2 8.7 8.5 8l1.7-.7"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
