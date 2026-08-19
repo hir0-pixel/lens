@@ -164,20 +164,14 @@ export function AgentWorkflow({ calls, thinking }: AgentWorkflowProps) {
 }
 
 export function ThinkingIndicator({
-  label = "Lens is thinking…",
+  label = "Working",
 }: {
   label?: string;
 }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 animate-cursor-fade">
-      <span className="lens-thinking-glow" aria-hidden>
-        <span className="lens-think-dots">
-          <span />
-          <span />
-          <span />
-        </span>
-      </span>
-      <span className="text-[12px] text-[var(--text-tertiary)]">{label}</span>
+    <div className="flex items-center gap-1 text-[12.5px] text-[#8a8a8a] animate-cursor-fade">
+      <span>{label}</span>
+      <ChevronRight className="h-3 w-3" strokeWidth={2} />
     </div>
   );
 }

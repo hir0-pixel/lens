@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { ChatMessage, Project } from "../../lib/types";
 import { AIMessageBubble } from "./AIMessageBubble";
-import { AgentWorkflow, ThinkingIndicator } from "./AgentWorkflow";
-import { ChatEmptyState } from "./ChatEmptyState";
+import { ThinkingIndicator } from "./AgentWorkflow";
 
 interface ChatWindowProps {
   messages: ChatMessage[];
@@ -21,11 +20,7 @@ export function ChatWindow({
   sending,
   restoringId,
   onRestoreCheckpoint,
-  onPromptSelect,
-  recentWorkspaces,
-  onWorkspaceSelect,
   streamingContent,
-  pendingToolCalls,
 }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -34,34 +29,25 @@ export function ChatWindow({
   }, [messages.length, sending, streamingContent]);
 
   if (messages.length === 0 && !sending) {
-    return <ChatEmptyState />;
+    return <div className="min-h-0 flex-1" />;
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-3 px-2 py-2">
-        {messages.map((msg) => (
-          <AIMessageBubble
-            key={msg.id}
-            message={msg}
-            restoring={restoringId === msg.checkpoint}
-            onRestore={onRestoreCheckpoint}
-          />
-        ))}
+        <div className="mx-auto flex w-full max-w-[760px] flex-col gap-7 px-6 pb-40 pt-4">
+          {messages.map((msg) => (
+            <AIMessageBubble
+              key={msg.id}
+              message={msg}
+              restoring={restoringId === msg.checkpoint}
+              onRestore={onRestoreCheckpoint}
+            />
+          ))}
 
-        {sending && (
-          <>
-            {pendingToolCalls && pendingToolCalls.length > 0 ? (
-              <AgentWorkflow calls={pendingToolCalls} />
-            ) : (
-              <ThinkingIndicator />
-            )}
+          {sending && <ThinkingIndicator />}
 
-          </>
-        )}
-
-        <div ref={bottomRef} />
+          <div ref={bottomRef} />
         </div>
       </div>
     </div>

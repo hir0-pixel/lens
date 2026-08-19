@@ -63,7 +63,7 @@ export function ReviewChangesPanel({
   }
 
   return (
-    <div className="shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+    <div className="shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] last:border-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

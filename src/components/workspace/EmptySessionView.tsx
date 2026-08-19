@@ -1,20 +1,19 @@
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronDown,
   Cloud,
   Folder,
   FolderPlus,
-  ListFilter,
-  Mic,
+  GitBranch,
+  LayoutGrid,
   Monitor,
   MoreHorizontal,
-  Paperclip,
   Plus,
   Search,
   Settings,
   Sparkles,
   Workflow,
-  Wrench,
-  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -22,11 +21,16 @@ import type { AIMode, Attachment, Model, ChatMessage } from "@/lib/types";
 import { MODELS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { ChatWindow } from "@/components/ai/ChatWindow";
-import { AgentPlanPanel, type PlanStep } from "@/components/ai/AgentPlanPanel";
-import { ReviewChangesPanel } from "@/components/ai/ReviewChangesPanel";
-import { MOCK_DIFF } from "@/components/ai/mock-data";
-import { ProviderDot } from "@/shared/design-system/ProviderDot";
+import { AgentChatComposer } from "@/components/ai/AgentChatComposer";
 import { revealInFolder } from "@/features/projects/revealInFolder";
+import { useGitStore } from "@/stores/gitStore";
+import { GitToolsCard } from "@/components/workspace/GitToolsCard";
+import { GitBranchPicker } from "@/components/workspace/GitBranchPicker";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,14 +43,9 @@ import { useCommandStore } from "@/features/command-palette/commandStore";
 import {
   relativeFrom,
   useSessionStore,
+  type PlanStep,
   type Repository,
 } from "@/stores/sessionStore";
-
-const MODES: { id: AIMode; label: string }[] = [
-  { id: "agent", label: "Agent" },
-  { id: "ask", label: "Ask" },
-  { id: "edit", label: "Edit" },
-];
 
 const NAV_ROWS: {
   id: string;
@@ -54,10 +53,10 @@ const NAV_ROWS: {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   shortcut?: string;
 }[] = [
-  { id: "new", label: "New Chat", icon: Plus, shortcut: "Ctrl+N" },
-  { id: "search", label: "Search", icon: Search },
+  { id: "new", label: "New task", icon: Plus, shortcut: "Ctrl+N" },
+  { id: "search", label: "Search", icon: Search, shortcut: "Ctrl+K" },
   { id: "automations", label: "Automations", icon: Workflow },
-  { id: "customize", label: "Customize", icon: Wrench },
+  { id: "skills", label: "Skills", icon: Sparkles },
 ];
 
 type LocationScope = "this-pc" | "cloud";
@@ -85,14 +84,14 @@ interface EmptySessionViewProps {
 }
 
 /**
- * Cursor-style empty / new-session home — wired to sessionStore.
+ * Cursor-style agents home — sidebar, transcript, floating composer.
  */
 export function EmptySessionView({
   model: fallbackModel,
   messages,
   sending,
   restoringId,
-  planSteps,
+  planSteps: _planSteps,
   onSend,
   onStop,
   onRestoreCheckpoint,
@@ -109,14 +108,18 @@ export function EmptySessionView({
   const openRepository = useSessionStore((s) => s.openRepository);
   const setCurrentSession = useSessionStore((s) => s.setCurrentSession);
   const setSessionRepo = useSessionStore((s) => s.setSessionRepo);
-  const setSessionMode = useSessionStore((s) => s.setSessionMode);
   const setSessionModel = useSessionStore((s) => s.setSessionModel);
+  const renameSession = useSessionStore((s) => s.renameSession);
+  const closeSessionTab = useSessionStore((s) => s.closeSessionTab);
   const renameRepository = useSessionStore((s) => s.renameRepository);
   const removeRepository = useSessionStore((s) => s.removeRepository);
   const createSession = useSessionStore((s) => s.createSession);
+  const historyIndex = useSessionStore((s) => s.historyIndex);
+  const historyLen = useSessionStore((s) => s.historyStack.length);
+  const goBack = useSessionStore((s) => s.goBack);
+  const goForward = useSessionStore((s) => s.goForward);
 
   const session = currentSessionId ? sessions[currentSessionId] : null;
-  const mode = session?.mode ?? "ask";
   const activeModel =
     MODELS.find((m) => m.id === (session?.modelId ?? fallbackModel.id)) ??
     fallbackModel;
@@ -127,21 +130,24 @@ export function EmptySessionView({
   const [expandedRepos, setExpandedRepos] = useState<string | null>(
     activeRepoId,
   );
-  const [repoFilter, setRepoFilter] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
   const [location, setLocation] = useState<LocationScope>("this-pc");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [tick, setTick] = useState(0);
+  const [groups, setGroups] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const openCommands = useCommandStore((s) => s.openCommands);
+  const currentBranch = useGitStore((s) => s.branches.find((b) => b.current));
+  const [headerBranchOpen, setHeaderBranchOpen] = useState(false);
 
   const canSend = text.trim().length > 0 || attachments.length > 0;
 
-  const filteredRepos = useMemo(() => {
-    const q = repoFilter.trim().toLowerCase();
-    if (!q) return repositories;
-    return repositories.filter((p) => p.name.toLowerCase().includes(q));
-  }, [repositories, repoFilter]);
+  const orphanSessions = useMemo(
+    () =>
+      Object.values(sessions)
+        .filter((s) => !s.repoId)
+        .sort((a, b) => b.lastActiveAt - a.lastActiveAt),
+    [sessions],
+  );
 
   useEffect(() => {
     setExpandedRepos(activeRepoId);
@@ -183,7 +189,9 @@ export function EmptySessionView({
   function submit(planFirst = false) {
     if (!canSend && !planFirst) return;
     const sess = ensureSession();
-    const t = text.trim() || (planFirst ? "Plan a new idea for this workspace" : "See attached files");
+    const t =
+      text.trim() ||
+      (planFirst ? "Plan a new idea for this workspace" : "See attached files");
     onSend(t, sess.mode, activeModel, attachments, { planFirst });
     setText("");
     setAttachments([]);
@@ -191,7 +199,7 @@ export function EmptySessionView({
 
   function planNewIdea() {
     const sess = ensureSession();
-    setSessionMode(sess.id, "agent");
+    useSessionStore.getState().setSessionMode(sess.id, "agent");
     const t = text.trim() || "Plan a new idea for this workspace";
     onSend(t, "agent", activeModel, attachments, { planFirst: true });
     setText("");
@@ -225,135 +233,37 @@ export function EmptySessionView({
   }
 
   void tick;
+  void _planSteps;
 
   const hasMessages = messages && messages.length > 0;
+  const branchName = currentBranch?.name ?? "main";
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex >= 0 && historyIndex < historyLen - 1;
 
-  function renderContextDropdowns() {
+  function renderComposer() {
     return (
-      <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#6b6b6b]">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 hover:text-[#9a9a9a]"
-            >
-              <span className="max-w-[160px] truncate">
-                {activeRepo?.name ?? "No project"}
-              </span>
-              <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem
-              onClick={() => {
-                const sess = ensureSession();
-                setSessionRepo(sess.id, null);
-              }}
-            >
-              No project
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {repositories.map((p) => (
-              <DropdownMenuItem
-                key={p.id}
-                onClick={() => {
-                  const sess = ensureSession();
-                  setSessionRepo(sess.id, p.id);
-                }}
-              >
-                <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                {p.name}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onAddFolder?.()}>
-              <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-              Open folder…
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 hover:text-[#9a9a9a]"
-            >
-              {location === "this-pc" ? (
-                <Monitor className="h-3 w-3" strokeWidth={1.5} />
-              ) : (
-                <Cloud className="h-3 w-3" strokeWidth={1.5} />
-              )}
-              <span>
-                {location === "this-pc" ? "This PC" : "Cloud Agents"}
-              </span>
-              <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem onClick={() => setLocation("this-pc")}>
-              <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-              This PC
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled
-              className="cursor-not-allowed opacity-50"
-              title="Cloud Agents require a connected Lens account"
-              onSelect={(e) => e.preventDefault()}
-            >
-              <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-              Cloud Agents
-              <span className="ml-auto text-[10px] uppercase text-[var(--text-tertiary)]">
-                Soon
-              </span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    );
-  }
-
-  function renderInputCard() {
-    return (
-      <div className="rounded-xl border border-white/[0.1] bg-[#1a1a1a]">
-        {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-3 pt-3">
-            {attachments.map((a) => (
-              <span
-                key={a.id}
-                className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-1 text-[11px] text-[#b0b0b0]"
-              >
-                <Paperclip className="h-3 w-3" strokeWidth={1.5} />
-                <span className="max-w-[120px] truncate">{a.name}</span>
-                <button
-                  type="button"
-                  aria-label={`Remove ${a.name}`}
-                  onClick={() =>
-                    setAttachments((prev) =>
-                      prev.filter((x) => x.id !== a.id),
-                    )
-                  }
-                >
-                  <X className="h-3 w-3" strokeWidth={2} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-          rows={1}
-          placeholder={hasMessages ? "Ask about this codebase..." : "Ask questions"}
-          className="max-h-[160px] min-h-[48px] w-full resize-none border-0 bg-transparent px-4 pt-3.5 text-[14px] text-[#e8e8e8] placeholder:text-[#5a5a5a] focus:outline-none"
-        />
-        <div className="flex items-center gap-1.5 px-3 pb-3">
+      <AgentChatComposer
+        text={text}
+        onTextChange={setText}
+        onSubmit={() => submit()}
+        onStop={onStop}
+        sending={sending}
+        placeholder={
+          hasMessages ? "Ask for follow up changes" : "Plan, search, build anything"
+        }
+        models={MODELS}
+        activeModel={activeModel}
+        onModelChange={(m) => {
+          const sess = ensureSession();
+          setSessionModel(sess.id, m.id);
+        }}
+        attachments={attachments}
+        onRemoveAttachment={(id) =>
+          setAttachments((prev) => prev.filter((x) => x.id !== id))
+        }
+        onAttachFiles={() => fileInputRef.current?.click()}
+        onAddContext={() => openCommands()}
+        fileInput={
           <input
             ref={fileInputRef}
             type="file"
@@ -364,129 +274,79 @@ export function EmptySessionView({
               e.target.value = "";
             }}
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#8a8a8a] hover:bg-white/[0.06]"
-                aria-label="Attach"
-              >
-                <Plus className="h-4 w-4" strokeWidth={1.5} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Paperclip className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                Attach files…
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openCommands()}>
-                <Search className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                Add context…
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        }
+      />
+    );
+  }
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex h-7 items-center gap-1 rounded-full bg-[#1e3a2f] px-2.5 text-[12px] font-medium text-[#3ecf8e]"
-              >
-                {MODES.find((m) => m.id === mode)?.label ?? "Ask"}
-                <X
-                  className="h-3 w-3 opacity-70"
-                  strokeWidth={2}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const sess = ensureSession();
-                    setSessionMode(sess.id, "ask");
-                  }}
-                />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-36">
-              {MODES.map((m) => (
-                <DropdownMenuItem
-                  key={m.id}
-                  onClick={() => {
-                    const sess = ensureSession();
-                    setSessionMode(sess.id, m.id);
-                  }}
-                >
-                  {m.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex h-7 max-w-[200px] items-center gap-1.5 rounded-md px-2 text-[12px] text-[#b0b0b0] hover:bg-white/[0.06]"
-              >
-                <ProviderDot provider={activeModel.provider} />
-                <span className="truncate">{activeModel.label}</span>
-                <ChevronDown className="h-3 w-3 opacity-50" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              {MODELS.map((m) => (
-                <DropdownMenuItem
-                  key={m.id}
-                  onClick={() => {
-                    const sess = ensureSession();
-                    setSessionModel(sess.id, m.id);
-                  }}
-                >
-                  <ProviderDot provider={m.provider} className="mr-2" />
-                  {m.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <div className="flex-1" />
-
-          <button
-            type="button"
-            disabled
-            className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-md text-[#555]"
-            aria-label="Voice input coming soon"
-            title="Voice input coming soon"
-          >
-            <Mic className="h-4 w-4" strokeWidth={1.5} />
-          </button>
-
-          <button
-            type="button"
-            onClick={sending ? onStop : () => submit()}
-            disabled={!sending && !canSend}
-            className={cn(
-              "ml-1 h-7 rounded-full px-3 text-[12px] font-medium",
-              sending
-                ? "bg-[#ef4444] text-white hover:bg-[#dc2626]"
-                : canSend
-                  ? "bg-[#e8e8e8] text-[#0a0a0a] hover:bg-white"
-                  : "cursor-not-allowed bg-white/[0.06] text-[#555]",
-            )}
-          >
-            {sending ? "Stop" : "Send"}
-          </button>
-        </div>
-      </div>
+  function sessionRow(
+    s: { id: string; title: string; lastActiveAt: number },
+    nested?: boolean,
+  ) {
+    const active = s.id === currentSessionId;
+    return (
+      <button
+        key={s.id}
+        type="button"
+        title={s.title}
+        onClick={() => setCurrentSession(s.id, true)}
+        className={cn(
+          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px]",
+          nested && "pl-2",
+          active
+            ? "bg-white/[0.08] text-[#ececec]"
+            : "text-[#8a8a8a] hover:bg-white/[0.05] hover:text-[#d4d4d4]",
+        )}
+      >
+        <span className="min-w-0 flex-1 truncate">{s.title}</span>
+        <span className="shrink-0 text-[11px] tabular-nums text-[#666]">
+          {relativeFrom(s.lastActiveAt)}
+        </span>
+      </button>
     );
   }
 
   return (
-    <div className="flex min-h-0 flex-1 bg-[#0a0a0a]">
+    <div className="flex min-h-0 flex-1 bg-[#111111]">
       <aside
-        className="flex w-[250px] shrink-0 flex-col border-r border-white/[0.06] bg-[#141414]"
+        className="flex w-[244px] shrink-0 flex-col border-r border-white/[0.06] bg-[#161616]"
         aria-label="Session navigator"
       >
-        <div className="flex flex-col gap-0.5 px-2 pt-2">
+        <div className="flex items-center gap-1 px-3.5 pt-3 pb-1">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.08] text-[12px] font-semibold text-[#e8e8e8]">
+            L
+          </span>
+          <button
+            type="button"
+            aria-label="Back"
+            disabled={!canGoBack}
+            onClick={() => goBack()}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-md",
+              canGoBack
+                ? "text-[#b0b0b0] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+                : "cursor-not-allowed text-[#555]",
+            )}
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            aria-label="Forward"
+            disabled={!canGoForward}
+            onClick={() => goForward()}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-md",
+              canGoForward
+                ? "text-[#b0b0b0] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+                : "cursor-not-allowed text-[#555]",
+            )}
+          >
+            <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        </div>
+
+        <div className="mt-1 flex flex-col gap-0.5 px-2">
           {NAV_ROWS.map(({ id, label, icon: Icon, shortcut }) => (
             <button
               key={id}
@@ -496,13 +356,12 @@ export function EmptySessionView({
                 if (id === "new") newChat();
                 else if (id === "search") openCommands();
                 else if (id === "automations") onOpenAutomations?.();
-                else if (id === "customize") onOpenSettings?.("appearance");
+                else if (id === "skills") onOpenSettings?.("ai");
               }}
               className={cn(
-                "flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[13px]",
+                "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px]",
                 "text-[#b0b0b0] transition-colors duration-100",
                 "hover:bg-white/[0.06] hover:text-[#e8e8e8]",
-                id === "new" && "bg-white/[0.06] text-[#e8e8e8]",
               )}
             >
               <Icon className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
@@ -516,58 +375,52 @@ export function EmptySessionView({
           ))}
         </div>
 
-        <div className="mt-4 flex items-center gap-1 px-3.5 pb-1.5">
-          <span className="min-w-0 flex-1 truncate text-[11px] font-medium tracking-wide text-[#666]">
-            Repositories
-          </span>
+        <div className="mt-3 flex items-center gap-1 px-3">
           <button
             type="button"
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-[#b0b0b0]",
-              filterOpen && "bg-white/[0.06] text-[#b0b0b0]",
-            )}
-            aria-label="Filter repositories"
-            title="Filter"
-            onClick={() => setFilterOpen((v) => !v)}
+            onClick={() => {
+              const name = window.prompt("Group name");
+              if (name?.trim()) setGroups((g) => [...g, name.trim()]);
+            }}
+            className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[12px] text-[#8a8a8a] hover:bg-white/[0.05] hover:text-[#d4d4d4]"
           >
-            <ListFilter className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <Plus className="h-3 w-3" strokeWidth={2} />
+            Group
           </button>
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-[#b0b0b0]"
-            aria-label="Add folder"
-            title="Add folder"
             onClick={() => onAddFolder?.()}
+            className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[12px] text-[#8a8a8a] hover:bg-white/[0.05] hover:text-[#d4d4d4]"
           >
-            <FolderPlus className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <Plus className="h-3 w-3" strokeWidth={2} />
+            Project
           </button>
         </div>
 
-        {filterOpen && (
-          <div className="px-3 pb-2">
-            <input
-              value={repoFilter}
-              onChange={(e) => setRepoFilter(e.target.value)}
-              placeholder="Filter repositories…"
-              className="h-7 w-full rounded-md border border-white/[0.08] bg-[#0a0a0a] px-2 text-[12px] text-[#d4d4d4] placeholder:text-[#555] focus:outline-none"
-              autoFocus
-            />
+        <div className="mt-3 px-3.5 pb-1 text-[11px] font-medium tracking-wide text-[#6a6a6a]">
+          Projects
+        </div>
+
+        {groups.map((g) => (
+          <div
+            key={g}
+            className="mx-2 mb-0.5 truncate rounded-md px-2 py-1 text-[12px] text-[#8a8a8a]"
+          >
+            {g}
           </div>
-        )}
+        ))}
 
         <ScrollArea className="min-h-0 flex-1 px-1.5">
           <ul className="flex flex-col gap-0.5 pb-2">
-            {filteredRepos.map((repo) => {
-              const expanded = expandedRepos === repo.id;
+            {orphanSessions.map((s) => (
+              <li key={s.id}>{sessionRow(s)}</li>
+            ))}
+            {repositories.map((repo) => {
+              const expanded = expandedRepos === repo.id || activeRepoId === repo.id;
               const nested = repoSessions(repo);
               return (
                 <li key={repo.id} className="group/repo">
-                  <div
-                    className={cn(
-                      "flex h-8 w-full items-center gap-1 rounded-md px-1",
-                      activeRepoId === repo.id && "bg-white/[0.05]",
-                    )}
-                  >
+                  <div className="flex h-8 w-full items-center gap-0.5 rounded-md px-1">
                     <button
                       type="button"
                       title={repo.name}
@@ -577,17 +430,14 @@ export function EmptySessionView({
                           prev === repo.id ? null : repo.id,
                         );
                       }}
-                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-white/[0.06]"
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 text-left hover:bg-white/[0.05]"
                     >
                       <Folder
-                        className="h-3.5 w-3.5 shrink-0 text-[#666]"
+                        className="h-3.5 w-3.5 shrink-0 text-[#6a6a6a]"
                         strokeWidth={1.5}
                       />
-                      <span className="min-w-0 flex-1 truncate text-[13px] text-[#d4d4d4]">
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-[#c8c8c8]">
                         {repo.name}
-                      </span>
-                      <span className="shrink-0 text-[11px] tabular-nums text-[#555]">
-                        {relativeFrom(repo.lastOpenedAt)}
                       </span>
                     </button>
                     <DropdownMenu>
@@ -606,7 +456,10 @@ export function EmptySessionView({
                       <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem
                           onClick={() => {
-                            const name = window.prompt("Rename repository", repo.name);
+                            const name = window.prompt(
+                              "Rename repository",
+                              repo.name,
+                            );
                             if (name) renameRepository(repo.id, name);
                           }}
                         >
@@ -638,25 +491,9 @@ export function EmptySessionView({
                     </DropdownMenu>
                   </div>
                   {expanded && nested.length > 0 && (
-                    <ul className="mb-1 ml-3.5 flex flex-col gap-0.5 border-l border-white/[0.06] pl-2">
+                    <ul className="mb-1 ml-2 flex flex-col gap-0.5">
                       {nested.map((s) =>
-                        s ? (
-                          <li key={s.id}>
-                            <button
-                              type="button"
-                              title={s.title}
-                              onClick={() => setCurrentSession(s.id, true)}
-                              className="flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-[12px] text-[#8a8a8a] hover:bg-white/[0.06] hover:text-[#d4d4d4]"
-                            >
-                              <span className="min-w-0 flex-1 truncate">
-                                {s.title}
-                              </span>
-                              <span className="shrink-0 text-[11px] tabular-nums text-[#555]">
-                                {relativeFrom(s.lastActiveAt)}
-                              </span>
-                            </button>
-                          </li>
-                        ) : null,
+                        s ? <li key={s.id}>{sessionRow(s, true)}</li> : null,
                       )}
                     </ul>
                   )}
@@ -666,19 +503,28 @@ export function EmptySessionView({
           </ul>
         </ScrollArea>
 
-        <div className="flex h-11 shrink-0 items-center gap-2 border-t border-white/[0.06] px-3">
+        <div className="flex h-12 shrink-0 items-center gap-2 border-t border-white/[0.06] px-3">
           <button
             type="button"
-            className="flex h-7 items-center gap-2 rounded-md px-1 text-[#8a8a8a] hover:bg-white/[0.06]"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 hover:bg-white/[0.05]"
             title="Account"
             onClick={() => onOpenSettings?.("general")}
           >
-            <div className="flex h-6 w-6 flex-col justify-center gap-[3px] px-1" aria-hidden>
-              <span className="h-px w-full bg-[#555]" />
-              <span className="h-px w-full bg-[#555]" />
-            </div>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3a3a3a] text-[11px] font-medium text-[#ececec]">
+              A
+            </span>
+            <span className="min-w-0 truncate text-[13px] text-[#c8c8c8]">
+              Account
+            </span>
           </button>
-          <span className="min-w-0 flex-1" />
+          <button
+            type="button"
+            className="flex h-7 w-7 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-[#b0b0b0]"
+            aria-label="Layout"
+            title="Layout"
+          >
+            <LayoutGrid className="h-4 w-4" strokeWidth={1.5} />
+          </button>
           <button
             type="button"
             className="flex h-7 w-7 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-[#b0b0b0]"
@@ -691,16 +537,90 @@ export function EmptySessionView({
         </div>
       </aside>
 
-      <div className="relative flex min-w-0 flex-1 flex-col bg-[#0a0a0a]">
+      <div className="relative flex min-w-0 flex-1 flex-col bg-[#111111]">
         {!hasMessages ? (
           <>
             <div className="flex flex-1 flex-col items-center justify-center px-6">
-              <div className="w-full max-w-[620px]">
-                <div className="mb-3 flex flex-wrap items-center gap-4 text-[12px] text-[#6b6b6b]">
-                  {renderContextDropdowns()}
+              <div className="w-full max-w-[720px]">
+                <div className="mb-3 flex flex-wrap items-center gap-3 text-[12px] text-[#6b6b6b]">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 hover:text-[#9a9a9a]"
+                      >
+                        <Folder className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        <span className="max-w-[160px] truncate">
+                          {activeRepo?.name ?? "No project"}
+                        </span>
+                        <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const sess = ensureSession();
+                          setSessionRepo(sess.id, null);
+                        }}
+                      >
+                        No project
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {repositories.map((p) => (
+                        <DropdownMenuItem
+                          key={p.id}
+                          onClick={() => {
+                            const sess = ensureSession();
+                            setSessionRepo(sess.id, p.id);
+                          }}
+                        >
+                          <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                          {p.name}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => onAddFolder?.()}>
+                        <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                        Open folder…
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 hover:text-[#9a9a9a]"
+                      >
+                        {location === "this-pc" ? (
+                          <Monitor className="h-3 w-3" strokeWidth={1.5} />
+                        ) : (
+                          <Cloud className="h-3 w-3" strokeWidth={1.5} />
+                        )}
+                        <span>
+                          {location === "this-pc" ? "This PC" : "Cloud Agents"}
+                        </span>
+                        <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <DropdownMenuItem onClick={() => setLocation("this-pc")}>
+                        <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                        This PC
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled
+                        className="cursor-not-allowed opacity-50"
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                        Cloud Agents
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
-                {renderInputCard()}
+                {renderComposer()}
 
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <button
@@ -709,7 +629,9 @@ export function EmptySessionView({
                     className="inline-flex h-8 items-center gap-2 rounded-full border border-white/[0.1] px-3.5 text-[12px] text-[#b0b0b0] hover:bg-white/[0.04] hover:text-[#e8e8e8]"
                   >
                     Plan New Idea
-                    <span className="text-[11px] tabular-nums text-[#555]">⇧Tab</span>
+                    <span className="text-[11px] tabular-nums text-[#555]">
+                      ⇧Tab
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -729,96 +651,126 @@ export function EmptySessionView({
                 className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] text-[#555] hover:bg-white/[0.03] hover:text-[#8a8a8a]"
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                <span>Import conversations — sync chats and continue them here</span>
+                <span>
+                  Import conversations — sync chats and continue them here
+                </span>
               </button>
             </div>
           </>
         ) : (
           <>
-            {/* Header */}
-            <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] bg-[#141414] px-4">
-              <div className="flex items-center gap-3">
-                <span className="text-[14px] font-semibold text-[#e8e8e8]">
-                  {session?.title ?? "Chat"}
+            <div className="flex min-h-12 shrink-0 items-start gap-2 px-4 pb-2 pt-2">
+              <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
+                <span className="max-w-[220px] truncate text-[13.5px] font-medium leading-8 text-[#f2f2f2]">
+                  {session?.title ?? "New chat"}
                 </span>
-                <span className="text-[#333]">|</span>
-                {renderContextDropdowns()}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-7 max-w-[180px] items-center gap-1.5 rounded-full bg-[#2a2a2a] px-2.5 text-[12.5px] text-[#d4d4d4] hover:bg-[#333]"
+                  >
+                    <Folder className="h-3.5 w-3.5 shrink-0 text-[#b0b0b0]" strokeWidth={1.5} />
+                    <span className="truncate">{activeRepo?.name ?? "lens"}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const sess = ensureSession();
+                      setSessionRepo(sess.id, null);
+                    }}
+                  >
+                    No project
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {repositories.map((p) => (
+                    <DropdownMenuItem
+                      key={p.id}
+                      onClick={() => {
+                        const sess = ensureSession();
+                        setSessionRepo(sess.id, p.id);
+                      }}
+                    >
+                      <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                      {p.name}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onAddFolder?.()}>
+                    <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                    Open folder…
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Popover open={headerBranchOpen} onOpenChange={setHeaderBranchOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#2a2a2a] px-2.5 text-[12.5px] text-[#d4d4d4] hover:bg-[#333]"
+                  >
+                    <GitBranch className="h-3.5 w-3.5 text-[#b0b0b0]" strokeWidth={1.5} />
+                    <span>{branchName}</span>
+                    <ChevronDown className="h-3 w-3 text-[#8a8a8a]" strokeWidth={2} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-[280px] rounded-xl border-white/[0.1] bg-[#1c1c1c] p-0"
+                >
+                  <GitBranchPicker onClose={() => setHeaderBranchOpen(false)} />
+                </PopoverContent>
+              </Popover>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#8a8a8a] hover:bg-white/[0.06] hover:text-[#d4d4d4]"
+                    aria-label="Chat options"
+                  >
+                    <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-44">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (!session) return;
+                      const name = window.prompt("Rename chat", session.title);
+                      if (name?.trim()) renameSession(session.id, name.trim());
+                    }}
+                  >
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (session) closeSessionTab(session.id);
+                    }}
+                  >
+                    Close chat
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               </div>
-
-              <div className="flex items-center gap-1.5">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex h-7 w-7 items-center justify-center rounded text-[#8a8a8a] hover:bg-white/[0.06]"
-                      aria-label="Session options"
-                    >
-                      <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        const newTitle = window.prompt("Rename session", session?.title ?? "Chat");
-                        if (newTitle?.trim()) {
-                          useSessionStore.getState().renameSession(session!.id, newTitle.trim());
-                        }
-                      }}
-                    >
-                      Rename session
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-500 focus:text-red-500"
-                      onClick={() => {
-                        if (confirm("Are you sure you want to delete this session?")) {
-                          useSessionStore.getState().closeSessionTab(session!.id);
-                        }
-                      }}
-                    >
-                      Delete session
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="ml-auto shrink-0">
+                <GitToolsCard />
               </div>
             </div>
 
-            {/* Scrollable messages and panels */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-4 py-3">
-                {/* Agent plan progress */}
-                {(mode === "agent" || (planSteps && planSteps.length > 0)) && planSteps && planSteps.length > 0 && (
-                  <div className="mb-4">
-                    <AgentPlanPanel steps={planSteps} forceOpen={sending} />
-                  </div>
-                )}
-
-                {/* Scoped edits diff panel */}
-                {(mode === "agent" || mode === "edit") && messages.length > 0 && (
-                  <div className="mb-4">
-                    <ReviewChangesPanel files={MOCK_DIFF} />
-                  </div>
-                )}
-
-                {/* Chat Message list */}
-                <ChatWindow
-                  messages={messages}
-                  sending={sending}
-                  restoringId={restoringId}
-                  onRestoreCheckpoint={onRestoreCheckpoint ?? (() => {})}
-                  onPromptSelect={(prompt) => {
-                    setText(prompt);
-                  }}
-                  streamingContent=""
-                  pendingToolCalls={undefined}
-                />
-              </div>
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+              <ChatWindow
+                messages={messages}
+                sending={sending}
+                restoringId={restoringId}
+                onRestoreCheckpoint={onRestoreCheckpoint ?? (() => {})}
+                onPromptSelect={(prompt) => setText(prompt)}
+                streamingContent=""
+                pendingToolCalls={undefined}
+              />
             </div>
 
-            {/* Input area anchored at the bottom */}
-            <div className="border-t border-white/[0.06] bg-[#0a0a0a] px-4 py-3">
-              <div className="mx-auto w-full max-w-[800px]">
-                {renderInputCard()}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#111111] via-[#111111]/90 to-transparent px-6 pb-4 pt-10">
+              <div className="pointer-events-auto mx-auto w-full max-w-[760px]">
+                {renderComposer()}
               </div>
             </div>
           </>
