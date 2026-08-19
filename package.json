@@ -9,6 +9,8 @@
     "contracts:check": "node scripts/contracts/check.mjs",
     "contracts:provenance": "node scripts/contracts/provenance.mjs",
     "dev": "vite",
+    "dev:bff": "npm run dev --prefix server",
+    "bff": "npm run dev --prefix server",
     "build": "node platform/build/workspace.mjs build",
     "build:web": "tsc && vite build",
     "preview": "vite preview",

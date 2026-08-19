@@ -62,6 +62,16 @@ export default defineConfig(async ({ mode }) => {
     watch: {
       ignored: ["**/src-tauri/**"],
     },
+    proxy: {
+      "/auth": {
+        target: "http://localhost:3001",
+        changeOrigin: false,
+      },
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: false,
+      },
+    },
   },
   };
 });
