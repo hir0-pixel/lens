@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { UserAccountMenu } from "@/shared/bff-auth/UserAccountMenu";
 
 interface TitleBarProps {
   projectName?: string;
@@ -165,7 +164,6 @@ export default function TitleBar({
             Settings
           </Button>
         )}
-        <UserAccountMenu />
         <WindowControls />
       </div>
     </header>

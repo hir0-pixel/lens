@@ -22,6 +22,8 @@ import { MODELS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { ChatWindow } from "@/components/ai/ChatWindow";
 import { AgentChatComposer } from "@/components/ai/AgentChatComposer";
+import TerminalPanel from "@/components/output/TerminalPanel";
+import { UserAccountMenu } from "@/shared/bff-auth/UserAccountMenu";
 import { revealInFolder } from "@/features/projects/revealInFolder";
 import { useGitStore } from "@/stores/gitStore";
 import { GitToolsCard } from "@/components/workspace/GitToolsCard";
@@ -81,6 +83,8 @@ interface EmptySessionViewProps {
   onAddFolder?: () => void;
   onImport?: () => void;
   onMultitask?: () => void;
+  terminalOpen?: boolean;
+  onCloseTerminal?: () => void;
 }
 
 /**
@@ -100,6 +104,8 @@ export function EmptySessionView({
   onAddFolder,
   onImport,
   onMultitask,
+  terminalOpen = false,
+  onCloseTerminal,
 }: EmptySessionViewProps) {
   const repositories = useSessionStore((s) => s.repositories);
   const sessions = useSessionStore((s) => s.sessions);
@@ -504,19 +510,7 @@ export function EmptySessionView({
         </ScrollArea>
 
         <div className="flex h-12 shrink-0 items-center gap-2 border-t border-white/[0.06] px-3">
-          <button
-            type="button"
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 hover:bg-white/[0.05]"
-            title="Account"
-            onClick={() => onOpenSettings?.("general")}
-          >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3a3a3a] text-[11px] font-medium text-[#ececec]">
-              A
-            </span>
-            <span className="min-w-0 truncate text-[13px] text-[#c8c8c8]">
-              Account
-            </span>
-          </button>
+          <UserAccountMenu showLabel />
           <button
             type="button"
             className="flex h-7 w-7 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-[#b0b0b0]"
@@ -538,7 +532,8 @@ export function EmptySessionView({
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col bg-[#111111]">
-        {!hasMessages ? (
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          {!hasMessages ? (
           <>
             <div className="flex flex-1 flex-col items-center justify-center px-6">
               <div className="w-full max-w-[720px]">
@@ -774,6 +769,14 @@ export function EmptySessionView({
               </div>
             </div>
           </>
+        )}
+        </div>
+        {terminalOpen && (
+          <TerminalPanel
+            cwd={activeRepo?.path}
+            projectName={activeRepo?.name}
+            onClose={onCloseTerminal}
+          />
         )}
       </div>
     </div>
