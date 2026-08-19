@@ -23,6 +23,7 @@ export interface Session {
   modelId: string;
   createdAt: number;
   lastActiveAt: number;
+  pinned?: boolean;
 }
 
 export interface Repository {
@@ -111,6 +112,7 @@ interface SessionState {
   /** Close all sessions and clear active repo → welcome. */
   closeWorkspace: () => void;
   renameSession: (sessionId: string, title: string) => void;
+  togglePinSession: (sessionId: string) => void;
   getModel: (session: Session) => Model;
 }
 
@@ -530,6 +532,19 @@ export const useSessionStore = create<SessionState>()(
             sessions: {
               ...s.sessions,
               [sessionId]: { ...sess, title },
+            },
+          };
+        });
+      },
+
+      togglePinSession: (sessionId) => {
+        set((s) => {
+          const sess = s.sessions[sessionId];
+          if (!sess) return s;
+          return {
+            sessions: {
+              ...s.sessions,
+              [sessionId]: { ...sess, pinned: !sess.pinned },
             },
           };
         });

@@ -3,12 +3,14 @@ import { toast } from "sonner";
 import TitleBar from "./components/TitleBar";
 import { EmptySessionView } from "./components/workspace/EmptySessionView";
 import { SessionTabStrip } from "./components/workspace/SessionTabStrip";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import {
   AgentsSideDock,
   type AgentsDockKind,
 } from "./components/workspace/AgentsSideDock";
-import { ErrorBoundary } from "./components/ErrorBoundary";
 import IdeWindowApp from "./components/windows/IdeWindowApp";
+import FileEditorWindowApp from "./components/windows/FileEditorWindowApp";
+import { ProjectFilesSidePane } from "./components/workspace/ProjectFilesSidePane";
 import SettingsDialog from "./components/settings/SettingsDialog";
 import PlansDialog from "./components/plans/PlansDialog";
 import ImportDialog from "./components/import/ImportDialog";
@@ -79,8 +81,12 @@ const SETTINGS_SECTIONS = new Set<string>([
 ]);
 
 export default function App() {
-  if (getWindowMode() === "ide") {
+  const mode = getWindowMode();
+  if (mode === "ide") {
     return <IdeWindowApp />;
+  }
+  if (mode === "file-editor") {
+    return <FileEditorWindowApp />;
   }
   return (
     <AuthGate>
@@ -116,7 +122,7 @@ function AgentsApp() {
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [credits, setCredits] = useState(2_000_000);
   const [, setSessionCredits] = useState(348_120);
-  const [agentsDock, setAgentsDock] = useState<AgentsDockKind>(null);
+  const [agentsDock, setAgentsDock] = useState<string | null>(null);
   const [bottomTerminal, setBottomTerminal] = useState(false);
   const labGatewayAbort = useRef<AbortController | null>(null);
 
@@ -221,7 +227,7 @@ function AgentsApp() {
       setView("workspace");
     }
     function onOpenAgentsTab(e: Event) {
-      const kind = (e as CustomEvent<{ kind?: AgentsDockKind }>).detail?.kind;
+      const kind = (e as CustomEvent<{ kind?: string }>).detail?.kind;
       if (!kind || kind === "picker") {
         setAgentsDock("picker");
       } else {
@@ -547,24 +553,28 @@ function AgentsApp() {
         variant="agents"
         onIdeWindow={() => void openIdeWindow()}
         onOpenTerminal={() => setBottomTerminal((v) => !v)}
-        sidePaneOpen={agentsDock !== null}
+        sidePaneOpen={agentsDock === "project-files"}
         onToggleSidePane={() =>
-          setAgentsDock((k) => (k ? null : "picker"))
+          setAgentsDock((k) => (k === "project-files" ? null : "project-files"))
         }
       />
       <SessionTabStrip />
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">{mainContent}</div>
-        <AgentsSideDock
-          kind={agentsDock}
-          onClose={() => setAgentsDock(null)}
-          onOpenTab={(tab) =>
-            window.dispatchEvent(
-              new CustomEvent("lens:open-agents-tab", { detail: { kind: tab } }),
-            )
-          }
-        />
+        {agentsDock === "project-files" ? (
+          <ProjectFilesSidePane onClose={() => setAgentsDock(null)} />
+        ) : agentsDock !== null ? (
+          <AgentsSideDock
+            kind={agentsDock as AgentsDockKind}
+            onClose={() => setAgentsDock(null)}
+            onOpenTab={(tab) =>
+              window.dispatchEvent(
+                new CustomEvent("lens:open-agents-tab", { detail: { kind: tab } }),
+              )
+            }
+          />
+        ) : null}
       </div>
 
       <WorkbenchOverlays />

@@ -10,11 +10,51 @@ function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-export function getWindowMode(): "agents" | "ide" {
+export function getWindowMode(): "agents" | "ide" | "file-editor" {
   if (typeof window === "undefined") return "agents";
   const q = new URLSearchParams(window.location.search);
+  if (q.get("window") === "file-editor" || q.has("filePath")) return "file-editor";
   if (q.get("window") === "ide") return "ide";
   return "agents";
+}
+
+export async function openFileWindow(filePath: string): Promise<void> {
+  const encodedPath = encodeURIComponent(filePath);
+  const url = `${window.location.origin}${window.location.pathname}?window=file-editor&filePath=${encodedPath}`;
+  const label = `file-${filePath.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+  if (isTauri()) {
+    try {
+      const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+      const existing = await WebviewWindow.getByLabel(label);
+      if (existing) {
+        await existing.setFocus();
+        await existing.unminimize();
+        return;
+      }
+      const fileWin = new WebviewWindow(label, {
+        url: `?window=file-editor&filePath=${encodedPath}`,
+        title: `Edit ${filePath}`,
+        width: 1000,
+        height: 720,
+        minWidth: 600,
+        minHeight: 400,
+        center: true,
+        focus: true,
+        decorations: true,
+        resizable: true,
+      });
+      fileWin.once("tauri://error", () => {
+        window.open(url, label, "width=1000,height=720");
+      });
+      return;
+    } catch (err) {
+      console.warn("Tauri file window failed, fallback to popup", err);
+    }
+  }
+
+  const popup = window.open(url, label, "width=1000,height=720,menubar=no");
+  popup?.focus();
 }
 
 export async function openIdeWindow(): Promise<void> {
