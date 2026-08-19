@@ -1,12 +1,4 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  type ComponentType,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, type ComponentType } from "react";
 import { Search, Star, X } from "lucide-react";
 import {
   Breadcrumb,
@@ -18,7 +10,6 @@ import {
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
@@ -26,76 +17,35 @@ import {
   searchSettings,
 } from "@/shared/settings/registry";
 import type { SettingsSectionId } from "@/shared/settings/defaults";
+import { GeneralSettingsPage } from "./sections/GeneralSettingsPage";
+import { AppearanceSettingsPage } from "./sections/AppearanceSettingsPage";
+import { EditorSettingsPage } from "./sections/EditorSettingsPage";
+import { TerminalSettingsPage } from "./sections/TerminalSettingsPage";
+import { BrowserSettingsPage } from "./sections/BrowserSettingsPage";
+import { AiSettingsPage } from "./sections/AiSettingsPage";
+import { ModelsSettingsPage, ProvidersSettingsPage } from "./sections/ProvidersSettingsPage";
+import {
+  AboutSettingsPage,
+  AccessibilitySettingsPage,
+  GitSettingsPage,
+  KeyboardSettingsPage,
+  PrivacySettingsPage,
+} from "./sections/MoreSettingsPages";
 
-const SECTION_COMPONENT: Record<
-  SettingsSectionId,
-  React.LazyExoticComponent<ComponentType>
-> = {
-  general: lazy(() =>
-    import("./sections/GeneralSettingsPage").then((m) => ({
-      default: m.GeneralSettingsPage,
-    })),
-  ),
-  appearance: lazy(() =>
-    import("./sections/AppearanceSettingsPage").then((m) => ({
-      default: m.AppearanceSettingsPage,
-    })),
-  ),
-  editor: lazy(() =>
-    import("./sections/EditorSettingsPage").then((m) => ({
-      default: m.EditorSettingsPage,
-    })),
-  ),
-  terminal: lazy(() =>
-    import("./sections/TerminalSettingsPage").then((m) => ({
-      default: m.TerminalSettingsPage,
-    })),
-  ),
-  browser: lazy(() =>
-    import("./sections/BrowserSettingsPage").then((m) => ({
-      default: m.BrowserSettingsPage,
-    })),
-  ),
-  ai: lazy(() =>
-    import("./sections/AiSettingsPage").then((m) => ({
-      default: m.AiSettingsPage,
-    })),
-  ),
-  providers: lazy(() =>
-    import("./sections/ProvidersSettingsPage").then((m) => ({
-      default: m.ProvidersSettingsPage,
-    })),
-  ),
-  models: lazy(() =>
-    import("./sections/ProvidersSettingsPage").then((m) => ({
-      default: m.ModelsSettingsPage,
-    })),
-  ),
-  git: lazy(() =>
-    import("./sections/MoreSettingsPages").then((m) => ({
-      default: m.GitSettingsPage,
-    })),
-  ),
-  privacy: lazy(() =>
-    import("./sections/MoreSettingsPages").then((m) => ({
-      default: m.PrivacySettingsPage,
-    })),
-  ),
-  accessibility: lazy(() =>
-    import("./sections/MoreSettingsPages").then((m) => ({
-      default: m.AccessibilitySettingsPage,
-    })),
-  ),
-  keyboard: lazy(() =>
-    import("./sections/MoreSettingsPages").then((m) => ({
-      default: m.KeyboardSettingsPage,
-    })),
-  ),
-  about: lazy(() =>
-    import("./sections/MoreSettingsPages").then((m) => ({
-      default: m.AboutSettingsPage,
-    })),
-  ),
+const SECTION_COMPONENT: Record<SettingsSectionId, ComponentType> = {
+  general: GeneralSettingsPage,
+  appearance: AppearanceSettingsPage,
+  editor: EditorSettingsPage,
+  terminal: TerminalSettingsPage,
+  browser: BrowserSettingsPage,
+  ai: AiSettingsPage,
+  providers: ProvidersSettingsPage,
+  models: ModelsSettingsPage,
+  git: GitSettingsPage,
+  privacy: PrivacySettingsPage,
+  accessibility: AccessibilitySettingsPage,
+  keyboard: KeyboardSettingsPage,
+  about: AboutSettingsPage,
 };
 
 const SECTION_IDS = new Set(SETTINGS_NAV.map((n) => n.id));
@@ -121,17 +71,6 @@ function highlightMatch(text: string, query: string) {
       </mark>
       {text.slice(idx + q.length)}
     </>
-  );
-}
-
-function SectionFallback() {
-  return (
-    <div className="space-y-3" aria-busy="true" aria-label="Loading settings">
-      <Skeleton className="h-6 w-40" />
-      <Skeleton className="h-4 w-64" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-24 w-full" />
-    </div>
   );
 }
 
@@ -419,9 +358,7 @@ export function SettingsLayout() {
               )}
             </div>
           ) : (
-            <Suspense fallback={<SectionFallback />}>
-              <Page />
-            </Suspense>
+            <Page />
           )}
         </div>
       </div>

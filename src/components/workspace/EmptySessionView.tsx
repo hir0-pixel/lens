@@ -1,4 +1,6 @@
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronDown,
   Cloud,
   Folder,
@@ -112,6 +114,10 @@ export function EmptySessionView({
   const renameRepository = useSessionStore((s) => s.renameRepository);
   const removeRepository = useSessionStore((s) => s.removeRepository);
   const createSession = useSessionStore((s) => s.createSession);
+  const historyIndex = useSessionStore((s) => s.historyIndex);
+  const historyLen = useSessionStore((s) => s.historyStack.length);
+  const goBack = useSessionStore((s) => s.goBack);
+  const goForward = useSessionStore((s) => s.goForward);
 
   const session = currentSessionId ? sessions[currentSessionId] : null;
   const activeModel =
@@ -231,6 +237,8 @@ export function EmptySessionView({
 
   const hasMessages = messages && messages.length > 0;
   const branchName = currentBranch?.name ?? "main";
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex >= 0 && historyIndex < historyLen - 1;
 
   function renderComposer() {
     return (
@@ -304,10 +312,38 @@ export function EmptySessionView({
         className="flex w-[244px] shrink-0 flex-col border-r border-white/[0.06] bg-[#161616]"
         aria-label="Session navigator"
       >
-        <div className="flex items-center px-3.5 pt-3 pb-1">
+        <div className="flex items-center gap-1 px-3.5 pt-3 pb-1">
           <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.08] text-[12px] font-semibold text-[#e8e8e8]">
             L
           </span>
+          <button
+            type="button"
+            aria-label="Back"
+            disabled={!canGoBack}
+            onClick={() => goBack()}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-md",
+              canGoBack
+                ? "text-[#b0b0b0] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+                : "cursor-not-allowed text-[#555]",
+            )}
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            aria-label="Forward"
+            disabled={!canGoForward}
+            onClick={() => goForward()}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-md",
+              canGoForward
+                ? "text-[#b0b0b0] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+                : "cursor-not-allowed text-[#555]",
+            )}
+          >
+            <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+          </button>
         </div>
 
         <div className="mt-1 flex flex-col gap-0.5 px-2">

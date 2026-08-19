@@ -1,13 +1,17 @@
 import { useState } from "react";
 import {
   ArrowUp,
+  Check,
   ChevronDown,
+  ClipboardList,
   Gauge,
+  Hand,
   Paperclip,
   Plus,
   Search,
+  ShieldAlert,
+  ShieldCheck,
   Square,
-  Timer,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,13 +25,39 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export type ApplyPolicy = "ask" | "always" | "plan";
+export type ApplyPolicy = "ask" | "auto" | "plan" | "full";
 export type EffortLevel = "low" | "medium" | "extra-high";
 
-const APPLY_OPTIONS: { id: ApplyPolicy; label: string }[] = [
-  { id: "ask", label: "Ask before changes" },
-  { id: "always", label: "Always apply changes" },
-  { id: "plan", label: "Plan first" },
+const APPLY_OPTIONS: {
+  id: ApplyPolicy;
+  label: string;
+  hint: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+}[] = [
+  {
+    id: "ask",
+    label: "Ask before changes",
+    hint: "Ask before file changes.",
+    icon: Hand,
+  },
+  {
+    id: "auto",
+    label: "Edit automatically",
+    hint: "Edit files automatically.",
+    icon: ShieldCheck,
+  },
+  {
+    id: "plan",
+    label: "Plan mode",
+    hint: "Plan before editing.",
+    icon: ClipboardList,
+  },
+  {
+    id: "full",
+    label: "Full access",
+    hint: "Run with fewer confirmations.",
+    icon: ShieldAlert,
+  },
 ];
 
 const EFFORT_OPTIONS: { id: EffortLevel; label: string }[] = [
@@ -85,8 +115,9 @@ export function AgentChatComposer({
   const applyPolicy = applyPolicyProp ?? localPolicy;
   const effort = effortProp ?? localEffort;
   const canSend = text.trim().length > 0 || attachments.length > 0;
-  const applyLabel =
-    APPLY_OPTIONS.find((o) => o.id === applyPolicy)?.label ?? "Ask before changes";
+  const applyOption =
+    APPLY_OPTIONS.find((o) => o.id === applyPolicy) ?? APPLY_OPTIONS[0];
+  const ApplyIcon = applyOption.icon;
   const effortLabel =
     EFFORT_OPTIONS.find((o) => o.id === effort)?.label ?? "Low";
 
@@ -176,23 +207,50 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-[12.5px] text-[#c4c4c4] hover:bg-white/[0.06]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] text-[#c4c4c4] hover:bg-white/[0.06]"
             >
-              <Timer className="h-3.5 w-3.5 text-[#8a8a8a]" strokeWidth={1.6} />
-              <span className="max-w-[160px] truncate">{applyLabel}</span>
+              <ApplyIcon className="h-3.5 w-3.5 text-[#d4d4d4]" strokeWidth={1.6} />
+              <span className="max-w-[160px] truncate">{applyOption.label}</span>
               <ChevronDown className="h-3 w-3 text-[#6a6a6a]" strokeWidth={2} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-52">
-            {APPLY_OPTIONS.map((opt) => (
-              <DropdownMenuItem
-                key={opt.id}
-                onClick={() => setPolicy(opt.id)}
-                className={cn(applyPolicy === opt.id && "bg-white/[0.06]")}
-              >
-                {opt.label}
-              </DropdownMenuItem>
-            ))}
+          <DropdownMenuContent
+            align="start"
+            side="top"
+            sideOffset={8}
+            className="w-[280px] rounded-xl border-white/[0.12] bg-[#1c1c1c] p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+          >
+            {APPLY_OPTIONS.map((opt) => {
+              const Icon = opt.icon;
+              const selected = applyPolicy === opt.id;
+              return (
+                <DropdownMenuItem
+                  key={opt.id}
+                  onClick={() => setPolicy(opt.id)}
+                  className={cn(
+                    "items-start gap-2.5 rounded-lg px-2.5 py-2 text-[#e8e8e8] focus:bg-white/[0.08] focus:text-white",
+                    selected && "bg-white/[0.07]",
+                  )}
+                >
+                  <Icon
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[#e8e8e8]"
+                    strokeWidth={1.6}
+                  />
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block text-[13.5px]">{opt.label}</span>
+                    <span className="mt-0.5 block text-[12px] text-[#8a8a8a]">
+                      {opt.hint}
+                    </span>
+                  </span>
+                  {selected && (
+                    <Check
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#e8e8e8]"
+                      strokeWidth={2}
+                    />
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
 

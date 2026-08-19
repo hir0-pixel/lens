@@ -1,11 +1,10 @@
-import { ArrowLeft, ArrowRight, SquareArrowOutUpRight, SquareTerminal } from "lucide-react";
+import { SquareArrowOutUpRight, SquareTerminal } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { MenuBar } from "@/features/menu-bar/MenuBar";
 import { WindowControls } from "@/features/shell/WindowControls";
 import { TitleBarOverflowMenu } from "@/features/shell/TitleBarOverflowMenu";
 import { WorkspaceLauncher } from "@/features/shell/WorkspaceLauncher";
 import { MENU_BAR } from "@/features/menu-bar/menuRegistry";
-import { useSessionStore } from "@/stores/sessionStore";
 import { openAgentsWindow } from "@/features/windows/openAppWindow";
 import { LensWordmark } from "@/components/brand/LensWordmark";
 import { Button } from "@/components/ui/button";
@@ -40,12 +39,6 @@ export default function TitleBar({
   onToggleSidePane,
 }: TitleBarProps) {
   const isAgents = variant === "agents";
-  const historyIndex = useSessionStore((s) => s.historyIndex);
-  const historyLen = useSessionStore((s) => s.historyStack.length);
-  const goBack = useSessionStore((s) => s.goBack);
-  const goForward = useSessionStore((s) => s.goForward);
-  const canGoBack = historyIndex > 0;
-  const canGoForward = historyIndex >= 0 && historyIndex < historyLen - 1;
 
   return (
     <header
@@ -81,39 +74,6 @@ export default function TitleBar({
       )}
 
       <div className="titlebar-no-drag relative z-[1] ml-auto flex items-stretch">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className={cn(
-            "h-full rounded-none px-1.5",
-            canGoBack
-              ? "text-muted-foreground hover:text-foreground"
-              : "cursor-not-allowed text-muted-foreground",
-          )}
-          aria-label="Back"
-          disabled={!canGoBack}
-          onClick={() => goBack()}
-        >
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className={cn(
-            "h-full rounded-none px-1.5",
-            canGoForward
-              ? "text-muted-foreground hover:text-foreground"
-              : "cursor-not-allowed text-muted-foreground",
-          )}
-          aria-label="Forward"
-          disabled={!canGoForward}
-          onClick={() => goForward()}
-        >
-          <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
-        </Button>
-
         {isAgents ? (
           <WorkspaceLauncher />
         ) : (
