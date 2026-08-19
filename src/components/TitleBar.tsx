@@ -8,6 +8,7 @@ import { openIdeWindow, openAgentsWindow } from "@/features/windows/openAppWindo
 import { LensWordmark } from "@/components/brand/LensWordmark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { UserAccountMenu } from "@/shared/bff-auth/UserAccountMenu";
 
 interface TitleBarProps {
   projectName?: string;
@@ -141,7 +142,7 @@ export default function TitleBar({
           </Button>
         )}
 
-        {!isAgents && (
+{!isAgents && (
           <Button
             type="button"
             variant="ghost"
@@ -153,6 +154,7 @@ export default function TitleBar({
             Settings
           </Button>
         )}
+        <UserAccountMenu />
         <WindowControls />
       </div>
     </header>

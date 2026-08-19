@@ -51,6 +51,9 @@ import {
   getIdentityGatewayConfig,
   IdentityLoginRequiredError,
 } from "./shared/identity-gateway/client";
+import { AuthGate } from "./shared/bff-auth/AuthGate";
+import { getBffAuthClient } from "./shared/bff-auth";
+import { useAuthStore } from "./shared/bff-auth/store";
 
 const ProjectListView = lazy(
   () => import("./components/projects/ProjectListView"),
@@ -79,7 +82,11 @@ export default function App() {
   if (getWindowMode() === "ide") {
     return <IdeWindowApp />;
   }
-  return <AgentsApp />;
+  return (
+    <AuthGate>
+      <AgentsApp />
+    </AuthGate>
+  );
 }
 
 /** Agents OS window — chat + optional side Terminal dock. IDE is a separate window. */
@@ -271,6 +278,36 @@ function AgentsApp() {
     };
     appendMessage(sess.id, userMsg);
     setSending(true);
+
+    const bffClient = getBffAuthClient();
+    if (bffClient && mode === "ask") {
+      const controller = new AbortController();
+      labGatewayAbort.current = controller;
+      try {
+        const content = await bffClient.generate(text, controller.signal);
+        appendMessage(sess.id, {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          content,
+          timestamp: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+          model: "Lens (authenticated)",
+        });
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          (error.message === "AUTH_REQUIRED" ||
+            error.name === "AuthClientError" && error.message === "AUTH_REQUIRED")
+        ) {
+          useAuthStore.getState().clear();
+        } else if (!controller.signal.aborted) {
+          toast.error("Generation is unavailable through the secure gateway.");
+        }
+      } finally {
+        if (labGatewayAbort.current === controller) labGatewayAbort.current = null;
+        setSending(false);
+      }
+      return;
+    }
 
     const identityGateway = getIdentityGatewayConfig();
     const labGateway = getLabGatewayConfig();
