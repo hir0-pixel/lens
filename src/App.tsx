@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import TitleBar from "./components/TitleBar";
+import TerminalView from "./components/output/TerminalView";
 import { EmptySessionView } from "./components/workspace/EmptySessionView";
 import { SessionTabStrip } from "./components/workspace/SessionTabStrip";
 import {
@@ -110,6 +111,7 @@ function AgentsApp() {
   const [credits, setCredits] = useState(2_000_000);
   const [, setSessionCredits] = useState(348_120);
   const [agentsDock, setAgentsDock] = useState<AgentsDockKind>(null);
+  const [bottomTerminal, setBottomTerminal] = useState(false);
   const labGatewayAbort = useRef<AbortController | null>(null);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -201,7 +203,7 @@ function AgentsApp() {
           repos.find((r) => r.id === activeId)?.path ?? term.defaultCwd;
         term.createSession({ cwd });
       }
-      setAgentsDock("terminal");
+      setBottomTerminal((v) => !v);
       setView("workspace");
     }
     function onOpenBrowser() {
@@ -506,9 +508,7 @@ function AgentsApp() {
         onOpenSettings={() => openSettings()}
         variant="agents"
         onIdeWindow={() => void openIdeWindow()}
-        onOpenTerminal={() => {
-          window.dispatchEvent(new CustomEvent("lens:open-terminal"));
-        }}
+        onOpenTerminal={() => setBottomTerminal((v) => !v)}
         sidePaneOpen={agentsDock !== null}
         onToggleSidePane={() =>
           setAgentsDock((k) => (k ? null : "picker"))
@@ -528,6 +528,49 @@ function AgentsApp() {
           }
         />
       </div>
+
+      {bottomTerminal && (
+        <div className="flex h-[240px] shrink-0 flex-col border-t border-white/[0.08] bg-[#0d0d0d]">
+          <div className="flex h-[34px] shrink-0 items-center border-b border-white/[0.08] bg-[#181818] px-2 gap-1">
+            <span className="px-2 py-1 text-[12px] font-semibold text-white">
+              Terminal
+            </span>
+            <span className="px-2 py-1 text-[12px] text-[#666]">
+              PowerShell
+            </span>
+            <span className="flex items-center gap-1.5 rounded bg-[#2a2a2a] px-2.5 py-1 text-[12px] font-medium text-white">
+              {project.name}
+              <button
+                type="button"
+                className="flex h-3.5 w-3.5 items-center justify-center rounded-sm text-[#888] hover:text-white"
+                onClick={() => setBottomTerminal(false)}
+              >
+                <span className="text-[11px] leading-none">×</span>
+              </button>
+            </span>
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-white"
+                title="New terminal"
+              >
+                <span className="text-[15px] leading-none">+</span>
+              </button>
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-white"
+                title="Close panel"
+                onClick={() => setBottomTerminal(false)}
+              >
+                <span className="text-[13px] leading-none">×</span>
+              </button>
+            </div>
+          </div>
+          <div className="min-h-0 flex-1">
+            <TerminalView cwd={project.path} />
+          </div>
+        </div>
+      )}
 
       <WorkbenchOverlays />
 

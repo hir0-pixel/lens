@@ -1,4 +1,5 @@
-import { SquareArrowOutUpRight, SquareTerminal } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Check, Plus, Search, SquareArrowOutUpRight, SquareTerminal, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { MenuBar } from "@/features/menu-bar/MenuBar";
 import { WindowControls } from "@/features/shell/WindowControls";
@@ -8,6 +9,8 @@ import { MENU_BAR } from "@/features/menu-bar/menuRegistry";
 import { openAgentsWindow } from "@/features/windows/openAppWindow";
 import { LensWordmark } from "@/components/brand/LensWordmark";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface TitleBarProps {
@@ -75,7 +78,24 @@ export default function TitleBar({
 
       <div className="titlebar-no-drag relative z-[1] ml-auto flex items-stretch">
         {isAgents ? (
-          <WorkspaceLauncher />
+          <>
+            <WorkspaceLauncher />
+            <ServersPopover />
+            <button
+              type="button"
+              aria-label="Toggle layout"
+              title="Toggle layout"
+              className="flex h-full w-8 items-center justify-center text-[#c8c8c8] hover:bg-white/[0.08] hover:text-white"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("lens:open-agents-tab", { detail: { kind: "review" } }));
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <rect x="1.5" y="2" width="13" height="12" rx="1.8" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M8 2.5v11" stroke="currentColor" strokeWidth="1.3" />
+              </svg>
+            </button>
+          </>
         ) : (
           <Button
             type="button"
@@ -147,6 +167,244 @@ export default function TitleBar({
         <WindowControls />
       </div>
     </header>
+  );
+}
+
+const SERVERS_TABS = ["Servers", "MCP", "LSP", "Plugins"] as const;
+const TAB_COUNTS: Record<string, number | undefined> = { Servers: 1, MCP: 1, Plugins: 1 };
+
+function ServersPopover() {
+  const [activeTab, setActiveTab] = useState<string>("Servers");
+  const [manageOpen, setManageOpen] = useState(false);
+
+  return (
+    <>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Servers"
+          title="Servers"
+          className="flex h-full w-8 items-center justify-center text-[#c8c8c8] hover:bg-white/[0.08] hover:text-white"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <rect x="2" y="2" width="12" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.2" />
+            <rect x="2" y="9" width="12" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="5" cy="4.5" r="0.9" fill="currentColor" />
+            <circle cx="5" cy="11.5" r="0.9" fill="currentColor" />
+          </svg>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="center"
+        sideOffset={4}
+        className="w-[340px] rounded-xl border border-white/10 bg-[#1e1e1e] p-0 shadow-xl"
+      >
+        <div className="flex border-b border-white/10">
+          {SERVERS_TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              className={cn(
+                "px-3 py-2 text-[13px] transition-colors",
+                activeTab === tab
+                  ? "border-b-2 border-white text-white"
+                  : "text-[#888] hover:text-white",
+              )}
+              onClick={() => setActiveTab(tab)}
+            >
+              {TAB_COUNTS[tab] != null ? `${TAB_COUNTS[tab]} ${tab}` : tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="px-3 py-2">
+          {activeTab === "Servers" && (
+            <div className="flex items-center justify-between py-1.5">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+                <span className="text-[13px] text-white font-medium">Local Server</span>
+                <span className="text-[12px] text-[#888]">vlocal</span>
+              </div>
+              <Check className="h-4 w-4 text-[#888]" strokeWidth={1.8} />
+            </div>
+          )}
+          {activeTab === "MCP" && (
+            <McpEntry />
+          )}
+          {activeTab === "LSP" && (
+            <p className="py-3 text-center text-[13px] text-[#888]">LSPs auto-detected from file types</p>
+          )}
+          {activeTab === "Plugins" && (
+            <div className="flex items-center gap-2 py-1.5">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+              <span className="truncate text-[13px] text-white">
+                file:///C:/Users/PMYLS/.config/opencode/plu...
+              </span>
+            </div>
+          )}
+        </div>
+
+        {activeTab === "Servers" && (
+          <div className="border-t border-white/10 px-3 py-2">
+            <button
+              type="button"
+              className="rounded-lg bg-white/10 px-3 py-1.5 text-[12px] text-white hover:bg-white/15"
+              onClick={() => setManageOpen(true)}
+            >
+              Manage servers
+            </button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+
+    <ManageServersDialog open={manageOpen} onOpenChange={setManageOpen} />
+    </>
+  );
+}
+
+function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState<"list" | "add">("list");
+
+  const close = () => { onOpenChange(false); setView("list"); };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) close(); else onOpenChange(v); }}>
+      <DialogContent className="max-w-[460px] gap-0 rounded-xl border border-white/10 bg-[#1e1e1e] p-0 shadow-2xl [&>button]:hidden">
+        {view === "list" ? (
+          <>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <h2 className="text-[16px] font-semibold text-white">Servers</h2>
+              <button type="button" className="rounded-md p-1 text-[#888] hover:bg-white/10 hover:text-white" onClick={close}>
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mx-5 mb-3 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5">
+              <Search className="h-4 w-4 text-[#666]" />
+              <input
+                type="text"
+                placeholder="Search servers"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-[13px] text-white placeholder:text-[#666] outline-none"
+              />
+            </div>
+
+            <div className="px-5 pb-3">
+              <div className="flex items-center justify-between rounded-lg px-1 py-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                  <span className="text-[14px] font-medium text-white">Local Server</span>
+                  <span className="text-[13px] text-[#888]">vlocal</span>
+                </div>
+                <Check className="h-4 w-4 text-[#888]" strokeWidth={1.8} />
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 px-5 py-3">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-[13px] text-white hover:text-white/80"
+                onClick={() => setView("add")}
+              >
+                <Plus className="h-4 w-4" />
+                Add server
+              </button>
+            </div>
+          </>
+        ) : (
+          <AddServerView onBack={() => setView("list")} onClose={close} />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddServerView({ onBack, onClose }: { onBack: () => void; onClose: () => void }) {
+  const [address, setAddress] = useState("");
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const fieldClass =
+    "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13px] text-white placeholder:text-[#666] outline-none focus:border-white/20";
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center gap-3 px-5 pt-5 pb-4">
+        <button type="button" className="text-[#888] hover:text-white" onClick={onBack}>
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h2 className="text-[16px] font-semibold text-white">Add server</h2>
+        <button type="button" className="ml-auto rounded-md p-1 text-[#888] hover:bg-white/10 hover:text-white" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-4 px-5 pb-5">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[13px] text-[#999]">Server address</span>
+          <input type="text" placeholder="http://localhost:4096" value={address} onChange={(e) => setAddress(e.target.value)} className={fieldClass} />
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[13px] text-[#999]">Server name (optional)</span>
+          <input type="text" placeholder="Localhost" value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
+        </label>
+
+        <div className="flex gap-3">
+          <label className="flex flex-1 flex-col gap-1.5">
+            <span className="text-[13px] text-[#999]">Username (optional)</span>
+            <input type="text" placeholder="opencode" value={username} onChange={(e) => setUsername(e.target.value)} className={fieldClass} />
+          </label>
+          <label className="flex flex-1 flex-col gap-1.5">
+            <span className="text-[13px] text-[#999]">Password (optional)</span>
+            <input type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} className={fieldClass} />
+          </label>
+        </div>
+      </div>
+
+      <div className="border-t border-white/10 px-5 py-3">
+        <button
+          type="button"
+          className="rounded-lg bg-white px-4 py-1.5 text-[13px] font-medium text-[#1e1e1e] hover:bg-white/90"
+        >
+          Add server
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function McpEntry() {
+  const [on, setOn] = useState(true);
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <div className="flex items-center gap-2">
+        <span className={cn("h-2 w-2 rounded-full transition-colors", on ? "bg-green-500" : "bg-white/20")} />
+        <span className="text-[13px] text-white font-medium">shadcn</span>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        className={cn(
+          "relative h-5 w-9 rounded-full transition-colors",
+          on ? "bg-white" : "bg-white/20",
+        )}
+        onClick={() => setOn(!on)}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 h-4 w-4 rounded-full bg-[#1e1e1e] transition-transform",
+            on ? "left-[18px]" : "left-0.5",
+          )}
+        />
+      </button>
+    </div>
   );
 }
 
