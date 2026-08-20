@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
 import { useTerminalStore } from "@/stores/terminalStore";
-import { executeCommand } from "@/components/terminal/utils/mockShell";
+import { executeRealCommand } from "@/components/terminal/utils/realShell";
 import {
   getBootLines,
   getPrompt,
@@ -102,12 +102,18 @@ function TerminalSessionComponent({
 
     registerTerminal(sessionId, handle);
 
-    const runCommand = (line: string) => {
+    const runCommand = async (line: string) => {
       const current = useTerminalStore.getState().sessions.find((s) => s.id === sessionId);
       if (!current || current.status !== "running") return;
 
       appendHistory(sessionId, line);
-      const result = executeCommand(line, { cwd: current.cwd, shell: current.shell });
+      const result = await executeRealCommand(
+        line,
+        { cwd: current.cwd, shell: current.shell },
+        (chunk) => {
+          term.write(chunk);
+        },
+      );
 
       if (result.clear) {
         term.clear();

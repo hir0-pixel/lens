@@ -132,7 +132,7 @@ export function AgentChatComposer({
   }
 
   return (
-    <div className="rounded-[22px] border border-white/[0.09] bg-[#1c1c1c] shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
+    <div className="rounded-2xl border border-white/[0.1] bg-[#18181b] shadow-xl transition-all focus-within:border-white/20 focus-within:ring-1 focus-within:ring-white/20">
       {fileInput}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-1.5 px-3.5 pt-3">
