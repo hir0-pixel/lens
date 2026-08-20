@@ -1,4 +1,5 @@
 import TerminalView from "@/components/output/TerminalView";
+import { useCallback, useEffect, useState } from "react";
 
 interface TerminalPanelProps {
   title?: string;
@@ -22,6 +23,29 @@ export default function TerminalPanel({
   projectName,
   onClose,
 }: TerminalPanelProps) {
+  const [height, setHeight] = useState(240);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const stopResizing = useCallback(() => setIsResizing(false), []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const onPointerMove = (event: PointerEvent) => {
+      // The panel is docked to the bottom, so moving the pointer upward grows it.
+      setHeight((current) =>
+        Math.min(Math.max(current - event.movementY, 160), window.innerHeight - 120),
+      );
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopResizing);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", stopResizing);
+    };
+  }, [isResizing, stopResizing]);
+
   const onNew = () =>
     window.dispatchEvent(new CustomEvent("lens:terminal-new"));
   const close = () => {
@@ -33,7 +57,33 @@ export default function TerminalPanel({
   };
 
   return (
-    <div className="flex h-[240px] shrink-0 flex-col border-t border-white/[0.08] bg-[#0d0d0d]">
+    <div
+      className="relative flex shrink-0 flex-col border-t border-white/[0.08] bg-[#0d0d0d]"
+      style={{ height }}
+    >
+      <div
+        className="absolute inset-x-0 -top-1 z-10 h-2 cursor-row-resize touch-none"
+        role="separator"
+        aria-label="Resize terminal"
+        aria-orientation="horizontal"
+        aria-valuemin={160}
+        aria-valuemax={Math.max(160, window.innerHeight - 120)}
+        aria-valuenow={height}
+        tabIndex={0}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          setIsResizing(true);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowUp") {
+            event.preventDefault();
+            setHeight((current) => Math.min(current + 24, window.innerHeight - 120));
+          } else if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setHeight((current) => Math.max(current - 24, 160));
+          }
+        }}
+      />
       <div className="flex h-[34px] shrink-0 items-center gap-1 border-b border-white/[0.08] bg-[#181818] px-2">
         <span className="px-2 py-1 text-[12px] font-semibold text-white">
           {title}

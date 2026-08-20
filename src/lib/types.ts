@@ -115,6 +115,11 @@ export interface Attachment {
   preview?: string;
 }
 
+export interface Citation {
+  source: string;
+  section: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: MessageRole;
@@ -124,6 +129,7 @@ export interface ChatMessage {
   toolCalls?: ToolCallRecord[];
   fileEdits?: FileEdit[];
   attachments?: Attachment[];
+  citations?: Citation[];
   model?: string;
 }
 

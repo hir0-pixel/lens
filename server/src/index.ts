@@ -9,10 +9,12 @@ import { createApiRouter } from "./routes/api";
 import { corsMiddleware } from "./middleware/cors";
 import { csrfProtection } from "./middleware/csrf";
 import { createSessionManager } from "./auth/sessionManager";
+import { LocalRagClient } from "./rag/localRagClient";
 
 export function createApp(options?: {
   authService?: ReturnType<typeof createAuthService>;
   generateHandler?: (input: { prompt: string; subject: string }) => Promise<string>;
+  ragHandler?: (input: { requestId: string; query: string; subject: string }, signal: AbortSignal) => Promise<{ output: string; citations: readonly { source: string; section: string }[] }>;
   logger?: Pick<typeof console, "error" | "warn">;
 }) {
   validateProductionConfig();
@@ -26,6 +28,16 @@ export function createApp(options?: {
     (async () => {
       throw new Error("No generation backend configured");
     });
+  const ragClient = cfg.RAG_PROVIDER_MODE !== "disabled" && cfg.RAG_SERVICE_URL && cfg.RAG_SERVICE_TOKEN
+    ? new LocalRagClient(cfg.RAG_SERVICE_URL, cfg.RAG_SERVICE_TOKEN)
+    : undefined;
+  const ragHandler = options?.ragHandler ?? (ragClient
+    ? (input: { requestId: string; query: string; subject: string }, signal: AbortSignal) => ragClient.ask({
+      requestId: input.requestId,
+      query: input.query,
+      subjectRef: input.subject,
+    }, signal)
+    : undefined);
 
   const app = express();
   app.disable("x-powered-by");
@@ -44,7 +56,7 @@ export function createApp(options?: {
 
   app.use("/auth", createAuthRouter({ auth }));
   app.use("/api", csrfProtection({ getSessionCsrf: (cookieValue) => sessionManager.readSession(cookieValue)?.csrfToken }));
-  app.use("/api", createApiRouter({ auth, generateHandler }));
+  app.use("/api", createApiRouter({ auth, generateHandler, ragHandler }));
 
   app.use("/health", (_req, res) => {
     res.json({ ok: true });

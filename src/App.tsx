@@ -318,13 +318,14 @@ function AgentsApp() {
       const controller = new AbortController();
       labGatewayAbort.current = controller;
       try {
-        const content = await bffClient.generate(text, controller.signal);
+        const answer = await bffClient.askRag(text, controller.signal);
         appendMessage(sess.id, {
           id: `a-${Date.now()}`,
           role: "assistant",
-          content,
+          content: answer.output,
           timestamp: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
           model: "Lens (authenticated)",
+          citations: answer.citations.map((citation) => ({ ...citation })),
         });
       } catch (error) {
         if (
@@ -334,7 +335,7 @@ function AgentsApp() {
         ) {
           useAuthStore.getState().clear();
         } else if (!controller.signal.aborted) {
-          toast.error("Generation is unavailable through the secure gateway.");
+          toast.error("The governed RAG service is unavailable through the secure gateway.");
         }
       } finally {
         if (labGatewayAbort.current === controller) labGatewayAbort.current = null;

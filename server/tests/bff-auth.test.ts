@@ -173,6 +173,36 @@ describe("Lens BFF authentication", () => {
     expect(res.body.error).toBe("CSRF_REJECTED");
   });
 
+  it("routes a synthetic RAG request through the authenticated BFF without exposing provider details", async () => {
+    makeEnv();
+    const ragHandler = vi.fn(async () => ({
+      output: "The remote-work stipend is $1,500. [Source 1]",
+      citations: [{ source: "remote_work_policy.docx", section: "Section 2: Equipment and Expenses" }],
+    }));
+    const app = createApp({ generateHandler: async () => "x", ragHandler });
+    const callback = await completeLogin(app);
+    const cookies = callback.header["set-cookie"] ?? [];
+    const sessionCookie = cookies.find((cookie: string) => cookie.startsWith("lens_session="))?.split(";")[0] ?? "";
+    const csrfCookie = cookies.find((cookie: string) => cookie.startsWith("lens_csrf="))?.split(";")[0] ?? "";
+    const csrf = decodeURIComponent(csrfCookie.split("=").slice(1).join("="));
+
+    const response = await request(app)
+      .post("/api/rag/ask")
+      .set("Cookie", [sessionCookie, csrfCookie])
+      .set("x-lens-csrf", csrf)
+      .send({ query: "What is the remote-work stipend?" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      output: "The remote-work stipend is $1,500. [Source 1]",
+      citations: [{ source: "remote_work_policy.docx", section: "Section 2: Equipment and Expenses" }],
+    });
+    expect(ragHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: "user-1", query: "What is the remote-work stipend?" }),
+      expect.any(AbortSignal),
+    );
+  });
+
   it("POST /auth/logout clears the application session and no longer authenticates", async () => {
     makeEnv();
     const app = createApp({ generateHandler: async () => "x" });
@@ -205,6 +235,18 @@ describe("Lens BFF authentication", () => {
   it("production build rejects OIDC_TEST_MODE being enabled", () => {
     makeEnv({ NODE_ENV: "production", OIDC_TEST_MODE: "true", OIDC_CLIENT_SECRET: CLIENT_SECRET });
     expect(() => validateProductionConfig()).toThrow(/TEST_MODE/i);
+  });
+
+  it("production build rejects the Gemini synthetic-data provider even when its local bridge is configured", () => {
+    makeEnv({
+      NODE_ENV: "production",
+      APP_ORIGIN: "https://lens.example.com",
+      OIDC_REDIRECT_URI: "https://lens.example.com/auth/callback",
+      RAG_PROVIDER_MODE: "gemini-test",
+      RAG_SERVICE_URL: "http://127.0.0.1:8010",
+      RAG_SERVICE_TOKEN: "r".repeat(32),
+    });
+    expect(() => validateProductionConfig()).toThrow(/Gemini test RAG/i);
   });
 
   it("parses OIDC_REQUIRE_HTTPS_ISSUER=false as false (regression: z.coerce.boolean coerces 'false' to true)", () => {

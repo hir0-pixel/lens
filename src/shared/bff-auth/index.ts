@@ -52,7 +52,13 @@ export function getBffAuthClient(environment: Record<string, string | boolean | 
     let openExternal: ((url: string) => void) | undefined;
     if (config.openExternal) {
       openExternal = config.openExternal;
-    } else if (isTauri()) {
+    } else if (isTauri() && environment.DEV !== true) {
+      // Production desktop: open the corporate login page in the system
+      // browser (the webview never embeds corporate login). In development
+      // the webview runs on a loopback origin, so we run the OIDC flow
+      // in-process instead — the session cookie then lands in the webview's
+      // own jar and the app resumes the session without cross-browser cookie
+      // sharing.
       openExternal = (url) => {
         void import("@tauri-apps/plugin-opener").then(({ openUrl }) => {
           void openUrl(url);

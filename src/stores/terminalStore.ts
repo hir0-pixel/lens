@@ -20,7 +20,7 @@ function createLeaf(sessionId: string): SplitPane {
   return { id: `pane-${sessionId}`, type: "leaf", sessionId };
 }
 
-function createDefaultSession(cwd = "~/dev/finance-dashboard"): TerminalSession {
+function createDefaultSession(cwd = "~"): TerminalSession {
   const id = createSessionId();
   const shell = defaultShellForPlatform();
   return {
@@ -109,7 +109,7 @@ export const useTerminalStore = create<TerminalStore>()(
       ...initStore(),
       search: { open: false, query: "", caseSensitive: false, regex: false },
       closedSessions: [],
-      defaultCwd: "~/dev/finance-dashboard",
+      defaultCwd: "~",
 
       createSession: (opts) => {
         const session = createDefaultSession(opts?.cwd ?? get().defaultCwd);

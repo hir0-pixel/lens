@@ -8,7 +8,6 @@ import type { ShellResult, ShellState } from "../types";
 export async function executeRealCommand(
   input: string,
   state: ShellState,
-  onStreamOutput?: (text: string) => void,
 ): Promise<ShellResult> {
   const trimmed = input.trim();
   if (!trimmed) {
@@ -32,7 +31,7 @@ export async function executeRealCommand(
     const target = args[0] || "~";
     let nextCwd = state.cwd;
     if (target === "~") {
-      nextCwd = "C:/Users/PMYLS";
+      nextCwd = "~";
     } else if (target.startsWith("/") || /^[A-Za-z]:/.test(target)) {
       nextCwd = target;
     } else {
@@ -48,40 +47,42 @@ export async function executeRealCommand(
   // Attempt Real OS Command execution via Tauri shell
   if (isTauri()) {
     try {
-      // Dynamic import for Tauri plugin shell with vite-ignore annotation
-      const shellPkg = "@tauri-apps/plugin-shell";
-      const tauriShell: any = await import(/* @vite-ignore */ shellPkg).catch(() => null);
+      const tauriShell: any = await import("@tauri-apps/plugin-shell").catch(() => null);
       if (tauriShell?.Command) {
         const isWin = typeof navigator !== "undefined" && navigator.userAgent.includes("Windows");
-        const program = isWin ? "powershell.exe" : "bash";
-        const programArgs = isWin ? ["-NoProfile", "-Command", input] : ["-c", input];
+        const program = isWin
+          ? state.shell === "cmd"
+            ? "cmd.exe"
+            : "powershell.exe"
+          : state.shell === "zsh"
+            ? "zsh"
+            : "bash";
+        const programArgs = isWin
+          ? state.shell === "cmd"
+            ? ["/d", "/s", "/c", input]
+            : ["-NoProfile", "-Command", input]
+          : ["-c", input];
 
         const command = tauriShell.Command.create(program, programArgs, {
           cwd: state.cwd.startsWith("~") ? undefined : state.cwd,
         });
 
-        let accumulated = "";
-
-        command.on("close", (data: { code: number }) => {
-          if (data.code !== 0) {
-            onStreamOutput?.(`\r\n\x1b[31mProcess exited with code ${data.code}\x1b[0m\r\n`);
-          }
-        });
-
-        command.stdout.on("data", (data: string) => {
-          const formatted = data.replace(/\n/g, "\r\n");
-          accumulated += formatted;
-          onStreamOutput?.(formatted);
-        });
-
-        command.stderr.on("data", (data: string) => {
-          const formatted = `\x1b[31m${data.replace(/\n/g, "\r\n")}\x1b[0m`;
-          accumulated += formatted;
-          onStreamOutput?.(formatted);
-        });
-
-        await command.spawn();
-        return { output: "", newState: state };
+        // `execute()` resolves only after the command exits and includes all
+        // output, so the next prompt is always drawn after the result.
+        const output = await command.execute();
+        const normalize = (text: string) => text.replace(/\r?\n/g, "\r\n");
+        const stdout = normalize(output.stdout);
+        const stderr = output.stderr
+          ? `\x1b[31m${normalize(output.stderr)}\x1b[0m`
+          : "";
+        const exit = output.code && output.code !== 0
+          ? `\x1b[31mProcess exited with code ${output.code}\x1b[0m`
+          : "";
+        const combined = [stdout, stderr, exit].filter(Boolean).join("");
+        return {
+          output: combined && !combined.endsWith("\r\n") ? `${combined}\r\n` : combined,
+          newState: state,
+        };
       }
     } catch (err) {
       console.warn("Tauri shell spawn failed", err);

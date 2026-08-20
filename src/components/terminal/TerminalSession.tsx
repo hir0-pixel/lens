@@ -1,48 +1,51 @@
 import { memo, useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
+import { WebglAddon } from "@xterm/addon-webgl";
 import "@xterm/xterm/css/xterm.css";
 import { useTerminalStore } from "@/stores/terminalStore";
-import { executeRealCommand } from "@/components/terminal/utils/realShell";
-import {
-  getBootLines,
-  getPrompt,
-  TERMINAL_OPTIONS,
-} from "@/components/terminal/utils/terminalTheme";
+import { TERMINAL_OPTIONS } from "@/components/terminal/utils/terminalTheme";
 import {
   registerTerminal,
   unregisterTerminal,
   type TerminalHandle,
 } from "@/components/terminal/utils/terminalRegistry";
+import { isTauri } from "@/features/projects/platform";
 import { cn } from "@/lib/utils";
 
 interface TerminalSessionProps {
   sessionId: string;
+  /** Retained for callers that label a terminal by project. The native shell owns its prompt. */
   projectName?: string;
   isActive: boolean;
   onFocus?: () => void;
   className?: string;
 }
 
+interface TerminalDataEvent {
+  sessionId: string;
+  data: string;
+}
+
 function TerminalSessionComponent({
   sessionId,
-  projectName = "finance-dashboard",
   isActive,
   onFocus,
   className,
 }: TerminalSessionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
-  const inputBufferRef = useRef("");
+  const onFocusRef = useRef(onFocus);
   const session = useTerminalStore((s) => s.sessions.find((x) => x.id === sessionId));
   const updateSession = useTerminalStore((s) => s.updateSession);
-  const setCwd = useTerminalStore((s) => s.setCwd);
-  const appendHistory = useTerminalStore((s) => s.appendHistory);
-  const killSession = useTerminalStore((s) => s.killSession);
   const generation = session?.generation ?? 0;
-  const shell = session?.shell ?? "bash";
-  const cwd = session?.cwd ?? "~/dev/finance-dashboard";
+  const shell = session?.shell ?? "powershell";
+  const cwd = session?.cwd ?? "~";
+
+  onFocusRef.current = onFocus;
 
   useEffect(() => {
     if (!containerRef.current || !session) return;
@@ -54,179 +57,152 @@ function TerminalSessionComponent({
     term.loadAddon(search);
     term.open(containerRef.current);
 
-    const boot = () => {
-      term.clear();
-      getBootLines(projectName, cwd, shell).forEach((line) => term.writeln(line));
-      term.write(getPrompt(shell, cwd).replace(/^\r\n/, ""));
+    try {
+      const webgl = new WebglAddon();
+      webgl.onContextLoss(() => webgl.dispose());
+      term.loadAddon(webgl);
+    } catch {
+      // xterm's canvas renderer remains available when WebGL is unavailable.
+    }
+
+    let disposed = false;
+    let unlisten: UnlistenFn | undefined;
+    let resizeObserver: ResizeObserver | undefined;
+
+    const resizePty = () => {
+      if (containerRef.current?.offsetParent === null) return;
+      fit.fit();
+      if (isTauri()) {
+        void invoke("terminal_resize", {
+          args: { sessionId, cols: term.cols, rows: term.rows },
+        }).catch(() => {
+          // The first layout pass can occur before the native session is ready.
+        });
+      }
     };
 
-    boot();
+    const start = async () => {
+      try {
+        unlisten = await listen<TerminalDataEvent>("terminal://data", (event) => {
+          if (event.payload.sessionId !== sessionId || disposed) return;
+          term.write(event.payload.data, () => term.scrollToBottom());
+        });
+
+        resizePty();
+        if (!isTauri()) {
+          term.writeln("This terminal is available in the desktop app.");
+          return;
+        }
+
+        await invoke("terminal_spawn", {
+          args: { sessionId, generation, cwd, shell, cols: term.cols, rows: term.rows },
+        });
+        if (!disposed) term.focus();
+      } catch (error) {
+        if (!disposed) {
+          term.writeln(`\x1b[31mUnable to start terminal: ${String(error)}\x1b[0m`);
+        }
+      }
+    };
+
+    const onData = term.onData((data) => {
+      if (!isTauri()) return;
+      onFocusRef.current?.();
+      void invoke("terminal_write", { sessionId, data }).catch((error) => {
+        if (!disposed) {
+          term.writeln(`\r\n\x1b[31mTerminal input error: ${String(error)}\x1b[0m`);
+        }
+      });
+    });
 
     const handle: TerminalHandle = {
       terminal: term,
       searchAddon: search,
       clear: () => {
         term.clear();
-        inputBufferRef.current = "";
-        term.write(getPrompt(shell, useTerminalStore.getState().sessions.find((s) => s.id === sessionId)?.cwd ?? cwd).replace(/^\r\n/, ""));
+        term.focus();
       },
       copy: () => {
-        const sel = term.getSelection();
-        if (sel) void navigator.clipboard.writeText(sel);
+        const selection = term.getSelection();
+        if (selection) void navigator.clipboard.writeText(selection);
       },
       paste: async () => {
         try {
           const text = await navigator.clipboard.readText();
-          term.write(text);
-          inputBufferRef.current += text;
+          if (isTauri()) {
+            await invoke("terminal_write", { sessionId, data: text });
+          }
         } catch {
-          /* clipboard denied */
+          // Clipboard access may be denied by the host.
         }
       },
       selectAll: () => term.selectAll(),
-      findNext: (query, opts) => {
+      findNext: (query, options) => {
         search.findNext(query, {
-          caseSensitive: opts?.caseSensitive,
-          regex: opts?.regex,
+          caseSensitive: options?.caseSensitive,
+          regex: options?.regex,
         });
       },
-      findPrevious: (query, opts) => {
+      findPrevious: (query, options) => {
         search.findPrevious(query, {
-          caseSensitive: opts?.caseSensitive,
-          regex: opts?.regex,
+          caseSensitive: options?.caseSensitive,
+          regex: options?.regex,
         });
       },
       focus: () => term.focus(),
-      restart: boot,
+      restart: () => {
+        void invoke("terminal_write", { sessionId, data: "exit\r" });
+      },
     };
 
     registerTerminal(sessionId, handle);
-
-    const runCommand = async (line: string) => {
-      const current = useTerminalStore.getState().sessions.find((s) => s.id === sessionId);
-      if (!current || current.status !== "running") return;
-
-      appendHistory(sessionId, line);
-      const result = await executeRealCommand(
-        line,
-        { cwd: current.cwd, shell: current.shell },
-        (chunk) => {
-          term.write(chunk);
-        },
-      );
-
-      if (result.clear) {
-        term.clear();
-      } else if (result.output) {
-        term.write(result.output);
-      }
-
-      if (result.newState.cwd !== current.cwd) {
-        setCwd(sessionId, result.newState.cwd);
-      }
-
-      if (result.exitSession) {
-        killSession(sessionId);
-        term.writeln("\x1b[90m[session killed — restart to continue]\x1b[0m");
-        return;
-      }
-
-      const updated = useTerminalStore.getState().sessions.find((s) => s.id === sessionId);
-      term.write(getPrompt(updated?.shell ?? shell, updated?.cwd ?? cwd));
-    };
-
-    const onData = term.onData((data) => {
-      const current = useTerminalStore.getState().sessions.find((s) => s.id === sessionId);
-      if (!current || current.status !== "running") return;
-      onFocus?.();
-
-      if (data === "\r") {
-        const line = inputBufferRef.current;
-        inputBufferRef.current = "";
-        term.write("\r\n");
-        runCommand(line);
-        return;
-      }
-
-      if (data === "\u007F") {
-        if (inputBufferRef.current.length > 0) {
-          inputBufferRef.current = inputBufferRef.current.slice(0, -1);
-          term.write("\b \b");
-        }
-        return;
-      }
-
-      if (data === "\u0003") {
-        inputBufferRef.current = "";
-        term.write("^C\r\n");
-        term.write(getPrompt(shell, useTerminalStore.getState().sessions.find((s) => s.id === sessionId)?.cwd ?? cwd).replace(/^\r\n/, ""));
-        return;
-      }
-
-      if (data === "\u000c") {
-        term.clear();
-        inputBufferRef.current = "";
-        term.write(getPrompt(shell, useTerminalStore.getState().sessions.find((s) => s.id === sessionId)?.cwd ?? cwd).replace(/^\r\n/, ""));
-        return;
-      }
-
-      if (data >= " ") {
-        inputBufferRef.current += data;
-        term.write(data);
-      }
-    });
-
-    const fitTerminal = () => {
-      if (containerRef.current?.offsetParent !== null) {
-        fit.fit();
-      }
-    };
-
-    fitTerminal();
-    requestAnimationFrame(fitTerminal);
-
-    const ro = new ResizeObserver(() => fitTerminal());
-    ro.observe(containerRef.current);
-    window.addEventListener("resize", fitTerminal);
-
     termRef.current = term;
+    void start();
+
+    resizeObserver = new ResizeObserver(resizePty);
+    resizeObserver.observe(containerRef.current);
+    window.addEventListener("resize", resizePty);
+    requestAnimationFrame(resizePty);
 
     return () => {
+      disposed = true;
       onData.dispose();
-      ro.disconnect();
-      window.removeEventListener("resize", fitTerminal);
+      unlisten?.();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", resizePty);
       unregisterTerminal(sessionId);
+      if (isTauri()) {
+        void invoke("terminal_close", { args: { sessionId, generation } });
+      }
       term.dispose();
       termRef.current = null;
     };
-  }, [sessionId, generation, projectName]);
+  }, [sessionId, generation, cwd, shell]);
 
   useEffect(() => {
-    if (isActive) {
-      requestAnimationFrame(() => termRef.current?.focus());
-    }
+    if (isActive) requestAnimationFrame(() => termRef.current?.focus());
   }, [isActive]);
 
   useEffect(() => {
     const term = termRef.current;
     if (!term || !isActive) return;
-    const current = useTerminalStore
-      .getState()
-      .sessions.find((s) => s.id === sessionId);
-    if (!current) return;
-    const viewport = term.buffer.active.viewportY;
-    if (current.scrollPosition === viewport) return;
-    updateSession(sessionId, { scrollPosition: viewport });
-  }, [sessionId, isActive, updateSession]);
+    const current = useTerminalStore.getState().sessions.find((s) => s.id === sessionId);
+    if (current && current.scrollPosition !== term.buffer.active.viewportY) {
+      updateSession(sessionId, { scrollPosition: term.buffer.active.viewportY });
+    }
+  }, [isActive, sessionId, updateSession]);
 
   return (
     <div
       className={cn(
-        "h-full w-full overflow-hidden bg-[var(--cursor-editor-bg)] px-2 py-1 font-mono",
+        "h-full w-full overflow-hidden bg-[#0c0c0c] font-mono",
         !isActive && "opacity-95",
         className,
       )}
-      onMouseDown={() => onFocus?.()}
+      onMouseDown={() => {
+        onFocusRef.current?.();
+        termRef.current?.focus();
+      }}
       role="tabpanel"
       aria-label={`Terminal session ${session?.title ?? sessionId}`}
     >

@@ -35,6 +35,11 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
   AUTH_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(10),
+  // Development-only bridge to the separately deployed Enterprise-RAG service.
+  // The client validates this as loopback before making any request.
+  RAG_PROVIDER_MODE: z.enum(["disabled", "gemini-test", "internal"]).default("disabled"),
+  RAG_SERVICE_URL: z.string().url().optional(),
+  RAG_SERVICE_TOKEN: z.string().min(32).optional(),
   OIDC_ISSUER: z.string().url().optional(),
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
@@ -95,6 +100,19 @@ export function validateProductionConfig(): void {
     if (!cfg.APP_ORIGIN?.startsWith("https://")) {
       throw new Error("APP_ORIGIN must use HTTPS in production");
     }
+    if (cfg.RAG_PROVIDER_MODE === "gemini-test") {
+      throw new Error("The Gemini test RAG bridge cannot be enabled in production");
+    }
+  }
+  const configured = Boolean(cfg.RAG_SERVICE_URL) && Boolean(cfg.RAG_SERVICE_TOKEN);
+  if (cfg.RAG_PROVIDER_MODE === "disabled" && (cfg.RAG_SERVICE_URL || cfg.RAG_SERVICE_TOKEN)) {
+    throw new Error("RAG service configuration requires an explicit provider mode");
+  }
+  if (cfg.RAG_PROVIDER_MODE !== "disabled" && !configured) {
+    throw new Error("An enabled RAG provider requires RAG_SERVICE_URL and RAG_SERVICE_TOKEN");
+  }
+  if (Boolean(cfg.RAG_SERVICE_URL) !== Boolean(cfg.RAG_SERVICE_TOKEN)) {
+    throw new Error("RAG_SERVICE_URL and RAG_SERVICE_TOKEN must be configured together");
   }
 }
 

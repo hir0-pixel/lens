@@ -128,6 +128,20 @@ export function AIMessageBubble({
         <MarkdownContent content={message.content} streaming={streaming} />
       </div>
 
+      {message.citations && message.citations.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Sources">
+          {message.citations.map((citation) => (
+            <span
+              key={`${citation.source}:${citation.section}`}
+              className="rounded-md border border-white/[0.1] bg-white/[0.03] px-2 py-1 text-[11px] text-[#aeb8c8]"
+              title={citation.section}
+            >
+              {citation.source} · {citation.section}
+            </span>
+          ))}
+        </div>
+      )}
+
       <button
         type="button"
         onClick={copyContent}
