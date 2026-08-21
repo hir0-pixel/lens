@@ -1,0 +1,27 @@
+# workloadIdentity: canary overlay keeps a single bounded replica set under the same workload identities for rollback-safe verification
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-bff
+  annotations:
+    workloadIdentity: canary-bff-uses-stable-workload-identity
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-orchestrator
+  annotations:
+    workloadIdentity: canary-orchestrator-uses-stable-workload-identity
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-retrieval
+  annotations:
+    workloadIdentity: canary-retrieval-uses-stable-workload-identity
+spec:
+  replicas: 1

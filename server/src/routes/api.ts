@@ -5,7 +5,6 @@ import type { AuthService } from "../auth/authService";
 import { createRateLimiter } from "../middleware/rateLimit";
 
 const MAX_PROMPT_LENGTH = 12_000;
-const MAX_OUTPUT_LENGTH = 1_000_000;
 
 export interface RagHandlerResult {
   output: string;
@@ -14,12 +13,17 @@ export interface RagHandlerResult {
 
 export function createApiRouter(options: {
   auth: AuthService;
-  generateHandler: (input: { prompt: string; subject: string }) => Promise<string>;
-  ragHandler?: (input: { requestId: string; query: string; subject: string }, signal: AbortSignal) => Promise<RagHandlerResult>;
+  ragHandler?: (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string }, signal: AbortSignal) => Promise<RagHandlerResult>;
 }): Router {
   const router = Router();
   const cfg = getConfig();
-  const rateLimiter = createRateLimiter();
+  const rateLimiter = createRateLimiter({
+    key: (req) => {
+      const cookieValue = req.cookies?.[cfg.SESSION_COOKIE_NAME];
+      const principal = options.auth.getRateLimitPrincipal(cookieValue) ?? "anonymous";
+      return `${principal}|network:${req.ip ?? "unknown"}|route:${req.path}`;
+    },
+  });
 
   router.get("/session", rateLimiter, async (req, res) => {
     const cookieValue = req.cookies?.[cfg.SESSION_COOKIE_NAME];
@@ -27,36 +31,10 @@ export function createApiRouter(options: {
     res.json(session);
   });
 
-  router.post("/generate", rateLimiter, async (req, res) => {
-    const cookieValue = req.cookies?.[cfg.SESSION_COOKIE_NAME];
-    const session = await options.auth.getSessionInfo(cookieValue);
-    if (!session.authenticated || !session.subject) {
-      res.status(401).json({ error: "UNAUTHENTICATED" });
-      return;
-    }
-    const prompt = req.body?.prompt;
-    if (typeof prompt !== "string" || prompt.trim().length === 0 || prompt.length > MAX_PROMPT_LENGTH) {
-      res.status(400).json({ error: "INVALID_REQUEST" });
-      return;
-    }
-    try {
-      const output = await options.generateHandler(
-        { prompt, subject: session.subject },
-      );
-      if (typeof output !== "string" || output.length > MAX_OUTPUT_LENGTH) {
-        res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE" });
-        return;
-      }
-      res.json({ output });
-    } catch {
-      res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE" });
-    }
-  });
-
   router.post("/rag/ask", rateLimiter, async (req, res) => {
     const cookieValue = req.cookies?.[cfg.SESSION_COOKIE_NAME];
-    const session = await options.auth.getSessionInfo(cookieValue);
-    if (!session.authenticated || !session.subject) {
+    const session = await options.auth.getTrustedSession(cookieValue);
+    if (!session.authenticated || !session.subject || !session.sessionRef || !session.deviceRef) {
       res.status(401).json({ error: "UNAUTHENTICATED" });
       return;
     }
@@ -74,7 +52,7 @@ export function createApiRouter(options: {
     req.once("aborted", () => controller.abort());
     try {
       const result = await options.ragHandler(
-        { requestId: randomUUID(), query, subject: session.subject },
+        { requestId: randomUUID(), query, subject: session.subject, sessionRef: session.sessionRef, deviceRef: session.deviceRef },
         controller.signal,
       );
       if (controller.signal.aborted) return;

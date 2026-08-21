@@ -35,11 +35,15 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
   AUTH_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(10),
-  // Development-only bridge to the separately deployed Enterprise-RAG service.
-  // The client validates this as loopback before making any request.
-  RAG_PROVIDER_MODE: z.enum(["disabled", "gemini-test", "internal"]).default("disabled"),
-  RAG_SERVICE_URL: z.string().url().optional(),
-  RAG_SERVICE_TOKEN: z.string().min(32).optional(),
+  ADMISSION_API_ORIGIN: z.string().url().optional(),
+  ADMISSION_WORKLOAD_TOKEN: z.string().min(32).optional(),
+  RATE_LIMIT_KEY_SECRET: z.string().min(32).optional(),
+  // Internal Orchestrator ingress used by the production RAG path. The client
+  // validates this as a loopback or internal network endpoint; the browser
+  // never learns it and can never supply an endpoint or trusted identity.
+  RAG_PROVIDER_MODE: z.enum(["disabled", "internal"]).default("disabled"),
+  ORCHESTRATOR_URL: z.string().url().optional(),
+  ORCHESTRATOR_TOKEN: z.string().min(32).optional(),
   OIDC_ISSUER: z.string().url().optional(),
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
@@ -49,6 +53,7 @@ const envSchema = z.object({
   OIDC_STATE_LENGTH: z.coerce.number().default(32),
   OIDC_NONCE_LENGTH: z.coerce.number().default(32),
   OIDC_PENDING_TTL_MS: z.coerce.number().default(5 * 60 * 1000),
+  OIDC_BROWSER_BINDING_COOKIE_NAME: z.string().min(1).max(128).default("lens_oidc_binding"),
   OIDC_TOKEN_INTROSPECTION_ENDPOINT: z.string().url().optional(),
   OIDC_REVOCATION_ENDPOINT: z.string().url().optional(),
   OIDC_USERINFO_ENDPOINT: z.string().url().optional(),
@@ -86,6 +91,9 @@ export function validateProductionConfig(): void {
       "OIDC_CLIENT_SECRET",
       "OIDC_REDIRECT_URI",
       "SESSION_SECRET",
+      "ADMISSION_API_ORIGIN",
+      "ADMISSION_WORKLOAD_TOKEN",
+      "RATE_LIMIT_KEY_SECRET",
     ];
     const missing = required.filter(key => !cfg[key as keyof EnvConfig]);
     if (missing.length > 0) {
@@ -100,19 +108,18 @@ export function validateProductionConfig(): void {
     if (!cfg.APP_ORIGIN?.startsWith("https://")) {
       throw new Error("APP_ORIGIN must use HTTPS in production");
     }
-    if (cfg.RAG_PROVIDER_MODE === "gemini-test") {
-      throw new Error("The Gemini test RAG bridge cannot be enabled in production");
+  }
+  const admissionConfigured = [cfg.ADMISSION_API_ORIGIN, cfg.ADMISSION_WORKLOAD_TOKEN, cfg.RATE_LIMIT_KEY_SECRET].filter(Boolean).length;
+  if (admissionConfigured !== 0 && admissionConfigured !== 3) {
+    throw new Error("ADMISSION_API_ORIGIN, ADMISSION_WORKLOAD_TOKEN, and RATE_LIMIT_KEY_SECRET must be configured together");
+  }
+  if (cfg.RAG_PROVIDER_MODE === "internal") {
+    if (!cfg.ORCHESTRATOR_URL || !cfg.ORCHESTRATOR_TOKEN) {
+      throw new Error("The internal RAG path requires ORCHESTRATOR_URL and ORCHESTRATOR_TOKEN");
     }
   }
-  const configured = Boolean(cfg.RAG_SERVICE_URL) && Boolean(cfg.RAG_SERVICE_TOKEN);
-  if (cfg.RAG_PROVIDER_MODE === "disabled" && (cfg.RAG_SERVICE_URL || cfg.RAG_SERVICE_TOKEN)) {
-    throw new Error("RAG service configuration requires an explicit provider mode");
-  }
-  if (cfg.RAG_PROVIDER_MODE !== "disabled" && !configured) {
-    throw new Error("An enabled RAG provider requires RAG_SERVICE_URL and RAG_SERVICE_TOKEN");
-  }
-  if (Boolean(cfg.RAG_SERVICE_URL) !== Boolean(cfg.RAG_SERVICE_TOKEN)) {
-    throw new Error("RAG_SERVICE_URL and RAG_SERVICE_TOKEN must be configured together");
+  if ("RAG_SERVICE_URL" in process.env || "RAG_SERVICE_TOKEN" in process.env) {
+    throw new Error("Legacy RAG_SERVICE bridge settings are not supported; use the internal Orchestrator path");
   }
 }
 

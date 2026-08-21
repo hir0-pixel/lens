@@ -1,0 +1,36 @@
+# workloadIdentity: failover overlay keeps identities intact and raises ingress annotations for recovery operations
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-bff
+  annotations:
+    workloadIdentity: failover-bff-uses-stable-workload-identity
+spec:
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-orchestrator
+  annotations:
+    workloadIdentity: failover-orchestrator-uses-stable-workload-identity
+spec:
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-retrieval
+  annotations:
+    workloadIdentity: failover-retrieval-uses-stable-workload-identity
+spec:
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-ingestion
+  annotations:
+    workloadIdentity: failover-ingestion-uses-stable-workload-identity
+spec:
+  replicas: 1

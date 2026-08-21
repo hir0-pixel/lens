@@ -5,7 +5,7 @@ import {
   SecureDeliveryAdmissionClient,
   type AdmissionEvidence,
 } from "../../libs/security-envelope";
-import { TelemetryCollector } from "../../platform/observability";
+import { createGovernedReference, TelemetryCollector } from "../../platform/observability";
 
 const now = new Date("2026-08-14T12:00:00.000Z");
 const digest = `sha256:${"a".repeat(64)}` as const;
@@ -90,8 +90,12 @@ describe("M01 workload trust", () => {
 });
 
 describe("M01 redacted telemetry", () => {
-  it("drops unknown attributes, strips sensitive values, and counts bounded queue loss", () => {
+  it("rejects secret-bearing telemetry, keeps governed references, and counts bounded queue loss", () => {
     const collector = new TelemetryCollector({ maxRecords: 1, maxBytes: 1024 });
+    const workloadRef = createGovernedReference("contract-probe-owner", "workload", {
+      keyId: "2026q3",
+      secret: "k".repeat(32),
+    });
     expect(collector.collect({
       signal: "log",
       priority: "normal",
@@ -99,9 +103,9 @@ describe("M01 redacted telemetry", () => {
       operation: "admit",
       timestamp: now.toISOString(),
       statusCode: "OK",
-      attributes: { error_code: "Bearer token-value", workload_id: "contract-probe-owner" },
-    })).toMatchObject({ accepted: true, redactedFields: 1 });
-    expect(collector.drain()[0].attributes).toEqual({ workload_id: "contract-probe-owner" });
+      attributes: { error_code: "E42", workload_ref: workloadRef },
+    })).toMatchObject({ accepted: true, redactedFields: 0 });
+    expect(collector.drain()[0].attributes).toEqual({ error_code: "E42", workload_ref: workloadRef });
     expect(collector.collect({
       signal: "trace",
       priority: "normal",
@@ -110,7 +114,8 @@ describe("M01 redacted telemetry", () => {
       timestamp: now.toISOString(),
       statusCode: "OK",
       attributes: { prompt: "protected content" },
-    })).toMatchObject({ accepted: false, reason: "unknown-attribute" });
+    })).toMatchObject({ accepted: false, reason: "forbidden-attribute", redactedFields: 1 });
+    expect(collector.drain()).toEqual([]);
 
     collector.collect({ signal: "metric", priority: "normal", serviceName: "contract-probe-owner", operation: "admit", timestamp: now.toISOString(), statusCode: "OK" });
     expect(collector.collect({ signal: "metric", priority: "debug", serviceName: "contract-probe-owner", operation: "admit", timestamp: now.toISOString(), statusCode: "OK" })).toMatchObject({ accepted: false, reason: "queue-full" });

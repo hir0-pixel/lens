@@ -1,0 +1,872 @@
+# workloadIdentity: runtime resources bind each service to a distinct ServiceAccount and projected identity token
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bff-workload
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/bff-workload
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orchestrator-workload
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/orchestrator-workload
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retrieval-workload
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/retrieval-workload
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ingestion-workload
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/ingestion-workload
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dr-ops-workload
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lens-bff
+  labels:
+    app.kubernetes.io/name: lens-bff
+  annotations:
+    workloadIdentity: ingress-terminates-at-private-boundary-bff-workload-only
+    lens.platform.internal/privateDnsName: lens.platform.internal
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: lens-bff
+  ports:
+    - name: https-app
+      port: 3001
+      targetPort: https-app
+      protocol: TCP
+      appProtocol: https
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lens-orchestrator
+  labels:
+    app.kubernetes.io/name: lens-orchestrator
+  annotations:
+    workloadIdentity: only-bff-and-approved-operators-may-call-orchestrator
+    lens.platform.internal/privateDnsName: orchestrator.rag.platform.internal
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: lens-orchestrator
+  ports:
+    - name: https-app
+      port: 8789
+      targetPort: https-app
+      protocol: TCP
+      appProtocol: https
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lens-retrieval
+  labels:
+    app.kubernetes.io/name: lens-retrieval
+  annotations:
+    workloadIdentity: only-orchestrator-may-call-retrieval
+    lens.platform.internal/privateDnsName: retrieval.rag.platform.internal
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: lens-retrieval
+  ports:
+    - name: https-app
+      port: 8788
+      targetPort: https-app
+      protocol: TCP
+      appProtocol: https
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lens-bff-private
+  annotations:
+    workloadIdentity: private-ingress-controller-presents-bff-tls-and-authenticates-to-bff-workload
+    lens.platform.internal/visibility: private
+    lens.platform.internal/access-path: approved-private-wan-vpn-sdwan-zero-trust
+spec:
+  ingressClassName: private-company
+  tls:
+    - hosts:
+        - lens.platform.internal
+      secretName: lens-bff-edge-tls
+  rules:
+    - host: lens.platform.internal
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lens-bff
+                port:
+                  number: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-bff
+  labels:
+    app.kubernetes.io/name: lens-bff
+    app.kubernetes.io/component: bff
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/bff-workload
+    lens.platform.internal/rollout-track: stable
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 180
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-bff
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lens-bff
+        app.kubernetes.io/component: bff
+        lens.platform.internal/failure-domain-spread: required
+      annotations:
+        workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/bff-workload
+        lens.platform.internal/mtls-mode: strict
+        lens.platform.internal/restart-trigger: replace-with-config-and-secret-checksums
+    spec:
+      serviceAccountName: bff-workload
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: lens-bff
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-bff
+        - maxSkew: 1
+          topologyKey: lens.platform.internal/failure-domain
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-bff
+      containers:
+        - name: bff
+          image: registry.platform.internal/lens/bff@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          command: ["node", "dist/index.js"]
+          ports:
+            - name: https-app
+              containerPort: 3001
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3001"
+            - name: APP_ORIGIN
+              value: https://lens.platform.internal
+            - name: RAG_PROVIDER_MODE
+              value: internal
+            - name: ORCHESTRATOR_URL
+              value: https://orchestrator.rag.platform.internal/
+            - name: ADMISSION_API_ORIGIN
+              value: https://admission.platform.internal/
+            - name: OIDC_ISSUER
+              value: https://identity.platform.internal:8443/realms/lens-internal
+            - name: OIDC_REDIRECT_URI
+              value: https://lens.platform.internal/auth/callback
+            - name: OIDC_ALLOWED_ORIGINS
+              value: https://lens.platform.internal
+            - name: OIDC_ALLOWED_REDIRECT_HOSTS
+              value: lens.platform.internal
+            - name: OIDC_TEST_MODE
+              value: "false"
+            - name: WORKLOAD_IDENTITY
+              value: spiffe://lens.platform.internal/ns/lens-rag/sa/bff-workload
+            - name: WORKLOAD_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/lens-workload-identity/token
+            - name: TLS_CERT_FILE
+              value: /var/run/lens/tls/tls.crt
+            - name: TLS_KEY_FILE
+              value: /var/run/lens/tls/tls.key
+            - name: MTLS_CA_BUNDLE_FILE
+              value: /var/run/lens/mtls/ca.crt
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lens-bff-runtime
+                  key: SESSION_SECRET
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: lens-bff-runtime
+                  key: OIDC_CLIENT_ID
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lens-bff-runtime
+                  key: OIDC_CLIENT_SECRET
+            - name: ADMISSION_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-bff-runtime
+                  key: ADMISSION_WORKLOAD_TOKEN
+            - name: RATE_LIMIT_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lens-bff-runtime
+                  key: RATE_LIMIT_KEY_SECRET
+            - name: ORCHESTRATOR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-bff-runtime
+                  key: ORCHESTRATOR_TOKEN
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: https-app
+            failureThreshold: 20
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: https-app
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: https-app
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 20"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: workload-identity
+              mountPath: /var/run/secrets/lens-workload-identity
+              readOnly: true
+            - name: tls-server
+              mountPath: /var/run/lens/tls
+              readOnly: true
+            - name: mtls-ca
+              mountPath: /var/run/lens/mtls
+              readOnly: true
+      volumes:
+        - name: workload-identity
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: lens.platform.internal
+                  expirationSeconds: 3600
+                  path: token
+        - name: tls-server
+          secret:
+            secretName: lens-bff-pod-tls
+        - name: mtls-ca
+          secret:
+            secretName: lens-service-mtls-ca
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lens-bff
+  annotations:
+    workloadIdentity: disruption-budget-protects-bff-workload-identity-capacity
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-bff
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-orchestrator
+  labels:
+    app.kubernetes.io/name: lens-orchestrator
+    app.kubernetes.io/component: orchestration
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/orchestrator-workload
+    lens.platform.internal/rollout-track: stable
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 180
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-orchestrator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lens-orchestrator
+        app.kubernetes.io/component: orchestration
+      annotations:
+        workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/orchestrator-workload
+        lens.platform.internal/mtls-mode: strict
+        lens.platform.internal/restart-trigger: replace-with-config-and-secret-checksums
+    spec:
+      serviceAccountName: orchestrator-workload
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: lens-orchestrator
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-orchestrator
+        - maxSkew: 1
+          topologyKey: lens.platform.internal/failure-domain
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-orchestrator
+      containers:
+        - name: orchestrator
+          image: registry.platform.internal/lens/orchestrator@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          command: ["node", "dist/main.js"]
+          ports:
+            - name: https-app
+              containerPort: 8789
+          env:
+            - name: HOST
+              value: 0.0.0.0
+            - name: PORT
+              value: "8789"
+            - name: LENS_RETRIEVAL_URL
+              value: https://retrieval.rag.platform.internal/
+            - name: LENS_MODEL_RUNTIME_URL
+              value: https://model-gateway.platform.internal/
+            - name: LENS_MODEL_ARTIFACT_DIGEST
+              value: sha256:1111111111111111111111111111111111111111111111111111111111111111
+            - name: WORKLOAD_IDENTITY
+              value: spiffe://lens.platform.internal/ns/lens-rag/sa/orchestrator-workload
+            - name: WORKLOAD_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/lens-workload-identity/token
+            - name: TLS_CERT_FILE
+              value: /var/run/lens/tls/tls.crt
+            - name: TLS_KEY_FILE
+              value: /var/run/lens/tls/tls.key
+            - name: MTLS_CA_BUNDLE_FILE
+              value: /var/run/lens/mtls/ca.crt
+            - name: LENS_ORCHESTRATOR_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-orchestrator-runtime
+                  key: LENS_ORCHESTRATOR_WORKLOAD_TOKEN
+            - name: LENS_RETRIEVAL_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-orchestrator-runtime
+                  key: LENS_RETRIEVAL_WORKLOAD_TOKEN
+            - name: LENS_MODEL_RUNTIME_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-orchestrator-runtime
+                  key: LENS_MODEL_RUNTIME_WORKLOAD_TOKEN
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 1536Mi
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: https-app
+            failureThreshold: 20
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: https-app
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: https-app
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 25"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: workload-identity
+              mountPath: /var/run/secrets/lens-workload-identity
+              readOnly: true
+            - name: tls-server
+              mountPath: /var/run/lens/tls
+              readOnly: true
+            - name: mtls-ca
+              mountPath: /var/run/lens/mtls
+              readOnly: true
+      volumes:
+        - name: workload-identity
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: lens.platform.internal
+                  expirationSeconds: 3600
+                  path: token
+        - name: tls-server
+          secret:
+            secretName: lens-orchestrator-pod-tls
+        - name: mtls-ca
+          secret:
+            secretName: lens-service-mtls-ca
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lens-orchestrator
+  annotations:
+    workloadIdentity: disruption-budget-protects-orchestrator-workload-identity-capacity
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-orchestrator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-retrieval
+  labels:
+    app.kubernetes.io/name: lens-retrieval
+    app.kubernetes.io/component: retrieval
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/retrieval-workload
+    lens.platform.internal/rollout-track: stable
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 180
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-retrieval
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lens-retrieval
+        app.kubernetes.io/component: retrieval
+      annotations:
+        workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/retrieval-workload
+        lens.platform.internal/mtls-mode: strict
+        lens.platform.internal/restart-trigger: replace-with-config-and-secret-checksums
+    spec:
+      serviceAccountName: retrieval-workload
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: lens-retrieval
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-retrieval
+        - maxSkew: 1
+          topologyKey: lens.platform.internal/failure-domain
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-retrieval
+      containers:
+        - name: retrieval
+          image: registry.platform.internal/lens/retrieval@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          command: ["node", "dist/main.js"]
+          ports:
+            - name: https-app
+              containerPort: 8788
+          env:
+            - name: HOST
+              value: 0.0.0.0
+            - name: PORT
+              value: "8788"
+            - name: NODE_ENV
+              value: production
+            - name: WORKLOAD_IDENTITY
+              value: spiffe://lens.platform.internal/ns/lens-rag/sa/retrieval-workload
+            - name: WORKLOAD_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/lens-workload-identity/token
+            - name: TLS_CERT_FILE
+              value: /var/run/lens/tls/tls.crt
+            - name: TLS_KEY_FILE
+              value: /var/run/lens/tls/tls.key
+            - name: MTLS_CA_BUNDLE_FILE
+              value: /var/run/lens/mtls/ca.crt
+            - name: LENS_RETRIEVAL_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-retrieval-runtime
+                  key: LENS_RETRIEVAL_WORKLOAD_TOKEN
+            - name: LENS_RETRIEVAL_PDP_URL
+              value: https://pdp.platform.internal/
+            - name: LENS_RETRIEVAL_INDEX_URL
+              value: https://search-broker.platform.internal/
+            - name: LENS_RETRIEVAL_CONTENT_URL
+              value: https://content-store.platform.internal/
+            - name: LENS_RETRIEVAL_AUDIT_URL
+              value: https://audit.platform.internal/
+            - name: LENS_RETRIEVAL_PUBLICATION_URL
+              value: https://index-state.platform.internal/
+            - name: LENS_RETRIEVAL_PDP_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-retrieval-runtime
+                  key: LENS_RETRIEVAL_PDP_WORKLOAD_TOKEN
+            - name: LENS_RETRIEVAL_INDEX_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-retrieval-runtime
+                  key: LENS_RETRIEVAL_INDEX_WORKLOAD_TOKEN
+            - name: LENS_RETRIEVAL_CONTENT_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-retrieval-runtime
+                  key: LENS_RETRIEVAL_CONTENT_WORKLOAD_TOKEN
+            - name: LENS_RETRIEVAL_AUDIT_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-retrieval-runtime
+                  key: LENS_RETRIEVAL_AUDIT_WORKLOAD_TOKEN
+            - name: LENS_RETRIEVAL_PUBLICATION_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-retrieval-runtime
+                  key: LENS_RETRIEVAL_PUBLICATION_WORKLOAD_TOKEN
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1024Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: https-app
+            failureThreshold: 20
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: https-app
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: https-app
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 25"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: workload-identity
+              mountPath: /var/run/secrets/lens-workload-identity
+              readOnly: true
+            - name: tls-server
+              mountPath: /var/run/lens/tls
+              readOnly: true
+            - name: mtls-ca
+              mountPath: /var/run/lens/mtls
+              readOnly: true
+      volumes:
+        - name: workload-identity
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: lens.platform.internal
+                  expirationSeconds: 3600
+                  path: token
+        - name: tls-server
+          secret:
+            secretName: lens-retrieval-pod-tls
+        - name: mtls-ca
+          secret:
+            secretName: lens-service-mtls-ca
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lens-retrieval
+  annotations:
+    workloadIdentity: disruption-budget-protects-retrieval-workload-identity-capacity
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-retrieval
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-ingestion
+  labels:
+    app.kubernetes.io/name: lens-ingestion
+    app.kubernetes.io/component: ingestion
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/ingestion-workload
+    lens.platform.internal/rollout-track: stable
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 180
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-ingestion
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lens-ingestion
+        app.kubernetes.io/component: ingestion
+      annotations:
+        workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/ingestion-workload
+        lens.platform.internal/mtls-mode: strict
+        lens.platform.internal/restart-trigger: replace-with-config-and-secret-checksums
+    spec:
+      serviceAccountName: ingestion-workload
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 90
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: lens-ingestion
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-ingestion
+        - maxSkew: 1
+          topologyKey: lens.platform.internal/failure-domain
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-ingestion
+      containers:
+        - name: ingestion
+          image: registry.platform.internal/lens/ingestion-worker@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: INGESTION_QUEUE_ENDPOINT
+              value: https://ingestion-queue.platform.internal/
+            - name: GOVERNANCE_ENDPOINT
+              value: https://governance.platform.internal/
+            - name: CONTENT_STORE_ENDPOINT
+              value: https://content-store.platform.internal/
+            - name: AUDIT_ENDPOINT
+              value: https://audit.platform.internal/
+            - name: WORKLOAD_IDENTITY
+              value: spiffe://lens.platform.internal/ns/lens-rag/sa/ingestion-workload
+            - name: WORKLOAD_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/lens-workload-identity/token
+            - name: TLS_CERT_FILE
+              value: /var/run/lens/tls/tls.crt
+            - name: TLS_KEY_FILE
+              value: /var/run/lens/tls/tls.key
+            - name: MTLS_CA_BUNDLE_FILE
+              value: /var/run/lens/mtls/ca.crt
+            - name: INGESTION_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-ingestion-runtime
+                  key: INGESTION_WORKLOAD_TOKEN
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            exec:
+              command: ["/bin/sh", "-c", "test -f /var/run/secrets/lens-workload-identity/token"]
+            failureThreshold: 20
+            periodSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "test -f /var/run/secrets/lens-workload-identity/token"]
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "test -f /var/run/secrets/lens-workload-identity/token"]
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 30"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: workload-identity
+              mountPath: /var/run/secrets/lens-workload-identity
+              readOnly: true
+            - name: tls-server
+              mountPath: /var/run/lens/tls
+              readOnly: true
+            - name: mtls-ca
+              mountPath: /var/run/lens/mtls
+              readOnly: true
+      volumes:
+        - name: workload-identity
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: lens.platform.internal
+                  expirationSeconds: 3600
+                  path: token
+        - name: tls-server
+          secret:
+            secretName: lens-ingestion-pod-tls
+        - name: mtls-ca
+          secret:
+            secretName: lens-service-mtls-ca
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lens-ingestion
+  annotations:
+    workloadIdentity: disruption-budget-protects-ingestion-workload-identity-capacity
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-ingestion

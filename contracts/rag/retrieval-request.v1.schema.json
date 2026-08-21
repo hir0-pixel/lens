@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lens:rag:retrieval-request:v1",
+  "title": "Lens Orchestrator-to-Retrieval request (v1)",
+  "description": "Internal versioned retrieval request. Retrieval authenticates the Orchestrator with workload identity over mTLS; a shared token alone is insufficient.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "turn_id",
+    "caller_workload_ref",
+    "subject_ref",
+    "session_ref",
+    "device_ref",
+    "application_id",
+    "query_digest",
+    "query_text",
+    "purpose_ref",
+    "retrieval_class",
+    "corpus_ref",
+    "mode",
+    "candidate_limit",
+    "deadline_at",
+    "cancellation",
+    "bulkhead",
+    "visibility_minimum"
+  ],
+  "properties": {
+    "request_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" },
+    "turn_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" },
+    "caller_workload_ref": { "const": "ai-orchestrator" },
+    "subject_ref": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{1,256}$" },
+    "session_ref": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{1,256}$" },
+    "device_ref": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{1,256}$" },
+    "application_id": { "const": "lens-employee-client" },
+    "query_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "query_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192,
+      "description": "Bounded raw query text required for lexical and semantic retrieval. HTTP ingress also enforces a 32768-byte UTF-8 cap inside a request-body envelope that must never exceed 65536 bytes."
+    },
+    "purpose_ref": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+    "retrieval_class": { "enum": ["enterprise-grounded"] },
+    "corpus_ref": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,127}$" },
+    "mode": { "enum": ["lexical", "semantic", "graph", "hybrid", "structured", "citation_refresh"] },
+    "candidate_limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
+    "deadline_at": { "type": "integer", "minimum": 1 },
+    "cancellation": { "type": "boolean" },
+    "bulkhead": { "enum": ["interactive", "management"] },
+    "visibility_minimum": { "type": "integer", "minimum": 0 }
+  }
+}

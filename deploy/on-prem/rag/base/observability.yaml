@@ -1,0 +1,671 @@
+# workloadIdentity: sovereign observability gateway uses a dedicated workload identity and accepts only content-free operational telemetry
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: observability-workload
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/observability-workload
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lens-otel-collector-config
+  annotations:
+    workloadIdentity: otel-collector-config-for-observability-workload-only
+    lens.platform.internal/config-class: content-free-operational-telemetry
+data:
+  collector.yaml: |
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      file_storage:
+        directory: /var/lib/otelcol/storage
+        timeout: 1s
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+            max_recv_msg_size_mib: 4
+          http:
+            endpoint: 0.0.0.0:4318
+            max_request_body_size: 4194304
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 384
+        spike_limit_mib: 96
+      filter/sovereign_payload_guard:
+        error_mode: propagate
+        trace_conditions:
+          - context: spanevent
+            conditions:
+              - 'spanevent.name != "" or spanevent.name == ""'
+          - context: span
+            conditions:
+              - 'IsMatch(span.name, "(?i).*(api[_-]?key|authorization|bearer|chunk|content|credential|document|memory|output|password|prompt|raw|secret|session|subject|token|tool_?arg|tool_?result|user_?id).*")'
+        log_conditions:
+          - context: log
+            conditions:
+              - 'IsString(log.body) and IsMatch(log.body, "(?i).*(api[_-]?key|authorization|bearer|chunk|content|credential|document|memory|output|password|prompt|raw|secret|session|subject|token|tool_?arg|tool_?result|user_?id).*")'
+        metric_conditions:
+          - context: metric
+            conditions:
+              - 'IsMatch(metric.name, "(?i).*(api[_-]?key|authorization|bearer|chunk|content|credential|document|memory|output|password|prompt|raw|secret|session|subject|token|tool_?arg|tool_?result|user_?id).*")'
+      transform/sovereign_sanitize:
+        error_mode: propagate
+        trace_statements:
+          - context: resource
+            statements:
+              - keep_keys(resource.attributes, ["service.name"])
+          - context: scope
+            statements:
+              - keep_keys(scope.attributes, [])
+          - context: span
+            statements:
+              - keep_keys(span.attributes, ["artifact_digest", "classification", "decision_ref", "dependency", "duration_ms", "error_code", "index_generation_ref", "operation", "parent_span_ref", "priority", "request_ref", "resource", "retrieval_ref", "schema_version", "span_ref", "stage", "status_code", "trace_ref", "turn_ref", "workload_ref"])
+              - set(span.status.message, "")
+        metric_statements:
+          - context: resource
+            statements:
+              - keep_keys(resource.attributes, ["service.name"])
+          - context: scope
+            statements:
+              - keep_keys(scope.attributes, [])
+          - context: datapoint
+            statements:
+              - keep_keys(datapoint.attributes, ["classification", "dependency", "error_code", "operation", "priority", "resource", "service", "stage", "status_code"])
+        log_statements:
+          - context: resource
+            statements:
+              - keep_keys(resource.attributes, ["service.name"])
+          - context: scope
+            statements:
+              - keep_keys(scope.attributes, [])
+          - context: log
+            statements:
+              - keep_keys(log.attributes, ["artifact_digest", "classification", "dependency", "duration_ms", "error_code", "operation", "priority", "resource", "schema_version", "service", "stage", "status_code", "workload_ref"])
+              - set(log.body, "content-free-operational-event")
+      batch:
+        timeout: 1s
+        send_batch_size: 512
+        send_batch_max_size: 1024
+
+    exporters:
+      otlphttp/metrics:
+        endpoint: https://metrics.telemetry.platform.internal
+        timeout: 5s
+        tls:
+          ca_file: /var/run/lens/mtls/ca.crt
+          cert_file: /var/run/lens/tls/tls.crt
+          key_file: /var/run/lens/tls/tls.key
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 2048
+          storage: file_storage
+        retry_on_failure:
+          enabled: true
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 60s
+      otlphttp/logs:
+        endpoint: https://logs.telemetry.platform.internal
+        timeout: 5s
+        tls:
+          ca_file: /var/run/lens/mtls/ca.crt
+          cert_file: /var/run/lens/tls/tls.crt
+          key_file: /var/run/lens/tls/tls.key
+        sending_queue:
+          enabled: true
+          num_consumers: 2
+          queue_size: 1024
+          storage: file_storage
+        retry_on_failure:
+          enabled: true
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 60s
+      otlphttp/traces:
+        endpoint: https://traces.telemetry.platform.internal
+        timeout: 5s
+        tls:
+          ca_file: /var/run/lens/mtls/ca.crt
+          cert_file: /var/run/lens/tls/tls.crt
+          key_file: /var/run/lens/tls/tls.key
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 2048
+          storage: file_storage
+        retry_on_failure:
+          enabled: true
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 60s
+
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      extensions: [health_check, file_storage]
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, filter/sovereign_payload_guard, transform/sovereign_sanitize, batch]
+          exporters: [otlphttp/metrics]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, filter/sovereign_payload_guard, transform/sovereign_sanitize, batch]
+          exporters: [otlphttp/logs]
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, filter/sovereign_payload_guard, transform/sovereign_sanitize, batch]
+          exporters: [otlphttp/traces]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lens-observability-rules
+  annotations:
+    workloadIdentity: rules-are-file-managed-and-read-by-internal-prometheus-only
+    lens.platform.internal/config-class: content-free-alerting
+data:
+  lens-rag.rules.yaml: |
+    groups:
+      - name: lens-rag-red-use
+        rules:
+          - alert: LensRequestErrorBudgetBurn
+            expr: sum by (service, operation) (rate(lens_request_errors_total[5m])) / clamp_min(sum by (service, operation) (rate(lens_requests_total[5m])), 1) > 0.02
+            for: 10m
+            labels:
+              severity: page
+              domain: rag
+            annotations:
+              summary: Lens request error rate is above budget.
+          - alert: LensRequestLatencyP99High
+            expr: histogram_quantile(0.99, sum by (service, operation, le) (rate(lens_request_duration_ms_bucket[5m]))) > 2500
+            for: 10m
+            labels:
+              severity: page
+              domain: rag
+            annotations:
+              summary: Lens request p99 latency is elevated.
+          - alert: LensActiveRequestsSaturated
+            expr: max by (service) (lens_active_requests) > 1000
+            for: 5m
+            labels:
+              severity: page
+              domain: rag
+            annotations:
+              summary: Active Lens requests are near the governed concurrency ceiling.
+          - alert: LensResourceSaturation
+            expr: max by (service, resource) (lens_resource_saturation_ratio) > 0.85
+            for: 10m
+            labels:
+              severity: page
+              domain: rag
+            annotations:
+              summary: Lens resource saturation is high.
+          - alert: LensPdpGovernanceLatency
+            expr: histogram_quantile(0.99, sum by (service, stage, le) (rate(lens_stage_duration_ms_bucket{stage=~"pdp|governance|authorization"}[5m]))) > 250
+            for: 5m
+            labels:
+              severity: page
+              domain: authorization
+            annotations:
+              summary: Authorization decision latency is above the admission budget.
+          - alert: LensAuthorizationFailureSpike
+            expr: sum by (service) (rate(lens_operational_signals_total{anomaly="authorization_failure_spike"}[5m])) > 1
+            for: 5m
+            labels:
+              severity: page
+              domain: authorization
+            annotations:
+              summary: Authorization failure spike detected.
+          - alert: LensAuditQuorumLoss
+            expr: min(lens_audit_quorum_healthy) < 1
+            for: 1m
+            labels:
+              severity: page
+              domain: audit
+            annotations:
+              summary: Audit quorum is unhealthy; generation admission must fail closed.
+          - alert: LensPublicationMismatch
+            expr: sum(rate(lens_operational_signals_total{anomaly="stale_publication_manifest"}[5m])) > 0
+            for: 2m
+            labels:
+              severity: page
+              domain: retrieval
+            annotations:
+              summary: Retrieval publication or generation mismatch detected.
+          - alert: LensTelemetryQueueDrops
+            expr: sum(rate(otelcol_exporter_enqueue_failed_log_records[5m])) + sum(rate(otelcol_exporter_enqueue_failed_metric_points[5m])) + sum(rate(otelcol_exporter_enqueue_failed_spans[5m])) > 0
+            for: 2m
+            labels:
+              severity: ticket
+              domain: observability
+            annotations:
+              summary: Operational telemetry queue is dropping records.
+          - alert: LensTelemetryExporterFailure
+            expr: sum(rate(otelcol_exporter_send_failed_log_records[5m])) + sum(rate(otelcol_exporter_send_failed_metric_points[5m])) + sum(rate(otelcol_exporter_send_failed_spans[5m])) > 0
+            for: 5m
+            labels:
+              severity: ticket
+              domain: observability
+            annotations:
+              summary: Operational telemetry exporter is failing to reach an internal backend.
+          - alert: LensIndexReplicaLoss
+            expr: min(lens_retrieval_index_replica_available) < 1
+            for: 5m
+            labels:
+              severity: page
+              domain: retrieval
+            annotations:
+              summary: Retrieval index has lost a required replica.
+          - alert: LensInferenceSaturation
+            expr: max(lens_resource_saturation_ratio{resource=~"gpu|kv_cache|model_server"}) > 0.85
+            for: 5m
+            labels:
+              severity: page
+              domain: inference
+            annotations:
+              summary: Inference capacity is saturated.
+          - alert: LensRecoverySurge
+            expr: sum(rate(lens_operational_signals_total{anomaly="recovery_stampede"}[5m])) > 0
+            for: 2m
+            labels:
+              severity: page
+              domain: recovery
+            annotations:
+              summary: Recovery surge detected after dependency restoration.
+  alertmanager-routing.yaml: |
+    route:
+      receiver: internal-noc
+      group_by: [alertname, domain, service]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 2h
+    receivers:
+      - name: internal-noc
+        webhook_configs:
+          - url: https://incident-noc.platform.internal/v1/alertmanager
+            send_resolved: true
+            http_config:
+              tls_config:
+                ca_file: /var/run/lens/mtls/ca.crt
+                cert_file: /var/run/lens/tls/tls.crt
+                key_file: /var/run/lens/tls/tls.key
+    inhibit_rules: []
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lens-grafana-provisioning
+  annotations:
+    workloadIdentity: grafana-provisioning-is-file-managed-ui-updates-disabled
+    lens.platform.internal/config-class: content-free-dashboarding
+data:
+  dashboard-provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: lens-rag-sovereign
+        orgId: 1
+        folder: Lens Sovereign RAG
+        type: file
+        disableDeletion: false
+        allowUiUpdates: false
+        updateIntervalSeconds: 60
+        options:
+          path: /etc/grafana/provisioning/dashboards/lens-rag-dashboard.json
+  lens-rag-dashboard.json: |
+    {
+      "uid": "lens-rag-sovereign",
+      "title": "Lens Sovereign RAG Operations",
+      "editable": false,
+      "schemaVersion": 39,
+      "tags": ["lens", "rag", "sovereign"],
+      "templating": {
+        "list": [
+          { "name": "service", "type": "query", "query": "label_values(lens_requests_total, service)", "refresh": 1 },
+          { "name": "domain", "type": "query", "query": "label_values(ALERTS, domain)", "refresh": 1 }
+        ]
+      },
+      "panels": [
+        { "id": 1, "title": "Request Rate", "type": "timeseries", "targets": [{ "expr": "sum by (service, operation) (rate(lens_requests_total[5m]))" }] },
+        { "id": 2, "title": "Request Errors", "type": "timeseries", "targets": [{ "expr": "sum by (service, operation, outcome) (rate(lens_request_errors_total[5m]))" }] },
+        { "id": 3, "title": "Request Latency p99", "type": "timeseries", "targets": [{ "expr": "histogram_quantile(0.99, sum by (service, operation, le) (rate(lens_request_duration_ms_bucket[5m])))" }] },
+        { "id": 4, "title": "Active Requests", "type": "timeseries", "targets": [{ "expr": "max by (service) (lens_active_requests)" }] },
+        { "id": 5, "title": "Resource USE", "type": "timeseries", "targets": [{ "expr": "max by (service, resource) (lens_resource_utilization_ratio)" }, { "expr": "max by (service, resource) (lens_resource_saturation_ratio)" }] },
+        { "id": 6, "title": "Authorization Latency", "type": "timeseries", "targets": [{ "expr": "histogram_quantile(0.99, sum by (service, stage, le) (rate(lens_stage_duration_ms_bucket{stage=~\"pdp|governance|authorization\"}[5m])))" }] },
+        { "id": 7, "title": "Audit Quorum", "type": "stat", "targets": [{ "expr": "min(lens_audit_quorum_healthy)" }] },
+        { "id": 8, "title": "Publication Mismatch", "type": "timeseries", "targets": [{ "expr": "sum(rate(lens_operational_signals_total{anomaly=\"stale_publication_manifest\"}[5m]))" }] },
+        { "id": 9, "title": "Telemetry Drops", "type": "timeseries", "targets": [{ "expr": "sum(rate(otelcol_exporter_enqueue_failed_log_records[5m])) + sum(rate(otelcol_exporter_enqueue_failed_metric_points[5m])) + sum(rate(otelcol_exporter_enqueue_failed_spans[5m]))" }] },
+        { "id": 10, "title": "Index Replica Health", "type": "stat", "targets": [{ "expr": "min(lens_retrieval_index_replica_available)" }] },
+        { "id": 11, "title": "Inference Saturation", "type": "timeseries", "targets": [{ "expr": "max(lens_resource_saturation_ratio{resource=~\"gpu|kv_cache|model_server\"})" }] },
+        { "id": 12, "title": "Recovery Surge", "type": "timeseries", "targets": [{ "expr": "sum(rate(lens_operational_signals_total{anomaly=\"recovery_stampede\"}[5m]))" }] }
+      ]
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lens-telemetry-retention-policy
+  annotations:
+    workloadIdentity: retention-policy-is-enforced-by-internal-telemetry-backends
+    lens.platform.internal/config-class: telemetry-retention
+data:
+  retention.yaml: |
+    policy_version: 2026-08-21
+    default_days: 14
+    classes:
+      metrics:
+        raw_days: 14
+        rollup_days: 90
+      logs:
+        raw_days: 7
+        rollup_days: 30
+      traces:
+        raw_days: 3
+        rollup_days: 14
+    indefinite_retention: false
+    audit_pipeline: excluded
+    purge_acceptance_gate: live-environment-only
+  acceptance-policy.yaml: |
+    checks:
+      retention_required: true
+      retention_zero_days_allowed: false
+      collector_sending_queues_must_be_bounded: true
+      public_endpoint_allowed: false
+      operational_telemetry_may_drop: true
+      audit_pipeline_allowed: false
+      content_attribute_names_allowed: false
+      dashboard_ui_updates_allowed: false
+      alertmanager_receiver_scope: internal-ha-compatible
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lens-otel-collector
+  labels:
+    app.kubernetes.io/name: lens-otel-collector
+    app.kubernetes.io/component: observability
+  annotations:
+    workloadIdentity: only-internal-workloads-may-send-content-free-operational-telemetry
+    lens.platform.internal/privateDnsName: otel-collector.rag.platform.internal
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: lens-otel-collector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: otlp-grpc
+      protocol: TCP
+      appProtocol: grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+      protocol: TCP
+      appProtocol: https
+    - name: metrics
+      port: 8888
+      targetPort: metrics
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lens-otel-collector
+  labels:
+    app.kubernetes.io/name: lens-otel-collector
+    app.kubernetes.io/component: observability
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/observability-workload
+    lens.platform.internal/mtls-mode: strict
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 180
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-otel-collector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lens-otel-collector
+        app.kubernetes.io/component: observability
+      annotations:
+        workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/observability-workload
+        lens.platform.internal/mtls-mode: strict
+        lens.platform.internal/restart-trigger: replace-with-config-and-secret-checksums
+    spec:
+      serviceAccountName: observability-workload
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      imagePullSecrets:
+        - name: registry-pull
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: lens-otel-collector
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-otel-collector
+        - maxSkew: 1
+          topologyKey: lens.platform.internal/failure-domain
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-otel-collector
+      containers:
+        - name: otel-collector
+          image: registry.platform.internal/lens/otel-collector-contrib@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          args: ["--config=/conf/collector.yaml"]
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+            - name: metrics
+              containerPort: 8888
+            - name: healthz
+              containerPort: 13133
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: healthz
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: healthz
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 20"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: collector-config
+              mountPath: /conf
+              readOnly: true
+            - name: collector-storage
+              mountPath: /var/lib/otelcol
+            - name: workload-identity
+              mountPath: /var/run/secrets/lens-workload-identity
+              readOnly: true
+            - name: tls-server
+              mountPath: /var/run/lens/tls
+              readOnly: true
+            - name: mtls-ca
+              mountPath: /var/run/lens/mtls
+              readOnly: true
+      volumes:
+        - name: collector-config
+          configMap:
+            name: lens-otel-collector-config
+        - name: collector-storage
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: workload-identity
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: lens.platform.internal
+                  expirationSeconds: 3600
+                  path: token
+        - name: tls-server
+          secret:
+            secretName: lens-observability-pod-tls
+        - name: mtls-ca
+          secret:
+            secretName: lens-service-mtls-ca
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lens-otel-collector
+  annotations:
+    workloadIdentity: disruption-budget-protects-observability-workload-capacity
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lens-otel-collector
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: observability-ingress
+  annotations:
+    workloadIdentity: only-rag-runtime-workloads-and-internal-prometheus-may-reach-observability-gateway
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-otel-collector
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - lens-bff
+                  - lens-orchestrator
+                  - lens-retrieval
+                  - lens-ingestion
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: monitoring
+      ports:
+        - protocol: TCP
+          port: 8888
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: observability-egress
+  annotations:
+    workloadIdentity: observability-workload-identity-may-reach-only-internal-telemetry-backends
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-otel-collector
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: telemetry-metrics
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: telemetry-logs
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: telemetry-traces
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: runtime-observability-egress
+  annotations:
+    workloadIdentity: runtime-workload-identities-may-send-only-content-free-operational-telemetry-to-collector
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - lens-bff
+          - lens-orchestrator
+          - lens-retrieval
+          - lens-ingestion
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-otel-collector
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318

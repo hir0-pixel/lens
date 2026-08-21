@@ -46,15 +46,8 @@ import { useSettingsStore } from "./stores/settingsStore";
 import { useSessionStore, type PlanStep } from "./stores/sessionStore";
 import { useTerminalStore } from "./stores/terminalStore";
 import type { SettingsSectionId } from "./shared/settings/defaults";
-import { generateLabGatewayResponse, getLabGatewayConfig } from "./shared/lab-gateway/client";
-import {
-  beginIdentityLogin,
-  generateIdentityGatewayResponse,
-  getIdentityGatewayConfig,
-  IdentityLoginRequiredError,
-} from "./shared/identity-gateway/client";
 import { AuthGate } from "./shared/bff-auth/AuthGate";
-import { getBffAuthClient } from "./shared/bff-auth";
+import { AuthClientError, getBffAuthClient } from "./shared/bff-auth";
 import { useAuthStore } from "./shared/bff-auth/store";
 
 const ProjectListView = lazy(
@@ -124,7 +117,7 @@ function AgentsApp() {
   const [, setSessionCredits] = useState(348_120);
   const [agentsDock, setAgentsDock] = useState<string | null>(null);
   const [bottomTerminal, setBottomTerminal] = useState(false);
-  const labGatewayAbort = useRef<AbortController | null>(null);
+  const requestAbort = useRef<AbortController | null>(null);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
@@ -313,10 +306,15 @@ function AgentsApp() {
     appendMessage(sess.id, userMsg);
     setSending(true);
 
-    const bffClient = getBffAuthClient();
-    if (bffClient && mode === "ask") {
+    if (mode === "ask") {
+      const bffClient = getBffAuthClient();
+      if (!bffClient) {
+        toast.error("The governed RAG service is unavailable through the secure gateway.");
+        setSending(false);
+        return;
+      }
       const controller = new AbortController();
-      labGatewayAbort.current = controller;
+      requestAbort.current = controller;
       try {
         const answer = await bffClient.askRag(text, controller.signal);
         appendMessage(sess.id, {
@@ -328,46 +326,23 @@ function AgentsApp() {
           citations: answer.citations.map((citation) => ({ ...citation })),
         });
       } catch (error) {
-        if (
-          error instanceof Error &&
-          (error.message === "AUTH_REQUIRED" ||
-            error.name === "AuthClientError" && error.message === "AUTH_REQUIRED")
-        ) {
+        if (error instanceof AuthClientError && error.code === "AUTH_REQUIRED") {
           useAuthStore.getState().clear();
+        } else if (
+          error instanceof AuthClientError &&
+          (error.code === "OVERLOADED" ||
+            error.code === "CAPACITY_UNAVAILABLE" ||
+            error.code === "RATE_LIMITED")
+        ) {
+          toast.error("Lens is at capacity.", {
+            description:
+              "Too many governed RAG requests are active right now. Please retry shortly.",
+          });
         } else if (!controller.signal.aborted) {
           toast.error("The governed RAG service is unavailable through the secure gateway.");
         }
       } finally {
-        if (labGatewayAbort.current === controller) labGatewayAbort.current = null;
-        setSending(false);
-      }
-      return;
-    }
-
-    const identityGateway = getIdentityGatewayConfig();
-    const labGateway = getLabGatewayConfig();
-    if ((identityGateway || labGateway) && mode === "ask") {
-      const controller = new AbortController();
-      labGatewayAbort.current = controller;
-      try {
-        const content = identityGateway
-          ? await generateIdentityGatewayResponse(text, identityGateway, controller.signal)
-          : await generateLabGatewayResponse(text, labGateway!, controller.signal);
-        appendMessage(sess.id, {
-          id: `a-${Date.now()}`,
-          role: "assistant",
-          content,
-          timestamp: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-          model: identityGateway ? "Llama 3.2 (authenticated LAN test)" : "Llama 3.2 (LAN test)",
-        });
-      } catch (error) {
-        if (error instanceof IdentityLoginRequiredError && identityGateway) {
-          beginIdentityLogin(identityGateway);
-        } else if (!controller.signal.aborted) {
-          toast.error("The authenticated LAN test gateway is unavailable.");
-        }
-      } finally {
-        if (labGatewayAbort.current === controller) labGatewayAbort.current = null;
+        if (requestAbort.current === controller) requestAbort.current = null;
         setSending(false);
       }
       return;
@@ -388,23 +363,20 @@ function AgentsApp() {
       mode === "edit" && (sess.openFiles.length > 0 || attachments.length > 0);
     const willTouchFiles = allowWrites || allowScopedEdit;
 
-    const toolCalls: ToolCallRecord[] =
-      mode === "ask"
-        ? []
-        : willTouchFiles
-          ? [
-              {
-                id: `t-${Date.now()}-1`,
-                name: mode === "edit" ? "edit_file" : "write_file",
-                detail:
-                  mode === "edit"
-                    ? sess.openFiles[0] ?? "selected files"
-                    : "Updating project files",
-                status: "running",
-                category: mode === "edit" ? "edit" : "write",
-              },
-            ]
-          : [];
+    const toolCalls: ToolCallRecord[] = willTouchFiles
+      ? [
+          {
+            id: `t-${Date.now()}-1`,
+            name: mode === "edit" ? "edit_file" : "write_file",
+            detail:
+              mode === "edit"
+                ? sess.openFiles[0] ?? "selected files"
+                : "Updating project files",
+            status: "running",
+            category: mode === "edit" ? "edit" : "write",
+          },
+        ]
+      : [];
 
     if (willTouchFiles) {
       window.setTimeout(() => void openIdeWindow(), 600);
@@ -421,7 +393,7 @@ function AgentsApp() {
         "lens";
       if (greeting && mode !== "edit") {
         content = `Hi! I'm Lens, ready to help with your project in \`${repoName}\`. What would you like to work on?`;
-      } else if (mode === "ask") {
+      } else if ((mode as "ask" | "edit" | "agent") === "ask") {
         content =
           "Here's what I found — Ask mode is read-only, so I won't change any files.";
       } else if (mode === "edit" && !allowScopedEdit) {
@@ -510,7 +482,7 @@ function AgentsApp() {
         planSteps={session?.plan}
         onSend={handleEmptySend}
         onStop={() => {
-          labGatewayAbort.current?.abort();
+          requestAbort.current?.abort();
           setSending(false);
         }}
         onRestoreCheckpoint={handleRestoreCheckpoint}

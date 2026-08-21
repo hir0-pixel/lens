@@ -1,0 +1,7 @@
+# workloadIdentity: campus-failover overlay preserves workload identities while shifting to the measured post-domain-loss service floor
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patchesStrategicMerge:
+  - replica-patch.yaml

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lens:rag:error:v1",
+  "title": "Lens RAG typed error (v1)",
+  "description": "Safe, non-content-bearing error envelope. Never reveals denied identities, counts, ACLs, or existence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["error", "code", "retryable", "correlation_id"],
+  "properties": {
+    "error": { "const": "RAG_REQUEST_FAILED" },
+    "code": {
+      "enum": ["INVALID_ARGUMENT", "UNAUTHENTICATED", "FORBIDDEN", "STALE_AUTHORITY", "RATE_LIMITED", "OVERLOADED", "DEPENDENCY_UNAVAILABLE", "DEADLINE_EXCEEDED", "CANCELLED", "NOT_FOUND_OR_NOT_DISCLOSABLE", "QUARANTINED"]
+    },
+    "message": { "type": "string", "maxLength": 256 },
+    "retryable": { "type": "boolean" },
+    "retry_after_ms": { "type": "integer", "minimum": 0 },
+    "correlation_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" }
+  }
+}

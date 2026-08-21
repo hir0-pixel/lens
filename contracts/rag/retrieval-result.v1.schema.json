@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lens:rag:retrieval-result:v1",
+  "title": "Lens Retrieval result (v1)",
+  "description": "Stable typed states from Document 006. Zero-authorized-context cases are externally indistinguishable as no_context.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status"],
+  "properties": {
+    "status": { "enum": ["context", "no_context", "denied_policy", "failed_downstream"] },
+    "retrieval_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" },
+    "request_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" },
+    "turn_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" },
+    "visibility_sequence": { "type": "integer", "minimum": 0 },
+    "index_generation": { "type": "string", "pattern": "^index:[A-Za-z0-9._:-]+:[a-f0-9]{64}$" },
+    "context_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "manifest": { "$ref": "urn:lens:rag:authorization-manifest:v1" },
+    "sources": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "$ref": "urn:lens:rag:retrieved-context:v1" }
+    }
+  },
+  "if": { "properties": { "status": { "const": "context" } } },
+  "then": {
+    "required": ["retrieval_id", "request_id", "turn_id", "visibility_sequence", "index_generation", "context_digest", "manifest", "sources"],
+    "properties": { "sources": { "minItems": 1 } }
+  },
+  "else": {
+    "properties": {
+      "retrieval_id": { "maxLength": 0 },
+      "request_id": { "maxLength": 0 },
+      "turn_id": { "maxLength": 0 },
+      "visibility_sequence": { "maximum": -1 },
+      "index_generation": { "maxLength": 0 },
+      "context_digest": { "maxLength": 0 },
+      "sources": { "maxItems": 0 },
+      "manifest": { "type": "null" }
+    }
+  }
+}

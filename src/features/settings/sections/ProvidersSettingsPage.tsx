@@ -1,36 +1,22 @@
-import { useState } from "react";
-import { Check, Loader2, Plug, Star } from "lucide-react";
+import { Check, Loader2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  SettingsSectionHeader,
-} from "../SettingControls";
 import { useProviderStore, type AiProviderConfig } from "@/stores/providerStore";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
+import { SettingsSectionHeader } from "../SettingControls";
 import { PROVIDER_COLORS } from "@/shared/design-system";
 
 const KIND_COLOR = PROVIDER_COLORS;
 
 function ProviderCard({ provider }: { provider: AiProviderConfig }) {
-  const updateProvider = useProviderStore((s) => s.updateProvider);
-  const toggleProvider = useProviderStore((s) => s.toggleProvider);
-  const testConnection = useProviderStore((s) => s.testConnection);
-  const models = useProviderStore(useShallow((s) =>
-    s.models.filter((m) => m.providerId === provider.id),
+  const testConnection = useProviderStore((state) => state.testConnection);
+  const models = useProviderStore(useShallow((state) =>
+    state.models.filter((model) => model.providerId === provider.id),
   ));
-  const [showKey, setShowKey] = useState(false);
 
   return (
     <Card className="gap-0 rounded-lg bg-white/[0.02] p-4 ring-white/10">
@@ -58,85 +44,23 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
           </div>
           <p className="text-[11px] text-zinc-500">{provider.baseUrl}</p>
         </div>
-        <Switch
-          checked={provider.enabled}
-          onCheckedChange={() => toggleProvider(provider.id)}
-          aria-label={`Enable ${provider.name}`}
-        />
       </div>
 
-      <div className="mt-3 space-y-2.5 border-t border-white/5 pt-3">
-        {provider.kind !== "lens" && (
-          <div>
-            <Label className="mb-1 block text-[11px] font-normal text-zinc-500">API Key</Label>
-            <div className="flex gap-2">
-              <Input
-                type={showKey ? "text" : "password"}
-                value={provider.apiKey}
-                onChange={(e) =>
-                  updateProvider(provider.id, { apiKey: e.target.value })
-                }
-                placeholder="sk-…"
-                className="h-8 flex-1 border-white/10 bg-surface-2 font-mono text-[12px]"
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8"
-                onClick={() => setShowKey((v) => !v)}
-              >
-                {showKey ? "Hide" : "Show"}
-              </Button>
-            </div>
-          </div>
-        )}
+      <div className="mt-3 space-y-3 border-t border-white/5 pt-3">
         <div>
-          <Label className="mb-1 block text-[11px] font-normal text-zinc-500">Base URL</Label>
-          <Input
-            value={provider.baseUrl}
-            onChange={(e) =>
-              updateProvider(provider.id, { baseUrl: e.target.value })
-            }
-            className="h-8 border-white/10 bg-surface-2 font-mono text-[12px]"
-          />
-        </div>
-        {(provider.kind === "openai" || provider.kind === "azure") && (
-          <div>
-            <Label className="mb-1 block text-[11px] font-normal text-zinc-500">
-              Organization ID
-            </Label>
-            <Input
-              value={provider.organizationId ?? ""}
-              onChange={(e) =>
-                updateProvider(provider.id, { organizationId: e.target.value })
-              }
-              className="h-8 border-white/10 bg-surface-2 font-mono text-[12px]"
-              placeholder="org-…"
-            />
+          <Label className="mb-1 block text-[11px] font-normal text-zinc-500">Routing</Label>
+          <div className="rounded-md border border-white/10 bg-surface-2 px-3 py-2 text-[12px] text-zinc-400">
+            Credentials, provider routing, and model access are managed by the sovereign platform deployment.
           </div>
-        )}
+        </div>
         {models.length > 0 && (
           <div>
             <Label className="mb-1 block text-[11px] font-normal text-zinc-500">
               Default model
             </Label>
-            <Select
-              value={provider.defaultModelId ?? models[0].id}
-              onValueChange={(v) =>
-                updateProvider(provider.id, { defaultModelId: v })
-              }
-            >
-              <SelectTrigger className="h-8 border-white/10 bg-surface-2 text-[12px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {models.map((m) => (
-                  <SelectItem key={m.id} value={m.id} className="text-[12px]">
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="rounded-md border border-white/10 bg-surface-2 px-3 py-2 text-[12px] text-zinc-300">
+              {models[0].label}
+            </div>
           </div>
         )}
         <div className="flex items-center justify-between pt-1">
@@ -153,12 +77,10 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
           >
             {provider.status === "testing" ? (
               <Loader2 className="h-3 w-3 animate-spin" />
-            ) : provider.status === "connected" ? (
-              <Check className="h-3 w-3 text-emerald-400" />
             ) : (
-              <Plug className="h-3 w-3" />
+              <Check className="h-3 w-3 text-emerald-400" />
             )}
-            Test connection
+            Verify routing
           </Button>
         </div>
       </div>
@@ -167,19 +89,19 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
 }
 
 export function ProvidersSettingsPage() {
-  const providers = useProviderStore(useShallow((s) =>
-    [...s.providers].sort((a, b) => a.priority - b.priority),
+  const providers = useProviderStore(useShallow((state) =>
+    [...state.providers].sort((a, b) => a.priority - b.priority),
   ));
 
   return (
     <div>
       <SettingsSectionHeader
         title="Providers"
-        description="Connect OpenAI, Anthropic, Gemini, OpenRouter, Ollama, Azure, or custom endpoints."
+        description="Review the provider surface exposed by this sovereign deployment."
       />
       <div className="space-y-3">
-        {providers.map((p) => (
-          <ProviderCard key={p.id} provider={p} />
+        {providers.map((provider) => (
+          <ProviderCard key={provider.id} provider={provider} />
         ))}
       </div>
     </div>
@@ -187,50 +109,50 @@ export function ProvidersSettingsPage() {
 }
 
 export function ModelsSettingsPage() {
-  const models = useProviderStore((s) => s.models);
-  const recentModelIds = useProviderStore((s) => s.recentModelIds);
-  const toggleFavoriteModel = useProviderStore((s) => s.toggleFavoriteModel);
-  const providers = useProviderStore((s) => s.providers);
-  const [query, setQuery] = useState("");
+  const models = useProviderStore((state) => state.models);
+  const recentModelIds = useProviderStore((state) => state.recentModelIds);
+  const toggleFavoriteModel = useProviderStore((state) => state.toggleFavoriteModel);
+  const providers = useProviderStore((state) => state.providers);
+  const query = "";
 
-  const filtered = models.filter((m) => {
+  const filtered = models.filter((model) => {
     if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return m.label.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
+    const lowered = query.toLowerCase();
+    return model.label.toLowerCase().includes(lowered) || model.id.toLowerCase().includes(lowered);
   });
 
   const byProvider = providers
-    .map((p) => ({
-      provider: p,
-      models: filtered.filter((m) => m.providerId === p.id),
+    .map((provider) => ({
+      provider,
+      models: filtered.filter((model) => model.providerId === provider.id),
     }))
-    .filter((g) => g.models.length > 0);
+    .filter((group) => group.models.length > 0);
 
   return (
     <div>
       <SettingsSectionHeader
         title="Models"
-        description="Browse models by provider. Star favorites for quick access."
+        description="Browse the model surface exposed by this sovereign deployment."
       />
       <Input
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search models…"
+        readOnly
+        placeholder="Search is locked to deployment-provided models"
         className="mb-4 h-9 border-white/10 bg-surface-2 text-[13px]"
       />
 
-      {recentModelIds.length > 0 && !query && (
+      {recentModelIds.length > 0 && (
         <div className="mb-4">
           <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
             Recent
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {recentModelIds.map((id) => {
-              const m = models.find((x) => x.id === id);
-              if (!m) return null;
+              const model = models.find((entry) => entry.id === id);
+              if (!model) return null;
               return (
                 <Badge key={id} variant="secondary" className="h-6 font-normal">
-                  {m.label}
+                  {model.label}
                 </Badge>
               );
             })}
@@ -239,45 +161,45 @@ export function ModelsSettingsPage() {
       )}
 
       <div className="space-y-4">
-        {byProvider.map(({ provider, models: group }) => (
+        {byProvider.map(({ provider, models: groupedModels }) => (
           <div key={provider.id}>
             <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
               {provider.name}
             </h3>
-            <div className="overflow-hidden rounded-lg border border-white/10 divide-y divide-white/5">
-              {group.map((m) => (
+            <div className="overflow-hidden divide-y divide-white/5 rounded-lg border border-white/10">
+              {groupedModels.map((model) => (
                 <div
-                  key={m.id}
+                  key={model.id}
                   className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03]"
                 >
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-xs"
-                    onClick={() => toggleFavoriteModel(m.id)}
+                    onClick={() => toggleFavoriteModel(model.id)}
                     className="text-zinc-500 hover:bg-transparent hover:text-accent"
-                    aria-label={m.favorite ? "Unfavorite" : "Favorite"}
+                    aria-label={model.favorite ? "Unfavorite" : "Favorite"}
                   >
                     <Star
                       className={cn(
                         "h-3.5 w-3.5",
-                        m.favorite && "fill-accent text-accent",
+                        model.favorite && "fill-accent text-accent",
                       )}
                     />
                   </Button>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px] text-zinc-200">{m.label}</div>
-                    <div className="font-mono text-[10px] text-zinc-600">{m.id}</div>
+                    <div className="text-[13px] text-zinc-200">{model.label}</div>
+                    <div className="font-mono text-[10px] text-zinc-600">{model.id}</div>
                   </div>
                   <span className="text-[10px] tabular-nums text-zinc-500">
-                    {(m.contextWindow / 1000).toFixed(0)}K
+                    {(model.contextWindow / 1000).toFixed(0)}K
                   </span>
-                  {m.vision && (
+                  {model.vision && (
                     <Badge variant="secondary" className="h-5 text-[9px]">
                       Vision
                     </Badge>
                   )}
-                  {m.reasoning && (
+                  {model.reasoning && (
                     <Badge variant="secondary" className="h-5 text-[9px] text-accent">
                       Reasoning
                     </Badge>

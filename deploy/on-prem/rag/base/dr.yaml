@@ -1,0 +1,202 @@
+# workloadIdentity: DR jobs run under a separate operator identity and never expose runtime data outside internal backup and restore paths
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rag-state-backup
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+    lens.platform.internal/recovery-class: class-a
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+            lens.platform.internal/procedure: backup
+        spec:
+          serviceAccountName: dr-ops-workload
+          automountServiceAccountToken: false
+          restartPolicy: OnFailure
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dr-tools
+              image: registry.platform.internal/lens/dr-tools@sha256:2222222222222222222222222222222222222222222222222222222222222222
+              args:
+                - backup
+                - --audit-ledger=https://audit.platform.internal/
+                - --governance=https://governance.platform.internal/
+                - --memory-store=https://memory.platform.internal/
+                - --model-registry=https://registry.platform.internal/
+                - --checkpoint-class=class-a
+                - --witness-manifest=true
+              env:
+                - name: WORKLOAD_IDENTITY
+                  value: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+                - name: WORKLOAD_IDENTITY_TOKEN_FILE
+                  value: /var/run/secrets/lens-workload-identity/token
+                - name: BACKUP_DESTINATION
+                  valueFrom:
+                    secretKeyRef:
+                      name: lens-dr-runtime
+                      key: BACKUP_DESTINATION
+                - name: BACKUP_ENVELOPE_KEY_REF
+                  valueFrom:
+                    secretKeyRef:
+                      name: lens-dr-runtime
+                      key: BACKUP_ENVELOPE_KEY_REF
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 10001
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: workload-identity
+                  mountPath: /var/run/secrets/lens-workload-identity
+                  readOnly: true
+          volumes:
+            - name: workload-identity
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      audience: lens.platform.internal
+                      expirationSeconds: 3600
+                      path: token
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rag-restore-verification
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+    lens.platform.internal/recovery-class: restore-cell
+spec:
+  schedule: "15 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+            lens.platform.internal/procedure: restore-verification
+        spec:
+          serviceAccountName: dr-ops-workload
+          automountServiceAccountToken: false
+          restartPolicy: OnFailure
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dr-tools
+              image: registry.platform.internal/lens/dr-tools@sha256:2222222222222222222222222222222222222222222222222222222222222222
+              args:
+                - restore-verify
+                - --restore-cell=https://restore-cell.platform.internal/
+                - --require-current-revocation=true
+                - --require-audit-completeness=true
+                - --reopen-traffic=false
+              env:
+                - name: WORKLOAD_IDENTITY
+                  value: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+                - name: WORKLOAD_IDENTITY_TOKEN_FILE
+                  value: /var/run/secrets/lens-workload-identity/token
+                - name: RESTORE_MANIFEST_SIGNING_KEY_REF
+                  valueFrom:
+                    secretKeyRef:
+                      name: lens-dr-runtime
+                      key: RESTORE_MANIFEST_SIGNING_KEY_REF
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 10001
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: workload-identity
+                  mountPath: /var/run/secrets/lens-workload-identity
+                  readOnly: true
+          volumes:
+            - name: workload-identity
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      audience: lens.platform.internal
+                      expirationSeconds: 3600
+                      path: token
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rag-campus-failover-drill
+  annotations:
+    workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+    lens.platform.internal/recovery-class: campus-failover
+spec:
+  schedule: "0 4 * * 6"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            workloadIdentity: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+            lens.platform.internal/procedure: campus-failover
+        spec:
+          serviceAccountName: dr-ops-workload
+          automountServiceAccountToken: false
+          restartPolicy: OnFailure
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dr-tools
+              image: registry.platform.internal/lens/dr-tools@sha256:2222222222222222222222222222222222222222222222222222222222222222
+              args:
+                - failover-drill
+                - --largest-domain-loss=true
+                - --surge-recovery=true
+                - --peak-traffic-profile=deployment-capacity-profile
+                - --verify-ledger-completeness=true
+              env:
+                - name: WORKLOAD_IDENTITY
+                  value: spiffe://lens.platform.internal/ns/lens-rag/sa/dr-ops-workload
+                - name: WORKLOAD_IDENTITY_TOKEN_FILE
+                  value: /var/run/secrets/lens-workload-identity/token
+                - name: RECOVERY_MANIFEST_KEY_REF
+                  valueFrom:
+                    secretKeyRef:
+                      name: lens-dr-runtime
+                      key: RECOVERY_MANIFEST_KEY_REF
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 10001
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: workload-identity
+                  mountPath: /var/run/secrets/lens-workload-identity
+                  readOnly: true
+          volumes:
+            - name: workload-identity
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      audience: lens.platform.internal
+                      expirationSeconds: 3600
+                      path: token

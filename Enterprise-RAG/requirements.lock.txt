@@ -1,0 +1,22 @@
+# Enterprise-RAG development bridge dependencies.
+#
+# This is a DEVELOPMENT-ONLY service (explicit synthetic-data guard). The file
+# pins exact versions with SHA-256 hashes so installs are reproducible from the
+# approved on-prem mirror. The runtime sets Transformers/HF offline mode and
+# fails rather than downloading models from a public host; the mirror must
+# pre-provision the embedding/rerank artifacts named in rag.py.
+#
+# Regenerate with the approved mirror tooling:
+#   pip-compile --generate-hashes requirements.in
+#
+# Direct runtime dependencies (transitives are resolved by the mirror and must
+# also be hash-pinned in the generated lock).
+
+python-dotenv==1.2.2 \
+  --hash=sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a
+
+qdrant-client==1.14.0 \
+  --hash=sha256:d32c73b14584202b215f8a416d58f9f0632e2cbe2e2ad2f321c9c816a87d70e6
+
+fastembed==0.7.1 \
+  --hash=sha256:b4f6a8f620c32f2e3de8231034ca2ca76dadc7d5463f2e9ab4930b51adc03b12

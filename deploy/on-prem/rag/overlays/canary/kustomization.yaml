@@ -1,0 +1,8 @@
+# workloadIdentity: canary overlay keeps the same workload identities while routing a bounded cohort to separate private hosts
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patchesStrategicMerge:
+  - private-ingress-patch.yaml
+  - replica-patch.yaml

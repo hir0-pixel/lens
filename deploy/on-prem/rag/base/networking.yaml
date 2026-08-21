@@ -1,0 +1,266 @@
+# workloadIdentity: network policies constrain each workload identity to explicit internal peers and deny public egress by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  annotations:
+    workloadIdentity: namespace-default-deny-enforced-for-all-workload-identities
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internal-dns
+  annotations:
+    workloadIdentity: only-internal-dns-resolution-is-allowed-for-runtime-workload-identities
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bff-private-ingress
+  annotations:
+    workloadIdentity: only-private-ingress-and-approved-monitoring-reach-bff-workload-identity
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-bff
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.lens.internal/private-ingress: "true"
+      ports:
+        - protocol: TCP
+          port: 3001
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bff-egress
+  annotations:
+    workloadIdentity: bff-workload-identity-may-reach-only-identity-admission-and-orchestrator
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-bff
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-orchestrator
+      ports:
+        - protocol: TCP
+          port: 8789
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: identity
+      ports:
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 8444
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: admission
+      ports:
+        - protocol: TCP
+          port: 9443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-ingress
+  annotations:
+    workloadIdentity: only-bff-workload-identity-may-call-orchestrator
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-orchestrator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-bff
+      ports:
+        - protocol: TCP
+          port: 8789
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-egress
+  annotations:
+    workloadIdentity: orchestrator-workload-identity-may-reach-only-retrieval-and-model-runtime
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-orchestrator
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-retrieval
+      ports:
+        - protocol: TCP
+          port: 8788
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: model-runtime
+      ports:
+        - protocol: TCP
+          port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: retrieval-ingress
+  annotations:
+    workloadIdentity: only-orchestrator-workload-identity-may-call-retrieval
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-retrieval
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: lens-orchestrator
+      ports:
+        - protocol: TCP
+          port: 8788
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: retrieval-egress
+  annotations:
+    workloadIdentity: retrieval-workload-identity-may-reach-only-pdp-governance-audit-content-and-index
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-retrieval
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: pdp
+      ports:
+        - protocol: TCP
+          port: 9443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: governance
+      ports:
+        - protocol: TCP
+          port: 9444
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: audit
+      ports:
+        - protocol: TCP
+          port: 9445
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: content-store
+      ports:
+        - protocol: TCP
+          port: 9446
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: retrieval-index
+      ports:
+        - protocol: TCP
+          port: 6333
+        - protocol: TCP
+          port: 6334
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingestion-egress
+  annotations:
+    workloadIdentity: ingestion-workload-identity-may-reach-only-queue-governance-audit-content-and-index
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lens-ingestion
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: ingestion-queue
+      ports:
+        - protocol: TCP
+          port: 9447
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: governance
+      ports:
+        - protocol: TCP
+          port: 9444
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: audit
+      ports:
+        - protocol: TCP
+          port: 9445
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: content-store
+      ports:
+        - protocol: TCP
+          port: 9446
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              lens.platform.internal/role: retrieval-index
+      ports:
+        - protocol: TCP
+          port: 6333
+        - protocol: TCP
+          port: 6334

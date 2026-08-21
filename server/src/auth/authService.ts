@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createLocalJWKSet, jwtVerify, type JSONWebKeySet, type JWTPayload } from "jose";
 import { getConfig } from "../config";
 import { discoverProviderConfig } from "./oidcClient";
 import { createSessionManager, type SessionManager } from "./sessionManager";
@@ -36,6 +37,14 @@ export interface SessionInfo {
   expiresAt?: number;
 }
 
+export interface TrustedSessionInfo {
+  authenticated: boolean;
+  subject?: string;
+  sessionRef?: string;
+  deviceRef?: string;
+  expiresAt?: number;
+}
+
 export class AuthServiceError extends Error {}
 
 export function createAuthService(options: {
@@ -45,8 +54,50 @@ export function createAuthService(options: {
   const cfg = getConfig();
   const sessionManager = options.sessionManager ?? createSessionManager();
   const fetcher = options.fetchImpl ?? fetch;
+  let jwks: ReturnType<typeof createLocalJWKSet> | undefined;
+  let jwksFetchedAt = 0;
 
-  async function exchangeCodeForTokens(code: string, verifier: string): Promise<ExchangeTokenResult> {
+  async function verifiedIdToken(idToken: string, expectedNonce: string): Promise<JWTPayload> {
+    const provider = await discoverProviderConfig(fetcher);
+    if (!idToken || !expectedNonce || !cfg.OIDC_CLIENT_ID) throw new AuthServiceError("ID token verification inputs are missing");
+    if (!jwks || Date.now() - jwksFetchedAt >= 15 * 60 * 1000) {
+      let response: Response;
+      try {
+        response = await fetcher(provider.jwksEndpoint, { headers: { accept: "application/json" } });
+      } catch {
+        throw new AuthServiceError("Unable to reach the identity signing-key endpoint");
+      }
+      if (!response.ok) throw new AuthServiceError("Identity signing-key request was rejected");
+      const contentLength = Number(response.headers.get("content-length") ?? "0");
+      if (Number.isFinite(contentLength) && contentLength > 256 * 1024) throw new AuthServiceError("Identity signing-key response is too large");
+      let keySet: unknown;
+      try {
+        keySet = await response.json();
+      } catch {
+        throw new AuthServiceError("Identity signing-key response is invalid");
+      }
+      const parsed = jwksSchema.safeParse(keySet);
+      if (!parsed.success) throw new AuthServiceError("Identity signing-key response is invalid");
+      jwks = createLocalJWKSet(parsed.data as JSONWebKeySet);
+      jwksFetchedAt = Date.now();
+    }
+    try {
+      const verified = await jwtVerify(idToken, jwks, {
+        issuer: provider.issuer,
+        audience: cfg.OIDC_CLIENT_ID,
+        algorithms: ["RS256", "PS256", "ES256"],
+      });
+      if (verified.payload.nonce !== expectedNonce || typeof verified.payload.sub !== "string" || !verified.payload.sub) {
+        throw new AuthServiceError("ID token nonce or subject is invalid");
+      }
+      return verified.payload;
+    } catch (error) {
+      if (error instanceof AuthServiceError) throw error;
+      throw new AuthServiceError("ID token verification failed");
+    }
+  }
+
+  async function exchangeCodeForTokens(code: string, verifier: string, expectedNonce: string): Promise<ExchangeTokenResult> {
     const provider = await discoverProviderConfig(fetcher);
     const body = new URLSearchParams({
       grant_type: "authorization_code",
@@ -90,32 +141,17 @@ export function createAuthService(options: {
     const idToken = parsed.data.id_token;
     const expiresIn = parsed.data.expires_in;
 
-    let subject = "";
-    let profile: ExchangeTokenResult["profile"] = {};
-    if (idToken) {
-      const claims = decodeIdToken(idToken);
-      if (claims?.sub) subject = claims.sub;
-      profile = {
-        name: claims?.name,
-        email: claims?.email,
-        picture: claims?.picture,
-        preferredUsername: claims?.preferred_username ?? claims?.nickname,
-      };
-    }
-    if (!subject) {
-      try {
-        const userinfo = await fetchUserInfo(accessToken);
-        subject = userinfo.sub;
-        profile = {
-          name: userinfo.name ?? profile.name,
-          email: userinfo.email ?? profile.email,
-          picture: userinfo.picture ?? profile.picture,
-          preferredUsername: userinfo.preferredUsername ?? profile.preferredUsername,
-        };
-      } catch {
-        throw new AuthServiceError("Unable to resolve user identity");
-      }
-    }
+    if (!idToken) throw new AuthServiceError("OIDC token response is missing an ID token");
+    const claims = await verifiedIdToken(idToken, expectedNonce);
+    const subject = claims.sub as string;
+    const profile: ExchangeTokenResult["profile"] = {
+      name: typeof claims.name === "string" ? claims.name : undefined,
+      email: typeof claims.email === "string" ? claims.email : undefined,
+      picture: typeof claims.picture === "string" ? claims.picture : undefined,
+      preferredUsername: typeof claims.preferred_username === "string"
+        ? claims.preferred_username
+        : typeof claims.nickname === "string" ? claims.nickname : undefined,
+    };
 
     return {
       accessToken,
@@ -156,7 +192,12 @@ export function createAuthService(options: {
       provider.introspectionEndpoint ??
       cfg.OIDC_TOKEN_INTROSPECTION_ENDPOINT;
     if (!endpoint) {
-      return true;
+      try {
+        const user = await fetchUserInfo(token);
+        return !expectedSubject || user.sub === expectedSubject;
+      } catch {
+        return false;
+      }
     }
     try {
       const body = new URLSearchParams({ token, token_type_hint: "access_token" });
@@ -208,7 +249,7 @@ export function createAuthService(options: {
     if (!pendingFlow || !timingSafeCompare(state ?? "", pendingFlow.state)) {
       throw new AuthServiceError("OIDC state mismatch");
     }
-    const tokens = await exchangeCodeForTokens(code ?? "", pendingFlow.verifier);
+    const tokens = await exchangeCodeForTokens(code ?? "", pendingFlow.verifier, pendingFlow.nonce);
     const csrfToken = randomBase64Url(32);
     const session = createSealedSession({
       tokens,
@@ -240,6 +281,26 @@ export function createAuthService(options: {
       expiresAt: session.expiresAt,
     };
   }
+
+  async function getTrustedSession(cookieValue: string | undefined): Promise<TrustedSessionInfo> {
+    const session = sessionManager.readSession(cookieValue);
+    if (!session) return { authenticated: false };
+    const valid = await validateToken(session.accessToken, session.subjectRef);
+    if (!valid) return { authenticated: false };
+    return {
+      authenticated: true,
+      subject: session.subjectRef,
+      sessionRef: `session:${session.sid}`,
+      deviceRef: `device:${session.sid}`,
+      expiresAt: session.expiresAt,
+    };
+  }
+
+  function getRateLimitPrincipal(cookieValue: string | undefined): string | undefined {
+    const session = sessionManager.readSession(cookieValue);
+    return session ? `session:${session.sid}` : undefined;
+  }
+
 
   async function refreshSession(cookieValue: string | undefined): Promise<string | undefined> {
     const session = sessionManager.readSession(cookieValue);
@@ -323,6 +384,8 @@ export function createAuthService(options: {
   return {
     completeLogin,
     getSessionInfo,
+    getTrustedSession,
+    getRateLimitPrincipal,
     refreshSession,
     logout,
     createSealedSession,
@@ -356,13 +419,6 @@ const userInfoSchema = z.object({
   nickname: z.string().optional(),
 });
 
-function decodeIdToken(idToken: string): { sub?: string; name?: string; email?: string; picture?: string; preferred_username?: string; nickname?: string } | undefined {
-  try {
-    const parts = idToken.split(".");
-    if (parts.length !== 3) return undefined;
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
-    return payload && typeof payload === "object" ? payload : undefined;
-  } catch {
-    return undefined;
-  }
-}
+const jwksSchema = z.object({
+  keys: z.array(z.record(z.unknown())).min(1).max(32),
+});

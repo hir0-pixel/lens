@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lens:rag:registry:v1",
+  "title": "Lens RAG contract registry (v1)",
+  "version": "1.0.0",
+  "owner": "platform/contracts",
+  "contracts": {
+    "request": "request.v1.schema.json",
+    "retrieval-request": "retrieval-request.v1.schema.json",
+    "retrieval-result": "retrieval-result.v1.schema.json",
+    "authorization-manifest": "authorization-manifest.v1.schema.json",
+    "retrieved-source": "retrieved-source.v1.schema.json",
+    "retrieved-context": "retrieved-context.v1.schema.json",
+    "error": "error.v1.schema.json"
+  },
+  "evolution": "additive-only",
+  "required-stable-codes": ["INVALID_ARGUMENT", "UNAUTHENTICATED", "FORBIDDEN", "STALE_AUTHORITY", "RATE_LIMITED", "OVERLOADED", "DEPENDENCY_UNAVAILABLE", "DEADLINE_EXCEEDED", "CANCELLED"]
+}

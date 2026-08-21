@@ -9,12 +9,12 @@ import { createApiRouter } from "./routes/api";
 import { corsMiddleware } from "./middleware/cors";
 import { csrfProtection } from "./middleware/csrf";
 import { createSessionManager } from "./auth/sessionManager";
-import { LocalRagClient } from "./rag/localRagClient";
+import { OrchestratorClient } from "./rag/orchestratorClient";
 
 export function createApp(options?: {
   authService?: ReturnType<typeof createAuthService>;
   generateHandler?: (input: { prompt: string; subject: string }) => Promise<string>;
-  ragHandler?: (input: { requestId: string; query: string; subject: string }, signal: AbortSignal) => Promise<{ output: string; citations: readonly { source: string; section: string }[] }>;
+  ragHandler?: (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string }, signal: AbortSignal) => Promise<{ output: string; citations: readonly { source: string; section: string }[] }>;
   logger?: Pick<typeof console, "error" | "warn">;
 }) {
   validateProductionConfig();
@@ -23,20 +23,22 @@ export function createApp(options?: {
   const auth = options?.authService ?? createAuthService({ sessionManager });
   const logger = options?.logger ?? console;
 
-  const generateHandler =
-    options?.generateHandler ??
-    (async () => {
-      throw new Error("No generation backend configured");
-    });
-  const ragClient = cfg.RAG_PROVIDER_MODE !== "disabled" && cfg.RAG_SERVICE_URL && cfg.RAG_SERVICE_TOKEN
-    ? new LocalRagClient(cfg.RAG_SERVICE_URL, cfg.RAG_SERVICE_TOKEN)
+  const orchestratorClient = cfg.RAG_PROVIDER_MODE === "internal" && cfg.ORCHESTRATOR_URL && cfg.ORCHESTRATOR_TOKEN
+    ? new OrchestratorClient(cfg.ORCHESTRATOR_URL, cfg.ORCHESTRATOR_TOKEN)
     : undefined;
-  const ragHandler = options?.ragHandler ?? (ragClient
-    ? (input: { requestId: string; query: string; subject: string }, signal: AbortSignal) => ragClient.ask({
-      requestId: input.requestId,
-      query: input.query,
-      subjectRef: input.subject,
-    }, signal)
+  const ragHandler = options?.ragHandler ?? (orchestratorClient
+    ? (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string }, signal: AbortSignal) => orchestratorClient.ask({
+        requestId: input.requestId,
+        query: input.query,
+        subjectRef: input.subject,
+        sessionRef: input.sessionRef,
+        deviceRef: input.deviceRef,
+        applicationId: "lens-employee-client",
+        purposeRef: "assistant",
+        retrievalClass: "enterprise-grounded",
+        deadlineMs: 60_000,
+        retryBudget: 0,
+      }, signal)
     : undefined);
 
   const app = express();
@@ -50,13 +52,13 @@ export function createApp(options?: {
     res.setHeader("Cache-Control", "no-store");
     next();
   });
-  app.use(express.json({ limit: "256kb" }));
+  app.use(express.json({ limit: "32kb", strict: true, type: "application/json" }));
   app.use(cookieParser());
   app.use(corsMiddleware());
 
   app.use("/auth", createAuthRouter({ auth }));
   app.use("/api", csrfProtection({ getSessionCsrf: (cookieValue) => sessionManager.readSession(cookieValue)?.csrfToken }));
-  app.use("/api", createApiRouter({ auth, generateHandler, ragHandler }));
+  app.use("/api", createApiRouter({ auth, ragHandler }));
 
   app.use("/health", (_req, res) => {
     res.json({ ok: true });
@@ -67,7 +69,16 @@ export function createApp(options?: {
   });
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    logger.error("Unhandled error", err);
+    const bodyError = err as { type?: unknown; status?: unknown; name?: unknown };
+    if (bodyError?.type === "entity.too.large" || bodyError?.status === 413) {
+      res.status(413).json({ error: "PAYLOAD_TOO_LARGE" });
+      return;
+    }
+    if (bodyError?.type === "entity.parse.failed") {
+      res.status(400).json({ error: "INVALID_JSON" });
+      return;
+    }
+    logger.error("Unhandled error", { name: typeof bodyError?.name === "string" ? bodyError.name : "Error" });
     res.status(500).json({ error: "INTERNAL_ERROR" });
   });
 

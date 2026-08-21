@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronDown, Folder, Menu, Settings, User } from "lucide-react";
+import { ChevronDown, CircleHelp, Folder, Menu, Settings, Trash, User } from "lucide-react";
 import { useAutoGrowTextarea } from "@/components/ai/hooks/useAutoGrowTextarea";
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * Used for project/branch selectors in the input card.
  */
 export function DropdownPill({
-  icon,
+  icon: Icon,
   label,
 }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -21,7 +21,7 @@ export function DropdownPill({
         "flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-400 bg-white/5 hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
       )}
     >
-      <icon className="h-3.5 w-3.5" />
+      <Icon className="h-3.5 w-3.5" />
       <span>{label}</span>
       <ChevronDown className="h-3 w-3 text-gray-300" />
     </button>
@@ -41,6 +41,13 @@ export function ProjectItem({ name }: { name: string }) {
   );
 }
 
+const statusColors = {
+  red: "bg-red-500",
+  green: "bg-green-500",
+  yellow: "bg-yellow-500",
+  blue: "bg-blue-500",
+} as const;
+
 /**
  * TaskItem component — colored status dot, truncated title, relative time.
  * Used within the Projects section nested task rows.
@@ -49,14 +56,7 @@ export function TaskItem({
   title,
   statusColor = "red",
   time = "7m",
-}: { title: string; statusColor?: string; time?: string }) {
-  const statusColors = {
-    red: "bg-red-500",
-    green: "bg-green-500",
-    yellow: "bg-yellow-500",
-    blue: "bg-blue-500",
-  };
-
+}: { title: string; statusColor?: keyof typeof statusColors; time?: string }) {
   return (
     <div className="flex items-baseline gap-2">
       <span className={statusColors[statusColor] || "bg-red-500"} h-1 w-1 rounded-full />
@@ -237,7 +237,7 @@ export function Sidebar() {
         <span className="text-gray-400 text-sm">Harper Lee</span>
         <div className="flex items-center gap-1.5 text-xs opacity-60">
           <Settings className="h-3.5 w-3.5" />
-          <Help className="h-3.5 w-3.5" />
+          <CircleHelp className="h-3.5 w-3.5" />
         </div>
       </div>
     </div>

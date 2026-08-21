@@ -8,7 +8,30 @@ export interface AuthSessionInfo {
   expiresAt?: number;
 }
 
-export class AuthClientError extends Error {}
+export type AuthClientErrorCode =
+  | "AUTH_REQUIRED"
+  | "LOGIN_UNAVAILABLE"
+  | "LOGOUT_UNAVAILABLE"
+  | "SESSION_UNAVAILABLE"
+  | "SESSION_INVALID"
+  | "GENERATION_UNAVAILABLE"
+  | "RAG_UNAVAILABLE"
+  | "OVERLOADED"
+  | "CAPACITY_UNAVAILABLE"
+  | "DEPENDENCY_UNAVAILABLE"
+  | "RATE_LIMITED";
+
+export class AuthClientError extends Error {
+  readonly code: AuthClientErrorCode;
+  readonly status?: number;
+
+  constructor(code: AuthClientErrorCode, status?: number) {
+    super(code);
+    this.name = "AuthClientError";
+    this.code = code;
+    this.status = status;
+  }
+}
 
 export interface RagAnswer {
   output: string;
@@ -32,6 +55,49 @@ export interface AuthClientOptions {
 function sameOriginBase(baseUrl: string): string {
   if (baseUrl === "") return "";
   return baseUrl.replace(/\/$/, "");
+}
+
+function readErrorCode(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const error = (payload as { error?: unknown }).error;
+  return typeof error === "string" ? error : undefined;
+}
+
+function classifyEndpointError(
+  response: Response,
+  payload: unknown,
+  fallback: AuthClientErrorCode,
+): AuthClientError {
+  const errorCode = readErrorCode(payload);
+  if (response.status === 401 || errorCode === "UNAUTHENTICATED") {
+    return new AuthClientError("AUTH_REQUIRED", response.status);
+  }
+  if (response.status === 429 || errorCode === "OVERLOADED") {
+    return new AuthClientError("OVERLOADED", response.status);
+  }
+  if (errorCode === "RATE_LIMITED") {
+    return new AuthClientError("RATE_LIMITED", response.status);
+  }
+  if (
+    errorCode === "DRAINING" ||
+    errorCode === "ADMISSION_UNAVAILABLE" ||
+    errorCode === "CAPACITY_UNAVAILABLE" ||
+    errorCode === "CAPACITY_EXHAUSTED"
+  ) {
+    return new AuthClientError("CAPACITY_UNAVAILABLE", response.status);
+  }
+  if (errorCode === "DEPENDENCY_UNAVAILABLE") {
+    return new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
+  }
+  return new AuthClientError(fallback, response.status);
+}
+
+async function readJsonPayload(response: Response): Promise<unknown | undefined> {
+  try {
+    return await response.json();
+  } catch {
+    return undefined;
+  }
 }
 
 export function createAuthClient(options: AuthClientOptions) {
@@ -68,11 +134,11 @@ export function createAuthClient(options: AuthClientOptions) {
       signal,
     });
     if (!response.ok) {
-      throw new AuthClientError("Session endpoint unavailable");
+      throw new AuthClientError("SESSION_UNAVAILABLE", response.status);
     }
-    const payload: unknown = await response.json();
+    const payload = await readJsonPayload(response);
     if (!payload || typeof payload !== "object") {
-      throw new AuthClientError("Session endpoint returned invalid data");
+      throw new AuthClientError("SESSION_INVALID", response.status);
     }
     return payload as AuthSessionInfo;
   }
@@ -97,7 +163,7 @@ export function createAuthClient(options: AuthClientOptions) {
         window.location.assign(url);
         return;
       }
-      throw new AuthClientError("LOGIN_UNAVAILABLE");
+      throw new AuthClientError("LOGIN_UNAVAILABLE", response.status);
     } catch (error) {
       if (error instanceof AuthClientError) throw error;
       throw new AuthClientError("LOGIN_UNAVAILABLE");
@@ -112,7 +178,7 @@ export function createAuthClient(options: AuthClientOptions) {
       signal,
     });
     if (!response.ok) {
-      throw new AuthClientError("Logout failed");
+      throw new AuthClientError("LOGOUT_UNAVAILABLE", response.status);
     }
     let payload: unknown = {};
     try {
@@ -145,17 +211,12 @@ export function createAuthClient(options: AuthClientOptions) {
       body: JSON.stringify({ prompt }),
       signal,
     });
-    if (response.status === 401) {
-      throw new AuthClientError("AUTH_REQUIRED");
+    const payload = await readJsonPayload(response);
+    if (!response.ok) {
+      throw classifyEndpointError(response, payload, "GENERATION_UNAVAILABLE");
     }
-    let payload: unknown;
-    try {
-      payload = await response.json();
-    } catch {
-      throw new AuthClientError("Generation endpoint returned invalid data");
-    }
-    if (!response.ok || !payload || typeof payload !== "object" || typeof (payload as { output?: unknown }).output !== "string") {
-      throw new AuthClientError("Generation endpoint unavailable");
+    if (!payload || typeof payload !== "object" || typeof (payload as { output?: unknown }).output !== "string") {
+      throw new AuthClientError("GENERATION_UNAVAILABLE", response.status);
     }
     return (payload as { output: string }).output;
   }
@@ -170,19 +231,16 @@ export function createAuthClient(options: AuthClientOptions) {
       body: JSON.stringify({ query }),
       signal,
     });
-    if (response.status === 401) throw new AuthClientError("AUTH_REQUIRED");
-    let payload: unknown;
-    try {
-      payload = await response.json();
-    } catch {
-      throw new AuthClientError("RAG_UNAVAILABLE");
+    const payload = await readJsonPayload(response);
+    if (!response.ok) {
+      throw classifyEndpointError(response, payload, "RAG_UNAVAILABLE");
     }
-    if (!response.ok || !payload || typeof payload !== "object" || typeof (payload as { output?: unknown }).output !== "string" || !Array.isArray((payload as { citations?: unknown }).citations)) {
-      throw new AuthClientError("RAG_UNAVAILABLE");
+    if (!payload || typeof payload !== "object" || typeof (payload as { output?: unknown }).output !== "string" || !Array.isArray((payload as { citations?: unknown }).citations)) {
+      throw new AuthClientError("RAG_UNAVAILABLE", response.status);
     }
     const result = payload as { output: string; citations: unknown[] };
     if (result.citations.some((citation) => !citation || typeof citation !== "object" || typeof (citation as { source?: unknown }).source !== "string" || typeof (citation as { section?: unknown }).section !== "string")) {
-      throw new AuthClientError("RAG_UNAVAILABLE");
+      throw new AuthClientError("RAG_UNAVAILABLE", response.status);
     }
     return {
       output: result.output,

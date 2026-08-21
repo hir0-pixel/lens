@@ -1,5 +1,6 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import request from "supertest";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import {
   __resetConfig,
   getConfig,
@@ -12,6 +13,9 @@ import { createApp } from "../src";
 const SECRET = "s".repeat(48);
 const CLIENT_SECRET = "c".repeat(32);
 const ORIGINAL_ENV = { ...process.env };
+let signingKeys: Awaited<ReturnType<typeof generateKeyPair>>;
+let publicJwk: Record<string, unknown>;
+let activeNonce = "";
 
 function baseEnv(overrides: Record<string, string> = {}) {
   return {
@@ -23,6 +27,9 @@ function baseEnv(overrides: Record<string, string> = {}) {
     OIDC_CLIENT_ID: "lens-bff",
     OIDC_CLIENT_SECRET: CLIENT_SECRET,
     OIDC_REDIRECT_URI: "http://localhost:3999/auth/callback",
+    ADMISSION_API_ORIGIN: "http://127.0.0.1:9444",
+    ADMISSION_WORKLOAD_TOKEN: "a".repeat(40),
+    RATE_LIMIT_KEY_SECRET: "k".repeat(40),
     ...overrides,
   };
 }
@@ -45,7 +52,18 @@ function mockFetcher() {
       );
     }
     if (url.endsWith("/token")) {
-      return new Response(JSON.stringify({ access_token: "acc", refresh_token: "ref", id_token: "id", expires_in: 300 }), { status: 200 });
+      const idToken = await new SignJWT({ nonce: activeNonce, name: "Test User", email: "u@example.com" })
+        .setProtectedHeader({ alg: "RS256", kid: "lens-test-key" })
+        .setIssuer("https://identity.example.com/realms/lens")
+        .setAudience("lens-bff")
+        .setSubject("user-1")
+        .setIssuedAt()
+        .setExpirationTime("5m")
+        .sign(signingKeys.privateKey);
+      return new Response(JSON.stringify({ access_token: "acc", refresh_token: "ref", id_token: idToken, expires_in: 300 }), { status: 200 });
+    }
+    if (url.endsWith("/certs")) {
+      return new Response(JSON.stringify({ keys: [publicJwk] }), { status: 200 });
     }
     if (url.endsWith("/userinfo")) {
       return new Response(JSON.stringify({ sub: "user-1", name: "Test User", email: "u@example.com" }), { status: 200 });
@@ -61,7 +79,12 @@ function mockFetcher() {
 }
 
 describe("Lens BFF authentication", () => {
+  beforeAll(async () => {
+    signingKeys = await generateKeyPair("RS256");
+    publicJwk = { ...(await exportJWK(signingKeys.publicKey)), kid: "lens-test-key", alg: "RS256", use: "sig" };
+  });
   beforeEach(() => {
+    activeNonce = "";
     vi.stubGlobal("fetch", mockFetcher());
   });
   afterEach(() => {
@@ -77,10 +100,12 @@ describe("Lens BFF authentication", () => {
   }
 
   async function completeLogin(app: ReturnType<typeof createApp>) {
-    const login = await request(app).get("/auth/login");
+    const browser = request.agent(app);
+    const login = await browser.get("/auth/login");
     const location = login.header.location;
     const state = new URL(location).searchParams.get("state") ?? "";
-    const cb = await request(app).get(`/auth/callback?state=${encodeURIComponent(state)}&code=codeABC`);
+    activeNonce = new URL(location).searchParams.get("nonce") ?? "";
+    const cb = await browser.get(`/auth/callback?state=${encodeURIComponent(state)}&code=codeABC`);
     return cb;
   }
 
@@ -114,6 +139,45 @@ describe("Lens BFF authentication", () => {
     const res = await request(app).get("/auth/callback?state=random&code=abc");
     expect(res.status).toBe(302);
     expect(res.header.location).toContain("auth=error");
+  });
+
+  it("accepts a browser-bound stateless callback on a different BFF replica", async () => {
+    makeEnv();
+    const replicaA = createApp({ generateHandler: async () => "x" });
+    const replicaB = createApp({ generateHandler: async () => "x" });
+    const login = await request(replicaA).get("/auth/login");
+    const authorization = new URL(login.header.location);
+    const state = authorization.searchParams.get("state") ?? "";
+    activeNonce = authorization.searchParams.get("nonce") ?? "";
+    const bindingCookie = (login.header["set-cookie"] ?? [])
+      .find((cookie: string) => cookie.startsWith("lens_oidc_binding="))
+      ?.split(";", 1)[0] ?? "";
+
+    const callback = await request(replicaB)
+      .get(`/auth/callback?state=${encodeURIComponent(state)}&code=codeABC`)
+      .set("Cookie", bindingCookie);
+
+    expect(callback.status).toBe(302);
+    expect(callback.header.location).toBe("http://localhost:1420/");
+    expect(callback.header["set-cookie"]?.some((cookie: string) => cookie.startsWith("lens_session="))).toBe(true);
+  });
+
+  it("rejects a stateless callback with the wrong browser binding or nonce", async () => {
+    makeEnv();
+    const app = createApp({ generateHandler: async () => "x" });
+    const browser = request.agent(app);
+    const login = await browser.get("/auth/login");
+    const authorization = new URL(login.header.location);
+    const state = authorization.searchParams.get("state") ?? "";
+    activeNonce = "wrong-nonce";
+
+    const wrongNonce = await browser.get(`/auth/callback?state=${encodeURIComponent(state)}&code=codeABC`);
+    expect(wrongNonce.header.location).toContain("auth=error");
+
+    const wrongBinding = await request(app)
+      .get(`/auth/callback?state=${encodeURIComponent(state)}&code=codeABC`)
+      .set("Cookie", `lens_oidc_binding=${"z".repeat(43)}`);
+    expect(wrongBinding.header.location).toContain("auth=error");
   });
 
   it("sets Secure+HttpOnly SameSite session cookie on success and exposes safe session data", async () => {
@@ -162,7 +226,18 @@ describe("Lens BFF authentication", () => {
     expect(res.body.authenticated).toBe(false);
   });
 
-  it("rejects state-changing /api/generate without a valid CSRF token", async () => {
+  it("rejects state-changing /api/rag/ask without a valid CSRF token", async () => {
+    makeEnv();
+    const app = createApp({ generateHandler: async () => "x" });
+    const res = await request(app)
+      .post("/api/rag/ask")
+      .set("Content-Type", "application/json")
+      .send({ query: "hello" });
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("CSRF_REJECTED");
+  });
+
+  it("fails closed on the obsolete /api/generate path", async () => {
     makeEnv();
     const app = createApp({ generateHandler: async () => "x" });
     const res = await request(app)
@@ -237,16 +312,14 @@ describe("Lens BFF authentication", () => {
     expect(() => validateProductionConfig()).toThrow(/TEST_MODE/i);
   });
 
-  it("production build rejects the Gemini synthetic-data provider even when its local bridge is configured", () => {
+  it("production build rejects the legacy gemini-test mode", () => {
     makeEnv({
       NODE_ENV: "production",
       APP_ORIGIN: "https://lens.example.com",
       OIDC_REDIRECT_URI: "https://lens.example.com/auth/callback",
       RAG_PROVIDER_MODE: "gemini-test",
-      RAG_SERVICE_URL: "http://127.0.0.1:8010",
-      RAG_SERVICE_TOKEN: "r".repeat(32),
     });
-    expect(() => validateProductionConfig()).toThrow(/Gemini test RAG/i);
+    expect(() => validateProductionConfig()).toThrow(/Invalid environment configuration|invalid enum/i);
   });
 
   it("parses OIDC_REQUIRE_HTTPS_ISSUER=false as false (regression: z.coerce.boolean coerces 'false' to true)", () => {
@@ -275,5 +348,58 @@ describe("Lens BFF authentication", () => {
       OIDC_REQUIRE_HTTPS_ISSUER: "false",
     });
     expect(() => validateProductionConfig()).toThrow(/HTTPS/i);
+  });
+
+  it("internal RAG mode requires an Orchestrator ingress and rejects the legacy bridge", () => {
+    makeEnv({ RAG_PROVIDER_MODE: "internal" });
+    delete process.env.ORCHESTRATOR_URL;
+    delete process.env.ORCHESTRATOR_TOKEN;
+    __resetConfig();
+    expect(() => validateProductionConfig()).toThrow(/ORCHESTRATOR_URL/);
+
+    makeEnv({
+      RAG_PROVIDER_MODE: "internal",
+      ORCHESTRATOR_URL: "http://127.0.0.1:3002",
+      ORCHESTRATOR_TOKEN: "o".repeat(32),
+      RAG_SERVICE_URL: "http://127.0.0.1:8010",
+      RAG_SERVICE_TOKEN: "r".repeat(32),
+    });
+    expect(() => validateProductionConfig()).toThrow(/Legacy RAG_SERVICE bridge settings are not supported/i);
+
+    delete process.env.RAG_SERVICE_URL;
+    delete process.env.RAG_SERVICE_TOKEN;
+    __resetConfig();
+    expect(() => validateProductionConfig()).not.toThrow();
+  });
+
+  it("rejects the legacy RAG_SERVICE bridge even when internal mode is disabled", () => {
+    makeEnv({
+      RAG_SERVICE_URL: "http://127.0.0.1:8010",
+      RAG_SERVICE_TOKEN: "r".repeat(32),
+    });
+    expect(() => validateProductionConfig()).toThrow(/Legacy RAG_SERVICE bridge settings are not supported/i);
+  });
+
+  it("routes internal RAG mode through the Orchestrator client and never exposes provider details", async () => {
+    makeEnv({
+      RAG_PROVIDER_MODE: "internal",
+      ORCHESTRATOR_URL: "http://127.0.0.1:3002",
+      ORCHESTRATOR_TOKEN: "o".repeat(32),
+    });
+    const app = createApp({ generateHandler: async () => "x" });
+    const callback = await completeLogin(app);
+    const cookies = callback.header["set-cookie"] ?? [];
+    const sessionCookie = cookies.find((cookie: string) => cookie.startsWith("lens_session="))?.split(";")[0] ?? "";
+    const csrfCookie = cookies.find((cookie: string) => cookie.startsWith("lens_csrf="))?.split(";")[0] ?? "";
+    const csrf = decodeURIComponent(csrfCookie.split("=").slice(1).join("="));
+
+    const response = await request(app)
+      .post("/api/rag/ask")
+      .set("Cookie", [sessionCookie, csrfCookie])
+      .set("x-lens-csrf", csrf)
+      .send({ query: "What is the remote-work stipend?" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.error).toBe("DEPENDENCY_UNAVAILABLE");
   });
 });

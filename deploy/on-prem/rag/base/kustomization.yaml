@@ -1,0 +1,11 @@
+# workloadIdentity: every runtime workload in this base must use the ServiceAccounts declared here
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: lens-rag
+resources:
+  - namespace.yaml
+  - runtime.yaml
+  - networking.yaml
+  - autoscaling.yaml
+  - dr.yaml
+  - observability.yaml

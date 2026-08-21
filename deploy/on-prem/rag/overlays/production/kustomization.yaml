@@ -1,0 +1,5 @@
+# workloadIdentity: production overlay reuses the base workload identities and private DNS routing
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base

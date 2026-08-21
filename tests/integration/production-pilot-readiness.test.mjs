@@ -19,6 +19,8 @@ test("model bridge load evidence is bounded and content free", async () => {
       return { ok: true, json: async () => ({ output: "private response that must not enter evidence" }) };
     },
   });
+  assert.equal(evidence.evidenceKind, "legacy-lab-model-bridge-load");
+  assert.equal(evidence.scope, "legacy-lab-only");
   assert.equal(evidence.passed, 8);
   assert.equal(evidence.failed, 0);
   assert.equal(peak, 3);

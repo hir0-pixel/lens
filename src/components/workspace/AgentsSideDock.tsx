@@ -4,7 +4,6 @@ import {
   ArrowRight,
   ChevronDown,
   FilePlus2,
-  Filter,
   Globe,
   MessageSquare,
   Plus,

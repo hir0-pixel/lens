@@ -8,9 +8,11 @@ import {
   discoverProviderConfig,
   OIDCProviderError,
 } from "../auth/oidcClient";
-import { createPendingFlowStore, type PendingFlowStore } from "../auth/pendingFlowStore";
+import type { PendingFlowStore } from "../auth/pendingFlowStore";
+import { createStatelessPendingFlowCodec } from "../auth/statelessPendingFlow";
 import type { AuthService } from "../auth/authService";
 import { createAuthRateLimiter } from "../middleware/rateLimit";
+import { randomBase64Url } from "../utils/crypto";
 
 export function createAuthRouter(options: {
   auth: AuthService;
@@ -19,9 +21,10 @@ export function createAuthRouter(options: {
   const router = Router();
   const cfg = getConfig();
   const rateLimiter = createAuthRateLimiter();
-  const pendingFlowStore = options.pendingFlowStore ?? createPendingFlowStore();
+  const pendingFlowStore = options.pendingFlowStore;
+  const statelessFlow = createStatelessPendingFlowCodec(cfg.SESSION_SECRET);
 
-  router.get("/login", rateLimiter, async (_req, res) => {
+  router.get("/login", rateLimiter, async (req, res) => {
     try {
       await discoverProviderConfig();
     } catch (error) {
@@ -32,8 +35,24 @@ export function createAuthRouter(options: {
       res.status(500).json({ error: "INTERNAL_ERROR" });
       return;
     }
-    const flow = createPendingFlow();
-    pendingFlowStore.put(flow);
+    const created = createPendingFlow();
+    let flow = created;
+    if (pendingFlowStore) {
+      pendingFlowStore.put(created);
+    } else {
+      const existingBinding = req.cookies?.[cfg.OIDC_BROWSER_BINDING_COOKIE_NAME];
+      const browserBinding = typeof existingBinding === "string" && /^[A-Za-z0-9_-]{32,256}$/.test(existingBinding)
+        ? existingBinding
+        : randomBase64Url(32);
+      flow = statelessFlow.seal(created, browserBinding);
+      res.cookie(cfg.OIDC_BROWSER_BINDING_COOKIE_NAME, browserBinding, {
+        httpOnly: true,
+        secure: cfg.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: cfg.OIDC_PENDING_TTL_MS,
+        path: "/auth",
+      });
+    }
     const url = buildAuthorizationUrl({
       codeChallenge: buildCodeChallenge(flow.verifier),
       codeChallengeMethod: "S256",
@@ -46,7 +65,9 @@ export function createAuthRouter(options: {
   router.get("/callback", rateLimiter, async (req, res) => {
     const state = typeof req.query.state === "string" ? req.query.state : undefined;
     const code = typeof req.query.code === "string" ? req.query.code : undefined;
-    const flow = pendingFlowStore.take(state);
+    const flow = pendingFlowStore
+      ? pendingFlowStore.take(state)
+      : statelessFlow.open(state, req.cookies?.[cfg.OIDC_BROWSER_BINDING_COOKIE_NAME]);
     try {
       await discoverProviderConfig();
       const result = await options.auth.completeLogin(state, code, flow);

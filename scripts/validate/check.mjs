@@ -34,6 +34,9 @@ if (!existsSync(path.join(root, "package.json"))) {
 run("Typecheck", "npm", ["run", "typecheck"]);
 run("M00 contract checks", "npm", ["run", "contracts:check"]);
 run("M00 provenance", "npm", ["run", "contracts:provenance"]);
+run("Production security gate", "npm", ["run", "security:production"]);
+run("Orchestrator service tests", "npm", ["run", "test:orchestrator-service"]);
+run("Retrieval service tests", "npm", ["run", "test:retrieval-service"]);
 run("Unit tests", "npm", ["run", "test"]);
 run("Production build", "npm", ["run", "build"]);
 

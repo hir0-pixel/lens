@@ -39,7 +39,8 @@ export async function runModelBridgeLoad({ url, token, requests = 10, concurrenc
   durations.sort((a, b) => a - b);
   return {
     schemaVersion: 1,
-    evidenceKind: "single-server-model-bridge-load",
+    evidenceKind: "legacy-lab-model-bridge-load",
+    scope: "legacy-lab-only",
     startedAt,
     completedAt: new Date().toISOString(),
     requests,

@@ -1,0 +1,5 @@
+# workloadIdentity: root deployment points at the production overlay, which inherits ServiceAccount workload identities from base
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - overlays/production

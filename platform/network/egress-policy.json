@@ -1,0 +1,35 @@
+{
+  "schemaId": "urn:sovereign:egress-policy:v1",
+  "version": 1,
+  "owner": "platform/network",
+  "appliesTo": ["retrieval", "orchestrator", "product-bff", "ingestion", "model-gateway", "audit", "pdp", "governance"],
+  "defaultDeny": true,
+  "publicDns": "forbidden",
+  "publicIp": "forbidden",
+  "proxy": "forbidden",
+  "webhooks": "forbidden",
+  "runtimeAllowedDestinations": [],
+  "allowedInternalServices": [
+    "identity.platform.internal",
+    "lens-gateway.platform.internal",
+    "admission.platform.internal",
+    "orchestrator.platform.internal",
+    "retrieval.platform.internal",
+    "audit.platform.internal",
+    "governance.platform.internal",
+    "pdp.platform.internal",
+    "memory.platform.internal",
+    "session.platform.internal",
+    "model-gateway.platform.internal",
+    "inference.platform.internal",
+    "qdrant.platform.internal",
+    "content-store.platform.internal",
+    "telemetry-collector.internal"
+  ],
+  "enforcement": {
+    "resolve": "internal-zones-only",
+    "externalNames": "sinkhole-and-alert",
+    "allowedZones": ["platform.internal", "build.internal"],
+    "egressFailureMode": "deny-and-alert"
+  }
+}

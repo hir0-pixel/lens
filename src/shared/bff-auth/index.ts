@@ -74,5 +74,5 @@ export function resetBffAuthClient(): void {
   cachedClient = undefined;
 }
 
-export { createAuthClient } from "./client";
-export type { AuthClient, AuthSessionInfo } from "./client";
+export { AuthClientError, createAuthClient } from "./client";
+export type { AuthClient, AuthClientErrorCode, AuthSessionInfo } from "./client";

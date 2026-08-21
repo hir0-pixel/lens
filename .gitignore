@@ -14,6 +14,11 @@ data/
 *.local
 opencode.json
 
+# BFF runtime secrets are never tracked; only server/.env.example is committed.
+server/.env
+server/.env.*
+!server/.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

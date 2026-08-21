@@ -1,0 +1,179 @@
+# workloadIdentity: autoscaling decisions are driven by internal metrics attached to workload identities, not average CPU alone
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lens-bff
+  annotations:
+    workloadIdentity: scale-bff-on-private-session-and-admission-pressure
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lens-bff
+  minReplicas: 3
+  maxReplicas: 12
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 60
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: lens_bff_active_sessions
+        target:
+          type: AverageValue
+          averageValue: "500"
+    - type: Pods
+      pods:
+        metric:
+          name: lens_bff_admission_wait_milliseconds
+        target:
+          type: AverageValue
+          averageValue: "75"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lens-orchestrator
+  annotations:
+    workloadIdentity: scale-orchestrator-on-active-turns-and-tail-latency
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lens-orchestrator
+  minReplicas: 3
+  maxReplicas: 18
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 60
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: lens_orchestrator_active_requests
+        target:
+          type: AverageValue
+          averageValue: "10"
+    - type: Pods
+      pods:
+        metric:
+          name: lens_orchestrator_p95_latency_milliseconds
+        target:
+          type: AverageValue
+          averageValue: "400"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lens-retrieval
+  annotations:
+    workloadIdentity: scale-retrieval-on-active-requests-p95-and-worker-saturation
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lens-retrieval
+  minReplicas: 3
+  maxReplicas: 24
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 15
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 60
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: lens_retrieval_active_requests
+        target:
+          type: AverageValue
+          averageValue: "12"
+    - type: Object
+      object:
+        describedObject:
+          apiVersion: v1
+          kind: Service
+          name: lens-retrieval
+        metric:
+          name: lens_retrieval_p95_latency_milliseconds
+        target:
+          type: Value
+          value: "250"
+    - type: Pods
+      pods:
+        metric:
+          name: lens_retrieval_worker_utilization
+        target:
+          type: AverageValue
+          averageValue: "700m"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lens-ingestion
+  annotations:
+    workloadIdentity: scale-ingestion-on-bounded-queue-depth-and-oldest-age
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lens-ingestion
+  minReplicas: 2
+  maxReplicas: 16
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+  metrics:
+    - type: External
+      external:
+        metric:
+          name: lens_ingestion_queue_depth
+        target:
+          type: Value
+          value: "500"
+    - type: External
+      external:
+        metric:
+          name: lens_ingestion_oldest_age_seconds
+        target:
+          type: Value
+          value: "120"

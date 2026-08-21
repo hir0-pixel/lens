@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lens:rag:request:v1",
+  "title": "Lens RAG BFF-to-Orchestrator request (v1)",
+  "description": "Server-generated request contract. The client never supplies identity, authorization, endpoint, or policy fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "turn_id",
+    "subject_ref",
+    "session_ref",
+    "device_ref",
+    "application_id",
+    "purpose_ref",
+    "retrieval_class",
+    "query_digest",
+    "deadline_at",
+    "cancellation",
+    "retry_budget",
+    "bulkhead",
+    "capability"
+  ],
+  "properties": {
+    "request_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" },
+    "turn_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{8,128}$" },
+    "subject_ref": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{1,256}$" },
+    "session_ref": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{1,256}$" },
+    "device_ref": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{1,256}$" },
+    "application_id": { "const": "lens-employee-client" },
+    "purpose_ref": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+    "retrieval_class": { "enum": ["enterprise-grounded"] },
+    "query_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "deadline_at": { "type": "integer", "minimum": 1 },
+    "cancellation": { "type": "boolean" },
+    "retry_budget": { "type": "integer", "minimum": 0, "maximum": 1 },
+    "bulkhead": { "enum": ["interactive", "management"] },
+    "capability": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" }
+  }
+}

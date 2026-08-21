@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture_ref": "approved-synthetic-rag-prompts-v1",
+  "chat_templates": [
+    "Using only the approved synthetic enterprise corpus, answer the placeholder employee question about {{topic}} for {{session_class}} connected sessions in rehearsal batch {{batch}} and sequence {{sequence}}.",
+    "Within the synthetic policy set only, provide the governed placeholder guidance for {{topic}} during rehearsal batch {{batch}} at request sequence {{sequence}}."
+  ],
+  "retrieval_templates": [
+    "Find the synthetic governed passages for {{topic}} in rehearsal batch {{batch}} for candidate envelope {{candidate_limit}} at sequence {{sequence}}.",
+    "Retrieve only synthetic corpus context related to {{topic}} for connected-session class {{session_class}}, candidate envelope {{candidate_limit}}, batch {{batch}}, sequence {{sequence}}."
+  ],
+  "topics": [
+    "synthetic-remote-work-policy",
+    "synthetic-travel-reimbursement",
+    "synthetic-security-escalation",
+    "synthetic-onboarding-handbook",
+    "synthetic-device-loss-procedure",
+    "synthetic-benefits-enrollment"
+  ]
+}

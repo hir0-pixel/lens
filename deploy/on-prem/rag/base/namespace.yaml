@@ -1,0 +1,14 @@
+# workloadIdentity: namespace policy requires every runtime pod to run under a named workload identity
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lens-rag
+  labels:
+    app.kubernetes.io/part-of: lens-rag
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    lens.platform.internal/runtime-plane: rag
+  annotations:
+    workloadIdentity: namespace-scoped-service-identities-required
+    lens.platform.internal/private-routing-only: "true"
