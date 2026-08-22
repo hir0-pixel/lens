@@ -61,6 +61,7 @@ type LocationScope = "this-pc" | "cloud";
 
 interface EmptySessionViewProps {
   model: Model;
+  models?: Model[];
   messages: ChatMessage[];
   sending: boolean;
   restoringId: string | null;
@@ -88,6 +89,7 @@ interface EmptySessionViewProps {
  */
 export function EmptySessionView({
   model: fallbackModel,
+  models = MODELS,
   messages,
   sending,
   restoringId,
@@ -123,7 +125,7 @@ export function EmptySessionView({
 
   const session = currentSessionId ? sessions[currentSessionId] : null;
   const activeModel =
-    MODELS.find((m) => m.id === (session?.modelId ?? fallbackModel.id)) ??
+    models.find((m) => m.id === (session?.modelId ?? fallbackModel.id)) ??
     fallbackModel;
   const activeRepoId = session?.repoId ?? null;
   const activeRepo = repositories.find((r) => r.id === activeRepoId) ?? null;
@@ -382,7 +384,7 @@ export function EmptySessionView({
         placeholder={
           hasMessages ? "Ask for follow up changes" : "Plan, search, build anything"
         }
-        models={MODELS}
+        models={models}
         activeModel={activeModel}
         onModelChange={(m) => {
           const sess = ensureSession();
@@ -434,8 +436,8 @@ export function EmptySessionView({
           "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] group",
           nested && "pl-2",
           active
-            ? "bg-white/[0.08] text-[#ececec]"
-            : "text-[#8a8a8a] hover:bg-white/[0.05] hover:text-[#d4d4d4]",
+            ? "bg-[var(--bg-active)] text-[var(--text-primary)]"
+            : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
         )}
       >
         <span className="min-w-0 flex-1 truncate">{s.title}</span>
@@ -449,10 +451,10 @@ export function EmptySessionView({
           {s.pinned ? (
             <Pin className="h-3.5 w-3.5 shrink-0 text-yellow-400" strokeWidth={1.5} />
           ) : (
-            <Pin className="h-3.5 w-3.5 shrink-0 text-[#666] opacity-60" strokeWidth={1.5} />
+            <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] opacity-60" strokeWidth={1.5} />
           )}
         </div>
-        <span className="shrink-0 text-[11px] tabular-nums text-[#666]">
+        <span className="shrink-0 text-[11px] tabular-nums text-[var(--text-tertiary)]">
           {relativeFrom(s.lastActiveAt)}
         </span>
       </button>
@@ -648,13 +650,13 @@ export function EmptySessionView({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 bg-[#111111]">
+    <div className="flex min-h-0 flex-1 bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       <aside
-        className="flex w-[244px] shrink-0 flex-col border-r border-white/[0.06] bg-[#161616]"
+        className="flex w-[244px] shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]"
         aria-label="Session navigator"
       >
         <div className="flex items-center gap-1 px-3.5 pt-3 pb-1">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.08] text-[12px] font-semibold text-[#e8e8e8]">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--bg-hover)] text-[12px] font-semibold text-[var(--text-primary)]">
             L
           </span>
           <button
@@ -665,8 +667,8 @@ export function EmptySessionView({
             className={cn(
               "flex h-7 w-7 items-center justify-center rounded-md",
               canGoBack
-                ? "text-[#b0b0b0] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
-                : "cursor-not-allowed text-[#555]",
+                ? "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                : "cursor-not-allowed text-[var(--text-disabled)]",
             )}
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
@@ -679,8 +681,8 @@ export function EmptySessionView({
             className={cn(
               "flex h-7 w-7 items-center justify-center rounded-md",
               canGoForward
-                ? "text-[#b0b0b0] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
-                : "cursor-not-allowed text-[#555]",
+                ? "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                : "cursor-not-allowed text-[var(--text-disabled)]",
             )}
           >
             <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
@@ -699,15 +701,15 @@ export function EmptySessionView({
                   newChat();
                 }}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-white/[0.06] hover:text-[#e8e8e8]",
-                  activeTab === "chat" ? "text-[#c8c8c8]" : "text-[#8a8a8a]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                  activeTab === "chat" ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
                 )}
               >
                 <Bot className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
                 <span className="min-w-0 flex-1 truncate font-medium">New session</span>
                 <span className="flex items-center gap-0.5">
-                  <kbd className="rounded bg-white/10 px-1 py-0.5 text-[10px] font-sans text-[#777]">Ctrl</kbd>
-                  <kbd className="rounded bg-white/10 px-1 py-0.5 text-[10px] font-sans text-[#777]">N</kbd>
+                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 text-[10px] font-sans text-[var(--text-tertiary)]">Ctrl</kbd>
+                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 text-[10px] font-sans text-[var(--text-tertiary)]">N</kbd>
                 </span>
               </button>
 
@@ -715,10 +717,10 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("capabilities")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-white/[0.06] hover:text-[#e8e8e8]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "capabilities"
-                    ? "bg-white/[0.08] text-[#ececec] font-medium"
-                    : "text-[#c8c8c8]",
+                    ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
+                    : "text-[var(--text-secondary)]",
                 )}
               >
                 <Boxes className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
@@ -729,10 +731,10 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("messaging")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-white/[0.06] hover:text-[#e8e8e8]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "messaging"
-                    ? "bg-white/[0.08] text-[#ececec] font-medium"
-                    : "text-[#c8c8c8]",
+                    ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
+                    : "text-[var(--text-secondary)]",
                 )}
               >
                 <MessageSquare className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
@@ -743,10 +745,10 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("artifacts")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-white/[0.06] hover:text-[#e8e8e8]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "artifacts"
-                    ? "bg-white/[0.08] text-[#ececec] font-medium"
-                    : "text-[#c8c8c8]",
+                    ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
+                    : "text-[var(--text-secondary)]",
                 )}
               >
                 <FileText className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
@@ -757,10 +759,10 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("scheduled-jobs")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-white/[0.06] hover:text-[#e8e8e8]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "scheduled-jobs"
-                    ? "bg-white/[0.08] text-[#ececec] font-medium"
-                    : "text-[#c8c8c8]",
+                    ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
+                    : "text-[var(--text-secondary)]",
                 )}
               >
                 <Timer className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
@@ -771,20 +773,20 @@ export function EmptySessionView({
             {/* Search Bar */}
             <div className="mt-3 px-2">
               <div className="relative flex items-center">
-                <Search className="absolute left-2.5 h-3.5 w-3.5 text-[#555]" strokeWidth={1.5} />
+                <Search className="absolute left-2.5 h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.5} />
                 <input
                   type="text"
                   placeholder="Search sessions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full rounded-md bg-white/[0.04] pl-8 pr-2 text-[12px] text-[#e8e8e8] placeholder-[#555] outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-white/10"
+                  className="h-8 w-full rounded-md border border-transparent bg-[var(--bg-surface-raised)] pl-8 pr-2 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--border-focus)] focus:bg-[var(--bg-overlay)]"
                 />
               </div>
             </div>
 
             {/* PINNED Section */}
             <div className="mt-4 px-2">
-              <div className="flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold tracking-wider text-[#7a7a7a] uppercase">
+              <div className="flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold tracking-wider text-[var(--text-tertiary)] uppercase">
                 <LayoutGrid className="h-3 w-3 shrink-0" strokeWidth={2} />
                 <span>PINNED</span>
               </div>
@@ -795,7 +797,7 @@ export function EmptySessionView({
                   ))}
                 </ul>
               ) : (
-                <div className="flex items-center gap-2 px-1 py-1 text-[12px] text-[#666]">
+                <div className="flex items-center gap-2 px-1 py-1 text-[12px] text-[var(--text-tertiary)]">
                   <Pin className="h-3.5 w-3.5 shrink-0 rotate-45" strokeWidth={1.5} />
                   <span>Shift-click a chat to pin</span>
                 </div>
@@ -804,14 +806,14 @@ export function EmptySessionView({
 
             {/* PROJECTS Section */}
             <div className="mt-4 flex flex-col px-2">
-              <div className="flex items-center justify-between px-1 py-1 text-[11px] font-bold tracking-wider text-[#7a7a7a] uppercase">
+              <div className="flex items-center justify-between px-1 py-1 text-[11px] font-bold tracking-wider text-[var(--text-tertiary)] uppercase">
                 <div className="flex items-center gap-1.5">
                   <LayoutGrid className="h-3 w-3 shrink-0" strokeWidth={2} />
                   <span>PROJECTS</span>
                 </div>
                 <button
                   type="button"
-                  className="text-[#666] hover:text-[#aaa]"
+                  className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
                   title="Filter projects"
                 >
                   <SlidersHorizontal className="h-3 w-3" strokeWidth={1.5} />
@@ -821,7 +823,7 @@ export function EmptySessionView({
               <button
                 type="button"
                 onClick={() => onAddFolder?.()}
-                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] text-[#c8c8c8] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 <FolderPlus className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
                 <span className="min-w-0 flex-1 truncate font-medium">New Project</span>
@@ -846,13 +848,13 @@ export function EmptySessionView({
                               prev === repo.id ? null : repo.id,
                             );
                           }}
-                          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 text-left hover:bg-white/[0.05]"
+                          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 text-left hover:bg-[var(--bg-hover)]"
                         >
                           <Folder
-                            className="h-3.5 w-3.5 shrink-0 text-[#6a6a6a]"
+                            className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]"
                             strokeWidth={1.5}
                           />
-                          <span className="min-w-0 flex-1 truncate text-[13px] text-[#c8c8c8]">
+                          <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--text-secondary)]">
                             {repo.name}
                           </span>
                         </button>
@@ -860,11 +862,11 @@ export function EmptySessionView({
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-0 hover:bg-white/[0.08] group-hover/repo:opacity-100"
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-0 hover:bg-[var(--bg-hover)] group-hover/repo:opacity-100"
                               aria-label={`${repo.name} menu`}
                             >
                               <MoreHorizontal
-                                className="h-3.5 w-3.5 text-[#888]"
+                                className="h-3.5 w-3.5 text-[var(--text-tertiary)]"
                                 strokeWidth={1.5}
                               />
                             </button>
@@ -921,11 +923,11 @@ export function EmptySessionView({
           </div>
         </ScrollArea>
 
-        <div className="flex h-12 shrink-0 items-center gap-2 border-t border-white/[0.06] px-3">
+        <div className="flex h-12 shrink-0 items-center gap-2 border-t border-[var(--border-subtle)] px-3">
           <UserAccountMenu showLabel />
           <button
             type="button"
-            className="flex h-7 w-7 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-[#b0b0b0]"
+            className="flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             aria-label="Layout"
             title="Layout"
           >
@@ -933,7 +935,7 @@ export function EmptySessionView({
           </button>
           <button
             type="button"
-            className="flex h-7 w-7 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-[#b0b0b0]"
+            className="flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             aria-label="Settings"
             title="Settings · Ctrl+,"
             onClick={() => onOpenSettings?.()}
@@ -943,7 +945,7 @@ export function EmptySessionView({
         </div>
       </aside>
 
-      <div className="relative flex min-w-0 flex-1 flex-col bg-[#111111]">
+      <div className="relative flex min-w-0 flex-1 flex-col bg-[var(--bg-canvas)]">
         {activeTab === "artifacts" ? (
           renderArtifactsView()
         ) : activeTab !== "chat" ? (
@@ -954,7 +956,7 @@ export function EmptySessionView({
           <>
             <div className="flex flex-1 flex-col items-center justify-center px-6">
               <div className="w-full max-w-[720px]">
-                <div className="mb-3 flex flex-wrap items-center gap-3 text-[12px] text-[#6b6b6b]">
+                <div className="mb-3 flex flex-wrap items-center gap-3 text-[12px] text-[var(--text-tertiary)]">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
@@ -1073,16 +1075,16 @@ export function EmptySessionView({
           <>
             <div className="flex min-h-12 shrink-0 items-start gap-2 px-4 pb-2 pt-2">
               <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
-                <span className="max-w-[220px] truncate text-[13.5px] font-medium leading-8 text-[#f2f2f2]">
+                <span className="max-w-[220px] truncate text-[13.5px] font-medium leading-8 text-[var(--text-primary)]">
                   {session?.title ?? "New chat"}
                 </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 max-w-[180px] items-center gap-1.5 rounded-full bg-[#2a2a2a] px-2.5 text-[12.5px] text-[#d4d4d4] hover:bg-[#333]"
+                    className="inline-flex h-7 max-w-[180px] items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
-                    <Folder className="h-3.5 w-3.5 shrink-0 text-[#b0b0b0]" strokeWidth={1.5} />
+                    <Folder className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
                     <span className="truncate">{activeRepo?.name ?? "lens"}</span>
                   </button>
                 </DropdownMenuTrigger>
@@ -1119,16 +1121,16 @@ export function EmptySessionView({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#2a2a2a] px-2.5 text-[12.5px] text-[#d4d4d4] hover:bg-[#333]"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
-                    <GitBranch className="h-3.5 w-3.5 text-[#b0b0b0]" strokeWidth={1.5} />
+                    <GitBranch className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.5} />
                     <span>{branchName}</span>
-                    <ChevronDown className="h-3 w-3 text-[#8a8a8a]" strokeWidth={2} />
+                    <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
                   align="start"
-                  className="w-[280px] rounded-xl border-white/[0.1] bg-[#1c1c1c] p-0"
+                  className="w-[280px] rounded-xl border-[var(--border-default)] bg-[var(--bg-overlay)] p-0"
                 >
                   <GitBranchPicker onClose={() => setHeaderBranchOpen(false)} />
                 </PopoverContent>
@@ -1137,7 +1139,7 @@ export function EmptySessionView({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#8a8a8a] hover:bg-white/[0.06] hover:text-[#d4d4d4]"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                     aria-label="Chat options"
                   >
                     <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
@@ -1177,7 +1179,7 @@ export function EmptySessionView({
               />
             </div>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#111111] via-[#111111]/90 to-transparent px-6 pb-4 pt-10">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--bg-canvas)] via-[var(--bg-canvas)]/90 to-transparent px-6 pb-4 pt-10">
               <div className="pointer-events-auto mx-auto w-full max-w-[760px]">
                 {renderComposer()}
               </div>

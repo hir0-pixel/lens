@@ -2,12 +2,10 @@ import { useState } from "react";
 import { ArrowLeft, Check, Plus, Search, SquareArrowOutUpRight, SquareTerminal, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { MenuBar } from "@/features/menu-bar/MenuBar";
-import { WindowControls } from "@/features/shell/WindowControls";
 import { TitleBarOverflowMenu } from "@/features/shell/TitleBarOverflowMenu";
 import { WorkspaceLauncher } from "@/features/shell/WorkspaceLauncher";
 import { MENU_BAR } from "@/features/menu-bar/menuRegistry";
 import { openAgentsWindow } from "@/features/windows/openAppWindow";
-import { LensWordmark } from "@/components/brand/LensWordmark";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -60,8 +58,7 @@ export default function TitleBar({
         })();
       }}
     >
-      <div className="titlebar-no-drag relative z-[1] flex items-center gap-2 pl-2">
-        <LensWordmark size="titlebar" />
+      <div className="titlebar-no-drag relative z-[1] flex items-center pl-2">
         <MenuBar menus={isAgents ? AGENT_MENUS : MENU_BAR} />
       </div>
 
@@ -85,7 +82,7 @@ export default function TitleBar({
               type="button"
               aria-label="Toggle layout"
               title="Toggle layout"
-              className="flex h-full w-8 items-center justify-center text-[#c8c8c8] hover:bg-white/[0.08] hover:text-white"
+              className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               onClick={() => {
                 window.dispatchEvent(new CustomEvent("lens:open-agents-tab", { detail: { kind: "review" } }));
               }}
@@ -118,7 +115,7 @@ export default function TitleBar({
           type="button"
           aria-label="Open terminal"
           title="Terminal"
-          className="flex h-full w-8 items-center justify-center text-[#c8c8c8] hover:bg-white/[0.08] hover:text-white"
+          className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           onClick={() => {
             if (onOpenTerminal) {
               onOpenTerminal();
@@ -139,8 +136,8 @@ export default function TitleBar({
             aria-label="Toggle side pane"
             title="Side pane"
             className={cn(
-              "flex h-full w-8 items-center justify-center hover:bg-white/[0.08] hover:text-white",
-              sidePaneOpen ? "text-white" : "text-[#c8c8c8]",
+              "flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+              sidePaneOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
             )}
             onClick={() => {
               if (onToggleSidePane) onToggleSidePane();
@@ -164,7 +161,6 @@ export default function TitleBar({
             Settings
           </Button>
         )}
-        <WindowControls />
       </div>
     </header>
   );
@@ -185,7 +181,7 @@ function ServersPopover() {
           type="button"
           aria-label="Servers"
           title="Servers"
-          className="flex h-full w-8 items-center justify-center text-[#c8c8c8] hover:bg-white/[0.08] hover:text-white"
+          className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
             <rect x="2" y="2" width="12" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.2" />
@@ -198,9 +194,9 @@ function ServersPopover() {
       <PopoverContent
         align="center"
         sideOffset={4}
-        className="w-[340px] rounded-xl border border-white/10 bg-[#1e1e1e] p-0 shadow-xl"
+        className="w-[340px] rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-0 text-[var(--text-primary)] shadow-xl"
       >
-        <div className="flex border-b border-white/10">
+        <div className="flex border-b border-[var(--border-subtle)]">
           {SERVERS_TABS.map((tab) => (
             <button
               key={tab}
@@ -208,8 +204,8 @@ function ServersPopover() {
               className={cn(
                 "px-3 py-2 text-[13px] transition-colors",
                 activeTab === tab
-                  ? "border-b-2 border-white text-white"
-                  : "text-[#888] hover:text-white",
+                  ? "border-b-2 border-[var(--accent-primary)] text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
               )}
               onClick={() => setActiveTab(tab)}
             >
@@ -223,22 +219,22 @@ function ServersPopover() {
             <div className="flex items-center justify-between py-1.5">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-green-500" />
-                <span className="text-[13px] text-white font-medium">Local Server</span>
-                <span className="text-[12px] text-[#888]">vlocal</span>
+                <span className="text-[13px] text-[var(--text-primary)] font-medium">Local Server</span>
+                <span className="text-[12px] text-[var(--text-tertiary)]">vlocal</span>
               </div>
-              <Check className="h-4 w-4 text-[#888]" strokeWidth={1.8} />
+              <Check className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.8} />
             </div>
           )}
           {activeTab === "MCP" && (
             <McpEntry />
           )}
           {activeTab === "LSP" && (
-            <p className="py-3 text-center text-[13px] text-[#888]">LSPs auto-detected from file types</p>
+            <p className="py-3 text-center text-[13px] text-[var(--text-secondary)]">LSPs auto-detected from file types</p>
           )}
           {activeTab === "Plugins" && (
             <div className="flex items-center gap-2 py-1.5">
               <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
-              <span className="truncate text-[13px] text-white">
+              <span className="truncate text-[13px] text-[var(--text-primary)]">
                 file:///C:/Users/PMYLS/.config/opencode/plu...
               </span>
             </div>
@@ -246,10 +242,10 @@ function ServersPopover() {
         </div>
 
         {activeTab === "Servers" && (
-          <div className="border-t border-white/10 px-3 py-2">
+          <div className="border-t border-[var(--border-subtle)] px-3 py-2">
             <button
               type="button"
-              className="rounded-lg bg-white/10 px-3 py-1.5 text-[12px] text-white hover:bg-white/15"
+              className="rounded-lg bg-[var(--bg-hover)] px-3 py-1.5 text-[12px] text-[var(--text-primary)] hover:bg-[var(--bg-active)]"
               onClick={() => setManageOpen(true)}
             >
               Manage servers
@@ -272,24 +268,24 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) close(); else onOpenChange(v); }}>
-      <DialogContent className="max-w-[460px] gap-0 rounded-xl border border-white/10 bg-[#1e1e1e] p-0 shadow-2xl [&>button]:hidden">
+      <DialogContent className="max-w-[460px] gap-0 rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-0 text-[var(--text-primary)] shadow-2xl [&>button]:hidden">
         {view === "list" ? (
           <>
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              <h2 className="text-[16px] font-semibold text-white">Servers</h2>
-              <button type="button" className="rounded-md p-1 text-[#888] hover:bg-white/10 hover:text-white" onClick={close}>
+              <h2 className="text-[16px] font-semibold text-[var(--text-primary)]">Servers</h2>
+              <button type="button" className="rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]" onClick={close}>
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mx-5 mb-3 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5">
-              <Search className="h-4 w-4 text-[#666]" />
+            <div className="mx-5 mb-3 flex items-center gap-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-3 py-1.5">
+              <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
               <input
                 type="text"
                 placeholder="Search servers"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-[13px] text-white placeholder:text-[#666] outline-none"
+                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
               />
             </div>
 
@@ -297,17 +293,17 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
               <div className="flex items-center justify-between rounded-lg px-1 py-2">
                 <div className="flex items-center gap-2.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                  <span className="text-[14px] font-medium text-white">Local Server</span>
-                  <span className="text-[13px] text-[#888]">vlocal</span>
+                  <span className="text-[14px] font-medium text-[var(--text-primary)]">Local Server</span>
+                  <span className="text-[13px] text-[var(--text-tertiary)]">vlocal</span>
                 </div>
-                <Check className="h-4 w-4 text-[#888]" strokeWidth={1.8} />
+                <Check className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.8} />
               </div>
             </div>
 
-            <div className="border-t border-white/10 px-5 py-3">
+            <div className="border-t border-[var(--border-subtle)] px-5 py-3">
               <button
                 type="button"
-                className="flex items-center gap-1.5 text-[13px] text-white hover:text-white/80"
+                className="flex items-center gap-1.5 text-[13px] text-[var(--text-primary)] hover:text-[var(--text-secondary)]"
                 onClick={() => setView("add")}
               >
                 <Plus className="h-4 w-4" />
@@ -330,47 +326,47 @@ function AddServerView({ onBack, onClose }: { onBack: () => void; onClose: () =>
   const [password, setPassword] = useState("");
 
   const fieldClass =
-    "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13px] text-white placeholder:text-[#666] outline-none focus:border-white/20";
+    "w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--border-focus)]";
 
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-3 px-5 pt-5 pb-4">
-        <button type="button" className="text-[#888] hover:text-white" onClick={onBack}>
+        <button type="button" className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h2 className="text-[16px] font-semibold text-white">Add server</h2>
-        <button type="button" className="ml-auto rounded-md p-1 text-[#888] hover:bg-white/10 hover:text-white" onClick={onClose}>
+        <h2 className="text-[16px] font-semibold text-[var(--text-primary)]">Add server</h2>
+        <button type="button" className="ml-auto rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]" onClick={onClose}>
           <X className="h-4 w-4" />
         </button>
       </div>
 
       <div className="flex flex-col gap-4 px-5 pb-5">
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-[#999]">Server address</span>
+          <span className="text-[13px] text-[var(--text-secondary)]">Server address</span>
           <input type="text" placeholder="http://localhost:4096" value={address} onChange={(e) => setAddress(e.target.value)} className={fieldClass} />
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-[#999]">Server name (optional)</span>
+          <span className="text-[13px] text-[var(--text-secondary)]">Server name (optional)</span>
           <input type="text" placeholder="Localhost" value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
         </label>
 
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-[13px] text-[#999]">Username (optional)</span>
+            <span className="text-[13px] text-[var(--text-secondary)]">Username (optional)</span>
             <input type="text" placeholder="opencode" value={username} onChange={(e) => setUsername(e.target.value)} className={fieldClass} />
           </label>
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-[13px] text-[#999]">Password (optional)</span>
+            <span className="text-[13px] text-[var(--text-secondary)]">Password (optional)</span>
             <input type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} className={fieldClass} />
           </label>
         </div>
       </div>
 
-      <div className="border-t border-white/10 px-5 py-3">
+      <div className="border-t border-[var(--border-subtle)] px-5 py-3">
         <button
           type="button"
-          className="rounded-lg bg-white px-4 py-1.5 text-[13px] font-medium text-[#1e1e1e] hover:bg-white/90"
+          className="rounded-lg bg-[var(--accent-primary)] px-4 py-1.5 text-[13px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--accent-primary-hover)]"
         >
           Add server
         </button>
@@ -385,7 +381,7 @@ function McpEntry() {
     <div className="flex items-center justify-between py-1.5">
       <div className="flex items-center gap-2">
         <span className={cn("h-2 w-2 rounded-full transition-colors", on ? "bg-green-500" : "bg-white/20")} />
-        <span className="text-[13px] text-white font-medium">shadcn</span>
+        <span className="text-[13px] text-[var(--text-primary)] font-medium">shadcn</span>
       </div>
       <button
         type="button"
@@ -393,13 +389,13 @@ function McpEntry() {
         aria-checked={on}
         className={cn(
           "relative h-5 w-9 rounded-full transition-colors",
-          on ? "bg-white" : "bg-white/20",
+          on ? "bg-[var(--accent-primary)]" : "bg-[var(--bg-active)]",
         )}
         onClick={() => setOn(!on)}
       >
         <span
           className={cn(
-            "absolute top-0.5 h-4 w-4 rounded-full bg-[#1e1e1e] transition-transform",
+            "absolute top-0.5 h-4 w-4 rounded-full bg-[var(--bg-surface)] shadow-sm transition-transform",
             on ? "left-[18px]" : "left-0.5",
           )}
         />
@@ -415,7 +411,7 @@ function SidePaneGlyph({ active }: { active: boolean }) {
       height="16"
       viewBox="0 0 16 16"
       fill="none"
-      className={active ? "text-white" : "text-[#c8c8c8]"}
+      className={active ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}
       aria-hidden
     >
       <rect

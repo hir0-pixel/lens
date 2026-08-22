@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.rameel.lens-desktop",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run dev:desktop",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Agents",
+        "title": "Lens",
         "width": 1440,
         "height": 900,
         "minWidth": 1024,

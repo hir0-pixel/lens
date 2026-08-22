@@ -85,9 +85,7 @@ describe("bff-auth frontend client", () => {
 
   it("generate routes through the authenticated endpoint and surfaces auth-required", async () => {
     const fetcher = vi
-      .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: true, subject: "user-1" }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ output: "hello from backend" }), { status: 200 }));
+      .fn().mockResolvedValueOnce(new Response(JSON.stringify({ output: "hello from backend" }), { status: 200 }));
     const client = createAuthClient({ baseUrl: "", fetcher });
     await expect(client.generate("hi")).resolves.toBe("hello from backend");
     expect(fetcher).toHaveBeenCalledWith(
@@ -96,8 +94,34 @@ describe("bff-auth frontend client", () => {
     );
   });
 
+  it("beginLogin navigates directly inside a desktop webview without probing", async () => {
+    const assign = vi.fn();
+    Object.defineProperty(window, "location", { value: { assign } });
+    const fetcher = vi.fn();
+    const client = createAuthClient({ baseUrl: "", fetcher, directLoginNavigation: true });
+    await client.beginLogin();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(assign).toHaveBeenCalledWith("/auth/login");
+  });
+
+  it("loads the authenticated Gemini catalog and forwards the selected model", async () => {
+    document.cookie = "lens_csrf=csrf-token";
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: true, subject: "user-1" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ models: [{ id: "gemini-2.5-flash", name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash" }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ output: "selected model response", model: "gemini-2.5-flash" }), { status: 200 }));
+    const client = createAuthClient({ baseUrl: "", fetcher });
+    await expect(client.getGeminiModels()).resolves.toHaveLength(1);
+    await expect(client.generate("hi", "gemini-2.5-flash")).resolves.toBe("selected model response");
+    expect(fetcher.mock.calls[2][1]).toEqual(expect.objectContaining({
+      body: JSON.stringify({ prompt: "hi", modelId: "gemini-2.5-flash" }),
+      headers: expect.objectContaining({ "x-lens-csrf": "csrf-token" }),
+    }));
+  });
+
   it("generate rejects when the backend session is not authenticated", async () => {
-    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ authenticated: false }), { status: 200 }));
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "UNAUTHENTICATED" }), { status: 401 }));
     const client = createAuthClient({ baseUrl: "", fetcher });
     await expect(client.generate("hi")).rejects.toThrow("AUTH_REQUIRED");
   });

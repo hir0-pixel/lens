@@ -118,6 +118,27 @@ export function applyAppearance(settings: AppearanceSettings): void {
   }
 
   if (resolved === "light") {
+    // Keep the Lens design-system tokens in sync with the shadcn tokens below.
+    // Most workbench components consume these semantic variables rather than
+    // --background/--foreground directly.
+    root.style.setProperty("--bg-canvas", "hsl(240, 20%, 98%)");
+    root.style.setProperty("--bg-surface", "hsl(0, 0%, 100%)");
+    root.style.setProperty("--bg-surface-raised", "hsl(240, 14%, 96%)");
+    root.style.setProperty("--bg-overlay", "hsl(0, 0%, 100%)");
+    root.style.setProperty("--bg-hover", "hsl(240, 10%, 93%)");
+    root.style.setProperty("--bg-active", "hsl(240, 9%, 89%)");
+    root.style.setProperty("--bg-selected", `color-mix(in srgb, ${accent} 14%, white)`);
+    root.style.setProperty("--border-subtle", "hsl(240, 8%, 90%)");
+    root.style.setProperty("--border-default", "hsl(240, 7%, 82%)");
+    root.style.setProperty("--border-strong", "hsl(240, 6%, 70%)");
+    root.style.setProperty("--text-primary", "hsl(240, 10%, 12%)");
+    root.style.setProperty("--text-secondary", "hsl(240, 6%, 36%)");
+    root.style.setProperty("--text-tertiary", "hsl(240, 5%, 48%)");
+    root.style.setProperty("--text-disabled", "hsl(240, 5%, 64%)");
+    root.style.setProperty("--text-on-accent", "hsl(0, 0%, 100%)");
+    root.style.setProperty("--accent-primary-muted", `color-mix(in srgb, ${accent} 14%, white)`);
+    root.style.setProperty("--cursor-scrollbar", "hsl(240, 6%, 50% / 0.35)");
+    root.style.setProperty("--cursor-scrollbar-hover", "hsl(240, 6%, 40% / 0.55)");
     root.style.setProperty("--background", "0 0% 98%");
     root.style.setProperty("--foreground", "240 5% 10%");
     root.style.setProperty("--card", "0 0% 100%");
@@ -130,7 +151,30 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--input", "240 5% 88%");
     root.style.setProperty("--secondary", "240 5% 94%");
     root.style.setProperty("--secondary-foreground", "240 5% 10%");
+    root.style.setProperty("--sidebar-background", "0 0% 100%");
+    root.style.setProperty("--sidebar-foreground", "240 6% 36%");
+    root.style.setProperty("--sidebar-primary-foreground", "0 0% 100%");
+    root.style.setProperty("--sidebar-accent", "240 10% 93%");
+    root.style.setProperty("--sidebar-accent-foreground", "240 10% 12%");
+    root.style.setProperty("--sidebar-border", "240 8% 90%");
   } else {
+    root.style.removeProperty("--bg-canvas");
+    root.style.removeProperty("--bg-surface");
+    root.style.removeProperty("--bg-surface-raised");
+    root.style.removeProperty("--bg-overlay");
+    root.style.removeProperty("--bg-hover");
+    root.style.removeProperty("--bg-active");
+    root.style.removeProperty("--bg-selected");
+    root.style.removeProperty("--border-subtle");
+    root.style.removeProperty("--border-default");
+    root.style.removeProperty("--border-strong");
+    root.style.removeProperty("--text-primary");
+    root.style.removeProperty("--text-secondary");
+    root.style.removeProperty("--text-tertiary");
+    root.style.removeProperty("--text-disabled");
+    root.style.removeProperty("--text-on-accent");
+    root.style.removeProperty("--cursor-scrollbar");
+    root.style.removeProperty("--cursor-scrollbar-hover");
     root.style.setProperty("--background", "240 5% 5%");
     root.style.setProperty("--foreground", "240 5% 90%");
     root.style.setProperty("--card", "240 4% 8%");
@@ -143,6 +187,12 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--input", "240 4% 16%");
     root.style.setProperty("--secondary", "240 4% 12%");
     root.style.setProperty("--secondary-foreground", "240 5% 90%");
+    root.style.removeProperty("--sidebar-background");
+    root.style.removeProperty("--sidebar-foreground");
+    root.style.removeProperty("--sidebar-primary-foreground");
+    root.style.removeProperty("--sidebar-accent");
+    root.style.removeProperty("--sidebar-accent-foreground");
+    root.style.removeProperty("--sidebar-border");
   }
 
   root.classList.toggle("reduce-motion", settings.reducedMotion);

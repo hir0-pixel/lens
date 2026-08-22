@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Attachment, Model } from "@/lib/types";
-import { ProviderDot } from "@/shared/design-system/ProviderDot";
 import { useAutoGrowTextarea } from "./hooks/useAutoGrowTextarea";
 import {
   DropdownMenu,
@@ -132,14 +131,14 @@ export function AgentChatComposer({
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.1] bg-[#18181b] shadow-xl transition-all focus-within:border-white/20 focus-within:ring-1 focus-within:ring-white/20">
+    <div className="rounded-2xl border border-transparent bg-[var(--bg-surface)] shadow-xl transition-all">
       {fileInput}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-1.5 px-3.5 pt-3">
           {attachments.map((a) => (
             <span
               key={a.id}
-              className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-1 text-[11px] text-[#b0b0b0]"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--bg-hover)] px-2 py-1 text-[11px] text-[var(--text-secondary)]"
             >
               <Paperclip className="h-3 w-3" strokeWidth={1.5} />
               <span className="max-w-[140px] truncate">{a.name}</span>
@@ -177,7 +176,7 @@ export function AgentChatComposer({
         }}
         rows={1}
         placeholder={placeholder}
-        className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent px-4 pt-3.5 text-[14px] leading-[1.45] text-[#e8e8e8] placeholder:text-[#6a6a6a] focus:outline-none"
+        className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent px-4 pt-3.5 text-[14px] leading-[1.45] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
       />
 
       <div className="flex items-center gap-0.5 px-2.5 pb-2.5">
@@ -185,7 +184,7 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[#9a9a9a] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               aria-label="Add"
             >
               <Plus className="h-4 w-4" strokeWidth={1.75} />
@@ -207,18 +206,18 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] text-[#c4c4c4] hover:bg-white/[0.06]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
-              <ApplyIcon className="h-3.5 w-3.5 text-[#d4d4d4]" strokeWidth={1.6} />
+              <ApplyIcon className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.6} />
               <span className="max-w-[160px] truncate">{applyOption.label}</span>
-              <ChevronDown className="h-3 w-3 text-[#6a6a6a]" strokeWidth={2} />
+              <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
             side="top"
             sideOffset={8}
-            className="w-[280px] rounded-xl border-white/[0.12] bg-[#1c1c1c] p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+            className="w-[280px] rounded-xl border-[var(--border-default)] bg-[var(--bg-overlay)] p-1.5 text-[var(--text-primary)] shadow-[var(--shadow-lg)]"
           >
             {APPLY_OPTIONS.map((opt) => {
               const Icon = opt.icon;
@@ -228,23 +227,23 @@ export function AgentChatComposer({
                   key={opt.id}
                   onClick={() => setPolicy(opt.id)}
                   className={cn(
-                    "items-start gap-2.5 rounded-lg px-2.5 py-2 text-[#e8e8e8] focus:bg-white/[0.08] focus:text-white",
-                    selected && "bg-white/[0.07]",
+                    "items-start gap-2.5 rounded-lg px-2.5 py-2 text-[var(--text-primary)] focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]",
+                    selected && "bg-[var(--bg-active)]",
                   )}
                 >
                   <Icon
-                    className="mt-0.5 h-4 w-4 shrink-0 text-[#e8e8e8]"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-primary)]"
                     strokeWidth={1.6}
                   />
                   <span className="min-w-0 flex-1 leading-tight">
                     <span className="block text-[13.5px]">{opt.label}</span>
-                    <span className="mt-0.5 block text-[12px] text-[#8a8a8a]">
+                    <span className="mt-0.5 block text-[12px] text-[var(--text-secondary)]">
                       {opt.hint}
                     </span>
                   </span>
                   {selected && (
                     <Check
-                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#e8e8e8]"
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-primary)]"
                       strokeWidth={2}
                     />
                   )}
@@ -260,11 +259,10 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded-full px-2 text-[12.5px] text-[#c4c4c4] hover:bg-white/[0.06]"
+              className="inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded-full px-2 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
-              <ProviderDot provider={activeModel.provider} />
               <span className="truncate">{activeModel.label}</span>
-              <ChevronDown className="h-3 w-3 text-[#6a6a6a]" strokeWidth={2} />
+              <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -272,9 +270,11 @@ export function AgentChatComposer({
               <DropdownMenuItem
                 key={m.id}
                 onClick={() => onModelChange(m)}
-                className={cn(m.id === activeModel.id && "bg-white/[0.06]")}
+                className={cn(
+                  "focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]",
+                  m.id === activeModel.id && "bg-[var(--bg-active)] text-[var(--text-primary)]",
+                )}
               >
-                <ProviderDot provider={m.provider} className="mr-2" />
                 {m.label}
               </DropdownMenuItem>
             ))}
@@ -285,11 +285,11 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-[12.5px] text-[#c4c4c4] hover:bg-white/[0.06]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
-              <Gauge className="h-3.5 w-3.5 text-[#8a8a8a]" strokeWidth={1.6} />
+              <Gauge className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.6} />
               <span>{effortLabel}</span>
-              <ChevronDown className="h-3 w-3 text-[#6a6a6a]" strokeWidth={2} />
+              <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
@@ -297,7 +297,10 @@ export function AgentChatComposer({
               <DropdownMenuItem
                 key={opt.id}
                 onClick={() => setEffort(opt.id)}
-                className={cn(effort === opt.id && "bg-white/[0.06]")}
+                className={cn(
+                  "focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]",
+                  effort === opt.id && "bg-[var(--bg-hover)]",
+                )}
               >
                 {opt.label}
               </DropdownMenuItem>
@@ -314,8 +317,8 @@ export function AgentChatComposer({
             sending
               ? "bg-[#ef4444] text-white hover:bg-[#dc2626]"
               : canSend
-                ? "bg-[#ececec] text-[#111] hover:bg-white"
-                : "bg-[#2a2a2a] text-[#6a6a6a]",
+                ? "bg-[var(--accent-primary)] text-[var(--text-on-accent)] hover:bg-[var(--accent-primary-hover)]"
+                : "bg-[var(--bg-active)] text-[var(--text-disabled)]",
           )}
           aria-label={sending ? "Stop" : "Send"}
         >

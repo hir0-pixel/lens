@@ -6,15 +6,8 @@ import type {
 } from "./types";
 
 export const MODELS: Model[] = [
-  { id: "composer-2.5-fast", label: "Composer 2.5 Fast", provider: "lens" },
-  { id: "lens-default", label: "Lens Default", provider: "lens" },
-  { id: "claude-opus", label: "Claude Opus 4.5", provider: "claude" },
-  { id: "claude-sonnet", label: "Claude Sonnet 4.5", provider: "claude" },
-  { id: "gpt-5", label: "GPT-5.1", provider: "chatgpt" },
-  { id: "gpt-4o", label: "GPT-4o", provider: "chatgpt" },
   { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" },
   { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
-  { id: "copilot-omnigrok", label: "Copilot Omnigrok", provider: "copilot" },
 ];
 
 export const INITIAL_THREAD: ChatMessage[] = [

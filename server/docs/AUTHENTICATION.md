@@ -209,8 +209,8 @@ The desktop webview never embeds the corporate login page. Instead:
 1. The app points at the BFF via `VITE_LENS_BFF_URL` (usually
    `https://lens.app` or a loopback BFF).
 2. Sign-in calls
-   [`openUrl`](https://tauri.app/plugin/opener/) to open **the system
-   browser** at `/auth/login` (see `src/shared/bff-auth/index.ts`).
+   navigates the current Lens webview to `/auth/login`; the registered OIDC
+   callback returns that same window to `APP_ORIGIN` after authentication.
 3. The user authenticates in their OS browser. The BFF sets the session
    cookie for the BFF origin.
 4. Returning to the webview, the app calls `/api/session` with

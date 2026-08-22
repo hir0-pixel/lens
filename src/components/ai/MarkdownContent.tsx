@@ -36,7 +36,7 @@ function InlineReference({
   const Icon = icons[type];
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-accent">
+    <span className="inline-flex items-center gap-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--accent-primary)]">
       <Icon className="h-3 w-3 shrink-0" />
       {label}
     </span>
@@ -56,7 +56,7 @@ function CodeBlock({
   if (!match) {
     return (
       <code
-        className="mx-0.5 inline-flex translate-y-px items-center rounded-[6px] border border-white/[0.1] bg-[#2a2a2a] px-[6px] py-[1px] font-[inherit] text-[13px] leading-[1.3] text-[#d8d8d8]"
+        className="mx-0.5 inline-flex translate-y-px items-center rounded-[6px] border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-[6px] py-[1px] font-[inherit] text-[13px] leading-[1.3] text-[var(--text-primary)]"
         {...props}
       >
         {children}
@@ -71,16 +71,16 @@ function CodeBlock({
   }
 
   return (
-    <div className="group relative my-2 overflow-hidden rounded-lg border border-white/10 bg-surface-1">
-      <div className="flex items-center justify-between border-b border-white/10 bg-surface-2 px-3 py-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-wide text-zinc-500">
+    <div className="group relative my-2 overflow-hidden rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-3 py-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
           {lang}
         </span>
         <Button
           variant="ghost"
           size="sm"
           onClick={copy}
-          className="h-6 gap-1 px-2 text-[10px] text-zinc-400 hover:text-zinc-200"
+          className="h-6 gap-1 px-2 text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         >
           {copied ? (
             <>
@@ -96,7 +96,7 @@ function CodeBlock({
         </Button>
       </div>
       <pre className="overflow-x-auto p-3">
-        <code className={cn("font-mono text-[12px] leading-relaxed text-zinc-300", className)}>
+        <code className={cn("font-mono text-[12px] leading-relaxed text-[var(--text-primary)]", className)}>
           {children}
         </code>
       </pre>
@@ -113,20 +113,20 @@ export function MarkdownContent({ content, streaming, className }: MarkdownConte
   return (
     <div
       className={cn(
-        "prose prose-invert prose-sm max-w-none",
-        "[&_p]:my-1.5 [&_p]:text-[14.5px] [&_p]:leading-[1.55] [&_p]:text-[#d4d4d4]",
-        "[&_strong]:font-semibold [&_strong]:text-zinc-100",
-        "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:text-zinc-300",
-        "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:text-zinc-300",
+        "prose prose-sm max-w-none text-[var(--text-primary)]",
+        "[&_p]:my-1.5 [&_p]:text-[14.5px] [&_p]:leading-[1.55] [&_p]:text-[var(--text-primary)]",
+        "[&_strong]:font-semibold [&_strong]:text-[var(--text-primary)]",
+        "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:text-[var(--text-primary)]",
+        "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:text-[var(--text-primary)]",
         "[&_li]:my-0.5",
-        "[&_h1]:text-base [&_h2]:text-[15px] [&_h3]:text-[14px] [&_h1,_h2,_h3]:font-semibold [&_h1,_h2,_h3]:text-zinc-100",
+        "[&_h1]:text-base [&_h2]:text-[15px] [&_h3]:text-[14px] [&_h1,_h2,_h3]:font-semibold [&_h1,_h2,_h3]:text-[var(--text-primary)]",
         "[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:text-[12px]",
-        "[&_th]:border [&_th]:border-white/10 [&_th]:bg-surface-2 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:text-zinc-300",
-        "[&_td]:border [&_td]:border-white/10 [&_td]:px-2 [&_td]:py-1 [&_td]:text-zinc-400",
-        "[&_blockquote]:border-l-2 [&_blockquote]:border-accent/50 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-400",
-        "[&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2",
-        "[&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-white/10",
-        "[&_hr]:my-4 [&_hr]:border-white/10",
+        "[&_th]:border [&_th]:border-[var(--border-default)] [&_th]:bg-[var(--bg-surface-raised)] [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:text-[var(--text-primary)]",
+        "[&_td]:border [&_td]:border-[var(--border-default)] [&_td]:px-2 [&_td]:py-1 [&_td]:text-[var(--text-secondary)]",
+        "[&_blockquote]:border-l-2 [&_blockquote]:border-[var(--accent-primary)] [&_blockquote]:pl-3 [&_blockquote]:text-[var(--text-secondary)]",
+        "[&_a]:text-[var(--accent-primary)] [&_a]:underline [&_a]:underline-offset-2",
+        "[&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-[var(--border-default)]",
+        "[&_hr]:my-4 [&_hr]:border-[var(--border-subtle)]",
         className,
       )}
     >
@@ -162,7 +162,7 @@ export function FileReferenceChip({ path }: { path: string }) {
 
 export function CitationChip({ index }: { index: number }) {
   return (
-    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded bg-white/10 px-1 text-[10px] font-medium text-zinc-400">
+    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded bg-[var(--bg-hover)] px-1 text-[10px] font-medium text-[var(--text-secondary)]">
       {index}
     </span>
   );

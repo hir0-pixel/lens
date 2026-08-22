@@ -13,6 +13,7 @@ dist-ssr
 data/
 *.local
 opencode.json
+server/.env
 
 # BFF runtime secrets are never tracked; only server/.env.example is committed.
 server/.env

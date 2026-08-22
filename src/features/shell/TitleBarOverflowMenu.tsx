@@ -16,7 +16,7 @@ import { UpdateService } from "@/shared/release/UpdateService";
 import { logger } from "@/shared/diagnostics/logger";
 
 function itemClass() {
-  return "h-8 cursor-pointer rounded-md px-3 text-[13px] text-[#e6e6e6] focus:bg-white/[0.08] focus:text-white";
+  return "h-8 cursor-pointer rounded-md px-3 text-[13px] text-[var(--text-primary)] focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]";
 }
 
 export function TitleBarOverflowMenu() {
@@ -85,7 +85,7 @@ export function TitleBarOverflowMenu() {
           type="button"
           aria-label="App menu"
           title="App menu"
-          className="flex h-full w-8 items-center justify-center text-[#c8c8c8] outline-none hover:bg-white/[0.08] hover:text-white data-[state=open]:bg-white/[0.08] data-[state=open]:text-white"
+          className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] outline-none hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] data-[state=open]:bg-[var(--bg-hover)] data-[state=open]:text-[var(--text-primary)]"
         >
           <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
@@ -93,7 +93,7 @@ export function TitleBarOverflowMenu() {
       <DropdownMenuContent
         align="end"
         sideOffset={6}
-        className="min-w-[248px] rounded-xl border border-white/[0.1] bg-[#1c1c1c] p-1.5 text-[#e6e6e6] shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+        className="min-w-[248px] rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-1.5 text-[var(--text-primary)] shadow-[var(--shadow-lg)]"
       >
         <DropdownMenuItem
           className={itemClass()}
@@ -102,7 +102,7 @@ export function TitleBarOverflowMenu() {
           }
         >
           New task
-          <DropdownMenuShortcut className="text-[11px] tracking-normal text-[#7a7a7a]">
+          <DropdownMenuShortcut className="text-[11px] tracking-normal text-[var(--text-tertiary)]">
             Ctrl+N
           </DropdownMenuShortcut>
         </DropdownMenuItem>
@@ -111,7 +111,7 @@ export function TitleBarOverflowMenu() {
           onClick={() => void openFolder()}
         >
           Open workspace
-          <DropdownMenuShortcut className="text-[11px] tracking-normal text-[#7a7a7a]">
+          <DropdownMenuShortcut className="text-[11px] tracking-normal text-[var(--text-tertiary)]">
             Ctrl+O
           </DropdownMenuShortcut>
         </DropdownMenuItem>
@@ -119,7 +119,7 @@ export function TitleBarOverflowMenu() {
           Open in File Explorer
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="mx-2 my-1.5 bg-white/[0.08]" />
+        <DropdownMenuSeparator className="mx-2 my-1.5 bg-[var(--border-subtle)]" />
 
         <DropdownMenuItem
           className={itemClass()}
@@ -140,7 +140,7 @@ export function TitleBarOverflowMenu() {
           Process monitor
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="mx-2 my-1.5 bg-white/[0.08]" />
+        <DropdownMenuSeparator className="mx-2 my-1.5 bg-[var(--border-subtle)]" />
 
         <DropdownMenuItem
           className={itemClass()}
@@ -184,7 +184,7 @@ export function TitleBarOverflowMenu() {
           Export logs
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="mx-2 my-1.5 bg-white/[0.08]" />
+        <DropdownMenuSeparator className="mx-2 my-1.5 bg-[var(--border-subtle)]" />
 
         <DropdownMenuItem
           className={itemClass()}

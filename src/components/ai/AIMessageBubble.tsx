@@ -54,7 +54,7 @@ export function AIMessageBubble({
               {message.attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#2a2a2a]"
+                  className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)]"
                   title={att.name}
                 >
                   {att.preview ? (
@@ -70,7 +70,7 @@ export function AIMessageBubble({
                       ) : att.kind === "video" ? (
                         <Video className="h-3.5 w-3.5 text-[#8a8a8a]" />
                       ) : null}
-                      <span className="max-w-[140px] truncate text-[12px] text-[#c8c8c8]">
+                      <span className="max-w-[140px] truncate text-[12px] text-[var(--text-secondary)]">
                         {att.name}
                       </span>
                     </div>
@@ -79,7 +79,7 @@ export function AIMessageBubble({
               ))}
             </div>
           )}
-          <div className="rounded-[18px] bg-[#2f2f2f] px-3.5 py-2 text-[14px] leading-[1.45] text-[#ececec]">
+          <div className="rounded-[18px] bg-[var(--bg-active)] px-3.5 py-2 text-[14px] leading-[1.45] text-[var(--text-primary)]">
             {message.content}
           </div>
         </div>
@@ -97,8 +97,8 @@ export function AIMessageBubble({
         type="button"
         onClick={() => hasTrace && setTraceOpen((v) => !v)}
         className={cn(
-          "mb-2 inline-flex items-center gap-1 text-[12.5px] text-[#8a8a8a]",
-          hasTrace && "hover:text-[#c4c4c4]",
+          "mb-2 inline-flex items-center gap-1 text-[12.5px] text-[var(--text-tertiary)]",
+          hasTrace && "hover:text-[var(--text-secondary)]",
         )}
       >
         {streaming ? "Working" : workedLabel(message)}
@@ -124,7 +124,7 @@ export function AIMessageBubble({
         </div>
       )}
 
-      <div className="w-full text-[14.5px] leading-[1.55] text-[#d4d4d4]">
+      <div className="w-full text-[14.5px] leading-[1.55] text-[var(--text-primary)]">
         <MarkdownContent content={message.content} streaming={streaming} />
       </div>
 
@@ -145,7 +145,7 @@ export function AIMessageBubble({
       <button
         type="button"
         onClick={copyContent}
-        className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[11px] text-[#6a6a6a] opacity-0 transition-opacity hover:bg-white/[0.04] hover:text-[#c4c4c4] group-hover:opacity-100"
+        className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[11px] text-[var(--text-tertiary)] opacity-0 transition-opacity hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100"
         aria-label="Copy message"
       >
         {copied ? (

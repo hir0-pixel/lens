@@ -31,10 +31,10 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
         {showLabel ? (
           <button
             type="button"
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 text-left hover:bg-white/[0.05]"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 text-left hover:bg-[var(--bg-hover)]"
             title={session?.email ?? displayName}
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#3a3a3a] text-[11px] font-medium text-[#ececec]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-active)] text-[11px] font-medium text-[var(--text-primary)]">
               {session?.picture ? (
                 <img
                   src={session.picture}
@@ -46,7 +46,7 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
                 initial
               )}
             </span>
-            <span className="min-w-0 truncate text-[13px] text-[#c8c8c8]">
+            <span className="min-w-0 truncate text-[13px] text-[var(--text-secondary)]">
               {displayName}
             </span>
           </button>

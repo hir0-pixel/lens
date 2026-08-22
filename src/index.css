@@ -498,9 +498,10 @@
 
   .cursor-titlebar {
     height: var(--title-bar-height);
-    background: var(--bg-surface);
+    /* Keep the window chrome continuous with the workspace beneath it. */
+    background: var(--bg-canvas);
     color: var(--text-secondary);
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 0;
     font-size: var(--text-sm);
   }
 
@@ -1106,12 +1107,26 @@
 
     /* Compatibility for existing workspace surfaces while they use semantic tokens. */
     .bg-\[\#0a0a0a\],
-    .bg-\[\#141414\],
-    .bg-\[\#1a1a1a\] {
+    .bg-\[\#0d0d0d\],
+    .bg-\[\#111\],
+    .bg-\[\#111111\],
+    .bg-\[\#141414\] {
       background-color: var(--bg-canvas) !important;
     }
+    .bg-\[\#161616\],
+    .bg-\[\#181818\],
+    .bg-\[\#18181b\],
+    .bg-\[\#1a1a1a\],
+    .bg-\[\#1c1c1c\],
     .bg-\[\#1e1e1e\],
-    .bg-\[\#222222\] {
+    .bg-\[\#222222\],
+    .bg-\[\#242424\],
+    .bg-\[\#252525\],
+    .bg-\[\#2a2a2a\],
+    .bg-\[\#2a2d33\],
+    .bg-\[\#2f2f2f\],
+    .bg-\[\#333\],
+    .bg-\[\#3a3a3a\] {
       background-color: var(--bg-surface) !important;
     }
     .bg-white\/3,
@@ -1120,6 +1135,9 @@
     .bg-white\/10 {
       background-color: hsl(240 8% 88% / 0.55) !important;
     }
+    [class*="bg-white/["] {
+      background-color: var(--bg-hover) !important;
+    }
     .border-white\/5,
     .border-white\/6,
     .border-white\/10,
@@ -1127,8 +1145,15 @@
     .border-white\/20 {
       border-color: var(--border-subtle) !important;
     }
+    .text-\[\#f2f2f2\],
+    .text-\[\#f0f0f0\],
+    .text-\[\#eee\],
+    .text-\[\#ececec\],
     .text-\[\#e8e8e8\],
+    .text-\[\#e6e6e6\],
+    .text-\[\#e0e0e0\],
     .text-\[\#d4d4d4\],
+    .text-\[\#c8c8c8\],
     .text-zinc-50,
     .text-zinc-100,
     .text-zinc-200,
@@ -1136,11 +1161,17 @@
       color: var(--text-primary) !important;
     }
     .text-\[\#b0b0b0\],
+    .text-\[\#aaa\],
+    .text-\[\#a0a0a0\],
+    .text-\[\#999\],
     .text-\[\#9a9a9a\],
     .text-\[\#8a8a8a\],
     .text-zinc-400 {
       color: var(--text-secondary) !important;
     }
+    .text-\[\#7a7a7a\],
+    .text-\[\#777\],
+    .text-\[\#6a6a6a\],
     .text-\[\#666\],
     .text-\[\#6b6b6b\],
     .text-\[\#5a5a5a\],
@@ -1156,14 +1187,16 @@
     [class*="hover:text-[#"]:hover {
       color: var(--text-primary) !important;
     }
+    [class~="hover:text-white"]:hover,
+    [class*="focus:text-white"]:focus,
+    [class*="data-[state=open]:text-white"][data-state="open"] {
+      color: var(--text-primary) !important;
+    }
     [class*="placeholder:text-[#"]::placeholder {
       color: var(--text-tertiary) !important;
     }
     [class*="border-white/["] {
       border-color: var(--border-subtle) !important;
-    }
-    .bg-\[\#0d0d0d\] {
-      background-color: var(--bg-surface) !important;
     }
     .bg-\[\#1e3a2f\] {
       background-color: var(--success-muted) !important;

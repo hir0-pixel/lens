@@ -2,6 +2,7 @@ import Provider from "oidc-provider";
 
 const ISSUER = process.env.LENS_DEV_IDP_ISSUER ?? "http://localhost:3005";
 const PORT = Number(process.env.LENS_DEV_IDP_PORT ?? 3005);
+const APP_ORIGIN = process.env.LENS_APP_ORIGIN ?? "http://localhost:1420";
 
 const devAccount = {
   sub: "dev-user-1",
@@ -225,8 +226,12 @@ provider.use(async (ctx, next) => {
     }
   } catch (err) {
     console.error("dev-idp interaction error:", err?.message ?? err);
-    ctx.status = 500;
-    ctx.body = "Interaction error";
+    // Interaction UIDs are one-use, in-memory records. If the dev provider is
+    // restarted while Lens is on an interaction URL, return to the app so the
+    // user can begin a fresh flow instead of trapping the webview on a 500.
+    ctx.status = 302;
+    ctx.redirect(`${APP_ORIGIN}/?auth=restart`);
+    return;
   }
   return next();
 });

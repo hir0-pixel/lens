@@ -25,17 +25,17 @@ export function GitBranchPicker({ onClose }: GitBranchPickerProps) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 border-b border-white/[0.08] px-3 py-2">
-        <Search className="h-3.5 w-3.5 text-[#6a6a6a]" strokeWidth={1.75} />
+      <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-3 py-2">
+        <Search className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search branches"
-          className="h-6 w-full bg-transparent text-[13px] text-[#e6e6e6] placeholder:text-[#6a6a6a] focus:outline-none"
+          className="h-6 w-full bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
           autoFocus
         />
       </div>
-      <div className="px-3 pb-1 pt-2 text-[11px] font-medium text-[#8a8a8a]">
+      <div className="px-3 pb-1 pt-2 text-[11px] font-medium text-[var(--text-tertiary)]">
         Branches
       </div>
       <ul className="max-h-56 overflow-y-auto pb-1">
@@ -48,27 +48,27 @@ export function GitBranchPicker({ onClose }: GitBranchPickerProps) {
                 onClose();
               }}
               className={cn(
-                "flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-white/[0.05]",
-                b.current && "bg-white/[0.06]",
+                "flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-[var(--bg-hover)]",
+                b.current && "bg-[var(--bg-active)]",
               )}
             >
               <GitBranch
-                className="mt-0.5 h-3.5 w-3.5 text-[#9a9a9a]"
+                className="mt-0.5 h-3.5 w-3.5 text-[var(--text-tertiary)]"
                 strokeWidth={1.6}
               />
               <span className="min-w-0 flex-1">
-                <span className="block text-[13px] font-medium text-[#e8e8e8]">
+                <span className="block text-[13px] font-medium text-[var(--text-primary)]">
                   {b.name}
                 </span>
                 {b.current && (
-                  <span className="text-[11px] text-[#7a7a7a]">
+                  <span className="text-[11px] text-[var(--text-tertiary)]">
                     Uncommitted changes: {fileCount} files
                   </span>
                 )}
               </span>
               {b.current && (
                 <Check
-                  className="mt-0.5 h-3.5 w-3.5 text-[#c8c8c8]"
+                  className="mt-0.5 h-3.5 w-3.5 text-[var(--text-secondary)]"
                   strokeWidth={2}
                 />
               )}
@@ -76,10 +76,10 @@ export function GitBranchPicker({ onClose }: GitBranchPickerProps) {
           </li>
         ))}
       </ul>
-      <div className="border-t border-white/[0.08] py-1">
+      <div className="border-t border-[var(--border-subtle)] py-1">
         <button
           type="button"
-          className="flex h-8 w-full items-center gap-2 px-3 text-[13px] text-[#d4d4d4] hover:bg-white/[0.04]"
+          className="flex h-8 w-full items-center gap-2 px-3 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           onClick={() => {
             const name = window.prompt("New branch name");
             if (name?.trim()) {
@@ -93,7 +93,7 @@ export function GitBranchPicker({ onClose }: GitBranchPickerProps) {
         </button>
         <button
           type="button"
-          className="flex h-8 w-full items-center gap-2 px-3 text-[13px] text-[#d4d4d4] hover:bg-white/[0.04]"
+          className="flex h-8 w-full items-center gap-2 px-3 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           onClick={() => {
             setShowHistory(true);
             onClose();

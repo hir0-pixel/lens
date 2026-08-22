@@ -1,4 +1,4 @@
-import { PROVIDER_COLORS } from "@/shared/design-system";
+import { PROVIDER_COLORS } from "./tokens";
 import { cn } from "@/lib/utils";
 
 /** Map mock model provider ids → brand color tokens */

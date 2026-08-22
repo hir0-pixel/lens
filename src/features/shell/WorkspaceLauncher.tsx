@@ -104,7 +104,7 @@ function ClionLogo({ className }: { className?: string }) {
 }
 
 const itemClass =
-  "h-9 cursor-pointer gap-2.5 rounded-md px-2.5 text-[13px] text-[#e8e8e8] focus:bg-white/[0.08] focus:text-white";
+  "h-9 cursor-pointer gap-2.5 rounded-md px-2.5 text-[13px] text-[var(--text-primary)] focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]";
 
 async function openInEditor(
   name: "VS Code" | "Cursor" | "CLion",
@@ -144,11 +144,11 @@ export function WorkspaceLauncher() {
           type="button"
           aria-label="Open workspace"
           title="Open workspace"
-          className="mx-1 inline-flex h-[22px] items-center gap-0.5 self-center rounded-md border border-white/[0.12] bg-[#2a2a2a] px-1.5 leading-none hover:bg-[#333]"
+          className="mx-1 inline-flex h-[22px] items-center gap-0.5 self-center rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-1.5 leading-none hover:bg-[var(--bg-hover)]"
         >
           <ExplorerGlyph className="block" />
           <ChevronDown
-            className="block h-3 w-3 shrink-0 translate-y-[1px] text-[#9a9a9a]"
+            className="block h-3 w-3 shrink-0 translate-y-[1px] text-[var(--text-tertiary)]"
             strokeWidth={2}
           />
         </button>
@@ -156,7 +156,7 @@ export function WorkspaceLauncher() {
       <DropdownMenuContent
         align="end"
         sideOffset={6}
-        className="min-w-[200px] rounded-xl border-white/[0.1] bg-[#1c1c1c] p-1.5"
+        className="min-w-[200px] rounded-xl border-[var(--border-default)] bg-[var(--bg-overlay)] p-1.5 text-[var(--text-primary)]"
       >
         <DropdownMenuItem
           className={itemClass}
@@ -167,13 +167,13 @@ export function WorkspaceLauncher() {
         >
           <ExplorerGlyph />
           Resource Manager
-          <Check className="ml-auto h-3.5 w-3.5 text-[#c8c8c8]" strokeWidth={2} />
+          <Check className="ml-auto h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={2} />
         </DropdownMenuItem>
         <DropdownMenuItem
           className={itemClass}
           onClick={() => void openIdeWindow()}
         >
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] bg-white/[0.08] text-[10px] font-semibold text-[#e8e8e8]">
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] bg-[var(--bg-hover)] text-[10px] font-semibold text-[var(--text-primary)]">
             L
           </span>
           Lens IDE

@@ -11,6 +11,7 @@
     "contracts:check": "node scripts/contracts/check.mjs && node scripts/contracts/rag-check.mjs",
     "contracts:provenance": "node scripts/contracts/provenance.mjs",
     "dev": "vite",
+    "dev:desktop": "node scripts/dev/desktop-stack.mjs",
     "dev:bff": "npm run dev --prefix server",
     "dev:orchestrator": "npm run dev --prefix orchestrator-service",
     "dev:retrieval": "npm run dev --prefix retrieval-service",
