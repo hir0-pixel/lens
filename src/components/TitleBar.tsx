@@ -3,7 +3,9 @@ import { ArrowLeft, Check, Plus, Search, SquareArrowOutUpRight, SquareTerminal, 
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { MenuBar } from "@/features/menu-bar/MenuBar";
 import { TitleBarOverflowMenu } from "@/features/shell/TitleBarOverflowMenu";
+import { WindowControls } from "@/features/shell/WindowControls";
 import { WorkspaceLauncher } from "@/features/shell/WorkspaceLauncher";
+import { LensWordmark } from "@/components/brand/LensWordmark";
 import { MENU_BAR } from "@/features/menu-bar/menuRegistry";
 import { openAgentsWindow } from "@/features/windows/openAppWindow";
 import { Button } from "@/components/ui/button";
@@ -42,9 +44,21 @@ export default function TitleBar({
   const isAgents = variant === "agents";
 
   return (
+    <>
+      <div
+        data-tauri-drag-region
+        className="lens-window-caption titlebar-drag flex h-8 shrink-0 items-stretch select-none"
+      >
+        <div className="pointer-events-none flex items-center px-1.5">
+          <LensWordmark size="titlebar" />
+        </div>
+        <div className="titlebar-no-drag ml-auto flex items-stretch">
+          <WindowControls />
+        </div>
+      </div>
     <header
       data-tauri-drag-region
-      className="cursor-titlebar titlebar-drag relative z-sticky flex h-8 shrink-0 select-none items-stretch bg-background"
+      className="cursor-titlebar titlebar-drag relative z-sticky flex h-8 shrink-0 select-none items-stretch"
       role="banner"
       onDoubleClick={() => {
         void (async () => {
@@ -163,6 +177,7 @@ export default function TitleBar({
         )}
       </div>
     </header>
+    </>
   );
 }
 

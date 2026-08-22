@@ -498,11 +498,52 @@
 
   .cursor-titlebar {
     height: var(--title-bar-height);
-    /* Keep the window chrome continuous with the workspace beneath it. */
+    /* The custom controls share the exact canvas colour of the app. */
+    background: var(--bg-canvas) !important;
+    color: var(--text-secondary);
+    border-bottom: 0 !important;
+    font-size: var(--text-sm);
+  }
+
+  .lens-window-caption {
     background: var(--bg-canvas);
     color: var(--text-secondary);
-    border-bottom: 0;
-    font-size: var(--text-sm);
+  }
+
+  /* The chat header sits above the scrollable transcript. Its extended scrim
+     * softens text as it passes beneath the header instead of cutting it off. */
+  .lens-chat-session-header {
+    position: relative;
+    z-index: 3;
+    background: hsl(240 10% 7% / 0.94);
+    -webkit-backdrop-filter: blur(12px) saturate(110%);
+    backdrop-filter: blur(12px) saturate(110%);
+  }
+
+  .lens-chat-session-header::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: -28px;
+    left: 0;
+    height: 28px;
+    pointer-events: none;
+    /* This element extends over the transcript, so the filter belongs here
+       rather than on the header itself: it blurs the text behind the fade. */
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    background: linear-gradient(
+      to bottom,
+      hsl(240 10% 7% / 0.88),
+      hsl(240 10% 7% / 0.4) 58%,
+      transparent
+    );
+  }
+
+  .lens-chat-session-header > * {
+    position: relative;
+    z-index: 2;
   }
 
   .cursor-activity-bar {

@@ -519,7 +519,7 @@ function AgentsApp() {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-background font-sans text-foreground antialiased">
+    <div className="flex h-screen flex-col bg-[var(--bg-canvas)] font-sans text-[var(--text-primary)] antialiased">
       <TitleBar
         projectName={project.name}
         onOpenSettings={() => openSettings()}

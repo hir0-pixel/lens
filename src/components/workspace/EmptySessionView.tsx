@@ -1073,7 +1073,7 @@ export function EmptySessionView({
           </>
         ) : (
           <>
-            <div className="flex min-h-12 shrink-0 items-start gap-2 px-4 pb-2 pt-2">
+            <div className="lens-chat-session-header flex min-h-12 shrink-0 items-start gap-2 px-4 pb-2 pt-2">
               <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
                 <span className="max-w-[220px] truncate text-[13.5px] font-medium leading-8 text-[var(--text-primary)]">
                   {session?.title ?? "New chat"}

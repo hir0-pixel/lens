@@ -4,7 +4,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = new URL("../../", import.meta.url);
 const rootPath = fileURLToPath(root);
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-const READINESS_TIMEOUT_MS = 30_000;
+// A cold Vite start can exceed 30 seconds on Windows while esbuild scans a
+// large workspace. Give the desktop host a realistic budget rather than
+// failing just before the frontend becomes available.
+const READINESS_TIMEOUT_MS = 90_000;
 const POLL_INTERVAL_MS = 250;
 
 export function serviceDefinitions(env = process.env) {
