@@ -34,7 +34,7 @@ describe("router: deterministic acknowledgement fast path", () => {
   });
 
   it("treats bare acknowledgements as zero-retrieval ACKNOWLEDGEMENT", () => {
-    for (const text of ["okay", "Okay!", "thanks", "Thank you.", "got it", "ok"]) {
+    for (const text of ["okay", "Okay!", "thanks", "Thank you.", "got it", "ok", "yes"]) {
       expect(isUnambiguousAcknowledgement(text)).toBe(true);
     }
   });
@@ -48,6 +48,12 @@ describe("router: deterministic acknowledgement fast path", () => {
     expect(result.decision).toEqual({ route: "ACKNOWLEDGEMENT", queryText: "thanks" });
     expect(result.routeOutput).toBe("NO_RETRIEVAL");
     expect(result.enforcement).toBeUndefined();
+  });
+
+  it("does not force retrieval for a bare yes when grounding is not required", async () => {
+    const result = await classifyTurn({ text: "yes", history: [], requestId: "req-1", turnId: "turn-1", deadlineAt: Date.now() + 30_000 }, undefined, policy({ groundingRequired: false }), signal());
+    expect(result.decision.route).toBe("ACKNOWLEDGEMENT");
+    expect(result.routeOutput).toBe("NO_RETRIEVAL");
   });
 
   it("does NOT let an acknowledgement skip retrieval when the pre-resolved policy requires grounding — overrides to SINGLE_RETRIEVAL with the default selector and records enforcement provenance", async () => {

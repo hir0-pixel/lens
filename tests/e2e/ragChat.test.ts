@@ -61,6 +61,15 @@ describe("real employee RAG chat composition", () => {
     expect(JSON.stringify(response.body)).toContain("finance");
   });
 
+  it("no-match answers do not reveal that ingested documents exist", async () => {
+    const response = await harness.askWithMode("banana smoothie recipe", "lexical");
+    const body = JSON.stringify(response.body);
+    expect(body).not.toContain("cobalt lantern");
+    expect(body).not.toContain("orbital archive");
+    expect(body).not.toContain("policy-doc");
+    expect(body).not.toMatch(/citation|chunkRef|document_version/i);
+  });
+
   it("hybrid retrieval returns literal and vector-grounded content", async () => {
     const source = "The orbital archive requires a dual-key review before launch scheduling.";
     await harness.ingest({ sourceId: "archive", documentRef: "archive-doc", versionRef: "archive-v1", text: source });
