@@ -120,10 +120,10 @@ export function AgentsSideDock({
 
       {kind === "picker" ? (
         <div className="flex min-h-0 flex-1 flex-col px-8 pt-16">
-          <h2 className="text-[22px] font-medium tracking-tight text-[var(--text-primary)]">
+          <h2 className="type-display-sm text-[var(--text-primary)]">
             Open tab
           </h2>
-          <p className="mt-1.5 text-[13.5px] text-[var(--text-tertiary)]">
+          <p className="mt-1.5 type-caption text-[var(--text-tertiary)]">
             Choose a tab to open in the side pane.
           </p>
           <div className="mt-8 grid grid-cols-2 gap-3">
@@ -135,7 +135,7 @@ export function AgentsSideDock({
                 className="flex h-[92px] flex-col items-start justify-center gap-3 rounded-2xl bg-[var(--bg-surface-raised)] px-5 text-left hover:bg-[var(--bg-hover)]"
               >
                 <Icon className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={1.5} />
-                <span className="text-[14px] text-[var(--text-primary)]">{label}</span>
+                <span className="type-body-sm text-[var(--text-primary)]">{label}</span>
               </button>
             ))}
           </div>
@@ -144,7 +144,7 @@ export function AgentsSideDock({
         <>
           {/* Tab strip */}
           <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-subtle)] px-1">
-            <span className="inline-flex h-7 items-center rounded-md bg-[var(--bg-hover)] px-2.5 text-[12px] font-medium text-[var(--text-primary)]">
+            <span className="inline-flex h-7 items-center rounded-md bg-[var(--bg-hover)] px-2.5 type-caption font-medium text-[var(--text-primary)]">
               {kind === "review" ? (
                 <>
                   <FilePlus2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
@@ -155,7 +155,7 @@ export function AgentsSideDock({
               )}
             </span>
             {kind === "terminal" && cwd && (
-              <span className="ml-1 max-w-[200px] truncate font-mono text-[11px] text-[var(--text-tertiary)]" title={cwd}>
+              <span className="ml-1 max-w-[200px] truncate type-code text-[var(--text-tertiary)]" title={cwd}>
                 {cwd}
               </span>
             )}
@@ -191,8 +191,8 @@ export function AgentsSideDock({
             {kind === "conversation" && (
               <div className="flex h-full flex-col items-center justify-center bg-[var(--bg-surface)] px-6 text-center">
                 <MessageSquare className="mb-3 h-8 w-8 text-[var(--text-tertiary)]" strokeWidth={1.4} />
-                <p className="text-[14px] text-[var(--text-secondary)]">Side conversation</p>
-                <p className="mt-1 max-w-[240px] text-[12.5px] text-[var(--text-tertiary)]">
+                <p className="type-body-sm text-[var(--text-secondary)]">Side conversation</p>
+                <p className="mt-1 max-w-[240px] type-caption text-[var(--text-tertiary)]">
                   Start a parallel thread without leaving this chat.
                 </p>
               </div>
@@ -234,11 +234,11 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
     <div className="flex h-full flex-col bg-[var(--bg-surface)]">
       {/* Git changes header */}
       <div className="flex items-center gap-3 px-3 py-1.5">
-        <button type="button" className="flex items-center gap-1 text-[13px] font-semibold text-[var(--text-primary)]">
+        <button type="button" className="flex items-center gap-1 type-caption font-semibold text-[var(--text-primary)]">
           Git changes <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
         {changes.length > 0 && (
-          <span className="text-[12px]">
+          <span className="type-caption">
             <span className="text-[var(--success)]">+{totalAdd}</span>{" "}
             <span className="text-[var(--error)]">-{totalDel}</span>
           </span>
@@ -284,13 +284,13 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
       {sel && (
         <div className="flex items-center gap-2 border-t border-[var(--border-subtle)] px-3 py-1.5">
           <SettingsGearIcon />
-          <span className="text-[12px] font-medium text-[var(--text-primary)]">
+          <span className="type-caption font-medium text-[var(--text-primary)]">
             {sel.path.split("/").pop()}
           </span>
-          <span className="text-[11px] text-[var(--text-tertiary)]">
+          <span className="type-caption text-[var(--text-tertiary)]">
             {sel.path.split("/").slice(0, -1).join("/")}/
           </span>
-          <span className="ml-auto text-[11px]">
+          <span className="ml-auto type-caption">
             <span className="text-[var(--success)]">+{sel.additions}</span>{" "}
             <span className="text-[var(--error)]">-{sel.deletions}</span>
           </span>
@@ -305,7 +305,7 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
           placeholder="Filter files"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="flex-1 bg-transparent text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+          className="flex-1 bg-transparent type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
         />
       </div>
 
@@ -313,14 +313,14 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
       <div className="min-h-0 flex-1 overflow-y-auto border-t border-[var(--border-subtle)]">
         {changes.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-[14px] text-[var(--text-tertiary)]">No uncommitted changes yet</p>
+            <p className="type-body-sm text-[var(--text-tertiary)]">No uncommitted changes yet</p>
           </div>
         ) : (
           <div className="py-0.5">
             {[...groups.entries()].map(([dir, files]) => (
               <div key={dir}>
                 {dir && (
-                  <button type="button" className="flex w-full items-center gap-1 px-2 py-1 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">
+                  <button type="button" className="flex w-full items-center gap-1 px-2 py-1 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">
                     <ChevronDown className="h-3 w-3" />
                     <FolderIcon />
                     <span>{dir.split("/").filter(Boolean).join(" › ")}</span>
@@ -333,7 +333,7 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
                       key={file.id}
                       type="button"
                       className={cn(
-                        "flex w-full items-center gap-2 py-1 text-[12px] hover:bg-[var(--bg-hover)]",
+                        "flex w-full items-center gap-2 py-1 type-caption hover:bg-[var(--bg-hover)]",
                         dir ? "pl-7 pr-2" : "px-2",
                         selectedFile === file.id && "bg-[var(--bg-active)]",
                       )}

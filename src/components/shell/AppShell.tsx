@@ -253,21 +253,21 @@ export default function AppShell({
           >
             <button
               type="button"
-              className="px-3 py-2 text-[11px] text-[var(--text-secondary)]"
+              className="px-3 py-2 type-caption text-[var(--text-secondary)]"
               onClick={() => openExplorer()}
             >
               Files
             </button>
             <button
               type="button"
-              className="px-3 py-2 text-[11px] text-[var(--text-secondary)]"
+              className="px-3 py-2 type-caption text-[var(--text-secondary)]"
               onClick={() => setNavView("agents")}
             >
               Agents
             </button>
             <button
               type="button"
-              className="px-3 py-2 text-[11px] text-[var(--text-secondary)]"
+              className="px-3 py-2 type-caption text-[var(--text-secondary)]"
               onClick={toggleTools}
             >
               Tools

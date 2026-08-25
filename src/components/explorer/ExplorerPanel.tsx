@@ -377,7 +377,7 @@ export function ExplorerPanel({
                 }
               }}
               className={cn(
-                "group relative flex cursor-pointer items-center gap-0.5 pr-2 text-[13px] outline-none",
+                "group relative flex cursor-pointer items-center gap-0.5 pr-2 type-caption outline-none",
                 "transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
                 isDrop && "ring-1 ring-inset ring-[var(--accent-primary)]",
                 isSelected && "bg-[var(--bg-selected)] text-[var(--text-primary)]",
@@ -457,7 +457,7 @@ export function ExplorerPanel({
                     if (e.key === "Enter") commitRename();
                     if (e.key === "Escape") setRenaming(null);
                   }}
-                  className="h-[18px] min-w-0 flex-1 rounded-[2px] border border-[var(--cursor-focus)] bg-[var(--cursor-input-bg)] px-1 text-[13px] text-[var(--ds-fg)] outline-none"
+                  className="h-[18px] min-w-0 flex-1 rounded-[2px] border border-[var(--cursor-focus)] bg-[var(--cursor-input-bg)] px-1 type-caption text-[var(--ds-fg)] outline-none"
                 />
               ) : (
                 <span className="min-w-0 flex-1 truncate leading-[22px]">
@@ -466,7 +466,7 @@ export function ExplorerPanel({
               )}
             </div>
           </ContextMenuTrigger>
-          <ContextMenuContent className="min-w-[180px] rounded-none border-[var(--ds-border)] bg-[var(--ds-surface-elevated)] p-0 text-[13px] shadow-[var(--shadow-overlay)] animate-cursor-fade">
+          <ContextMenuContent className="min-w-[180px] rounded-none border-[var(--ds-border)] bg-[var(--ds-surface-elevated)] p-0 type-caption shadow-[var(--shadow-overlay)] animate-cursor-fade">
             {isFolder ? (
               <>
                 <ContextMenuItem
@@ -523,7 +523,7 @@ export function ExplorerPanel({
   return (
     <div className="flex h-full flex-col" role="tree" aria-label="Explorer">
       <div className="flex h-[22px] shrink-0 items-center gap-0.5 px-2">
-        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--ds-fg)]">
+        <span className="min-w-0 flex-1 truncate type-caption-uppercase text-[var(--ds-fg)]">
           finance-dashboard
         </span>
         <ExplorerAction
@@ -551,7 +551,7 @@ export function ExplorerPanel({
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter files…"
           aria-label="Filter explorer"
-          className="cursor-input h-[22px] w-full px-1.5 text-[12px]"
+          className="cursor-input h-[22px] w-full px-1.5 type-caption"
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto py-0.5">
@@ -584,7 +584,7 @@ function ExplorerAction({
       </TooltipTrigger>
       <TooltipContent
         side="bottom"
-        className="rounded-none border-[var(--ds-border)] bg-[var(--ds-surface-elevated)] px-2 py-1 text-[12px] animate-cursor-fade"
+        className="rounded-none border-[var(--ds-border)] bg-[var(--ds-surface-elevated)] px-2 py-1 type-caption animate-cursor-fade"
       >
         {label}
       </TooltipContent>

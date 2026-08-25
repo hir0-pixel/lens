@@ -71,13 +71,13 @@ export function BranchSwitcher() {
             <Button
               variant="ghost"
               disabled={operation === "checking-out"}
-              className="h-8 w-full justify-between gap-2 px-2 text-[12px] font-normal hover:bg-[var(--bg-hover)]"
+              className="h-8 w-full justify-between gap-2 px-2 type-caption font-normal hover:bg-[var(--bg-hover)]"
             >
               <span className="flex min-w-0 items-center gap-2">
                 <GitBranch className="h-3.5 w-3.5 text-accent" />
                 <span className="truncate text-[var(--text-primary)]">{current?.name ?? "—"}</span>
               </span>
-              <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-[var(--text-tertiary)]">
+              <span className="flex shrink-0 items-center gap-1.5 type-caption text-[var(--text-tertiary)]">
                 {current && current.ahead > 0 && (
                   <span className="flex items-center gap-0.5 text-[var(--success)]">
                     <ArrowUp className="h-2.5 w-2.5" />
@@ -102,14 +102,14 @@ export function BranchSwitcher() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search branches…"
-                  className="h-8 border-[var(--border-default)] bg-surface-2 pl-7 text-[12px]"
+                  className="h-8 border-[var(--border-default)] bg-surface-2 pl-7 type-caption"
                 />
               </div>
             </div>
             <div className="max-h-64 overflow-y-auto p-1">
               {favorites.length > 0 && (
                 <>
-                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <DropdownMenuLabel className="type-caption-uppercase text-[var(--text-tertiary)]">
                     Favorites
                   </DropdownMenuLabel>
                   {favorites.map((b) => (
@@ -131,7 +131,7 @@ export function BranchSwitcher() {
                   ))}
                 </>
               )}
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+              <DropdownMenuLabel className="type-caption-uppercase text-[var(--text-tertiary)]">
                 Local branches
               </DropdownMenuLabel>
               {others.map((b) => (
@@ -152,7 +152,7 @@ export function BranchSwitcher() {
                 />
               ))}
               {filtered.length === 0 && (
-                <div className="px-2 py-4 text-center text-[12px] text-[var(--text-tertiary)]">
+                <div className="px-2 py-4 text-center type-caption text-[var(--text-tertiary)]">
                   No branches found
                 </div>
               )}
@@ -283,7 +283,7 @@ function BranchItem({
           <span className="min-w-0 flex-1 truncate">{name}</span>
           {favorite && <Star className="h-3 w-3 fill-accent text-accent" />}
           {(ahead > 0 || behind > 0) && (
-            <span className="text-[10px] text-[var(--text-tertiary)]">
+            <span className="type-caption text-[var(--text-tertiary)]">
               {ahead > 0 && `↑${ahead}`}
               {behind > 0 && ` ↓${behind}`}
             </span>

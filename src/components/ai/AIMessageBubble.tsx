@@ -70,7 +70,7 @@ export function AIMessageBubble({
                       ) : att.kind === "video" ? (
                         <Video className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                       ) : null}
-                      <span className="max-w-[140px] truncate text-[12px] text-[var(--text-secondary)]">
+                      <span className="max-w-[140px] truncate type-caption text-[var(--text-secondary)]">
                         {att.name}
                       </span>
                     </div>
@@ -79,7 +79,7 @@ export function AIMessageBubble({
               ))}
             </div>
           )}
-          <div className="rounded-[18px] bg-[var(--bg-active)] px-3.5 py-2 text-[14px] leading-[1.45] text-[var(--text-primary)]">
+          <div className="rounded-[18px] bg-[var(--bg-active)] px-3.5 py-2 type-body-sm leading-[1.45] text-[var(--text-primary)]">
             {message.content}
           </div>
         </div>
@@ -97,7 +97,7 @@ export function AIMessageBubble({
         type="button"
         onClick={() => hasTrace && setTraceOpen((v) => !v)}
         className={cn(
-          "mb-2 inline-flex items-center gap-1 text-[12.5px] text-[var(--text-tertiary)]",
+          "mb-2 inline-flex items-center gap-1 type-caption text-[var(--text-tertiary)]",
           hasTrace && "hover:text-[var(--text-secondary)]",
         )}
       >
@@ -124,7 +124,7 @@ export function AIMessageBubble({
         </div>
       )}
 
-      <div className="w-full text-[14.5px] leading-[1.55] text-[var(--text-primary)]">
+      <div className="w-full type-body-sm leading-[1.55] text-[var(--text-primary)]">
         <MarkdownContent content={message.content} streaming={streaming} />
       </div>
 
@@ -133,7 +133,7 @@ export function AIMessageBubble({
           {message.citations.map((citation) => (
             <span
               key={`${citation.source}:${citation.section}`}
-              className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-2 py-1 text-[11px] text-[var(--text-secondary)]"
+              className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-2 py-1 type-caption text-[var(--text-secondary)]"
               title={citation.section}
             >
               {citation.source} · {citation.section}
@@ -145,7 +145,7 @@ export function AIMessageBubble({
       <button
         type="button"
         onClick={copyContent}
-        className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[11px] text-[var(--text-tertiary)] opacity-0 transition-opacity hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100"
+        className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 type-caption text-[var(--text-tertiary)] opacity-0 transition-opacity hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100"
         aria-label="Copy message"
       >
         {copied ? (

@@ -56,7 +56,7 @@ export default function AutomationsDialog({
     >
       <div className="flex flex-col gap-3 p-1">
         {!creating ? (
-          <Button onClick={() => setCreating(true)} className="w-full text-[13px]">
+          <Button onClick={() => setCreating(true)} className="w-full type-caption">
             <Plus className="h-4 w-4" strokeWidth={1.5} />
             New Automation
           </Button>
@@ -94,10 +94,10 @@ export default function AutomationsDialog({
               </Field>
             </FieldGroup>
             <div className="mt-3 flex gap-2">
-              <Button onClick={submitCreate} size="sm" className="flex-1 text-[12px]">
+              <Button onClick={submitCreate} size="sm" className="flex-1 type-caption">
                 Create
               </Button>
-              <Button onClick={resetForm} variant="secondary" size="sm" className="flex-1 text-[12px]">
+              <Button onClick={resetForm} variant="secondary" size="sm" className="flex-1 type-caption">
                 Cancel
               </Button>
             </div>
@@ -107,8 +107,8 @@ export default function AutomationsDialog({
         {items.length === 0 && !creating ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <Workflow className="h-8 w-8 text-[var(--text-tertiary)]" strokeWidth={1.25} />
-            <p className="text-[13px] text-[var(--text-secondary)]">No automations yet</p>
-            <p className="max-w-xs text-[12px] text-[var(--text-tertiary)]">
+            <p className="type-caption text-[var(--text-secondary)]">No automations yet</p>
+            <p className="max-w-xs type-caption text-[var(--text-tertiary)]">
               Create one to run recurring agent prompts on a trigger.
             </p>
           </div>
@@ -121,14 +121,14 @@ export default function AutomationsDialog({
               >
                 <Workflow className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.5} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-medium text-[var(--text-primary)]">
+                  <div className="truncate type-caption font-medium text-[var(--text-primary)]">
                     {automation.name}
                   </div>
-                  <div className="truncate text-[12px] text-[var(--text-tertiary)]">
+                  <div className="truncate type-caption text-[var(--text-tertiary)]">
                     {automation.trigger}
                   </div>
                   {automation.prompt && (
-                    <div className="mt-1 line-clamp-2 text-[11px] text-[var(--text-secondary)]">
+                    <div className="mt-1 line-clamp-2 type-caption text-[var(--text-secondary)]">
                       {automation.prompt}
                     </div>
                   )}
@@ -138,7 +138,7 @@ export default function AutomationsDialog({
                   variant={automation.enabled ? "default" : "secondary"}
                   size="xs"
                   className={cn(
-                    "shrink-0 rounded-full text-[11px]",
+                    "shrink-0 rounded-full type-caption",
                     automation.enabled && "bg-[var(--success-muted)] text-[var(--success)] hover:bg-[var(--success-muted)]",
                   )}
                   onClick={() => toggle(automation.id)}

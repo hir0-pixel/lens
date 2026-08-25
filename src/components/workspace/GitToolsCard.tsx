@@ -92,7 +92,7 @@ export function GitToolsCard() {
         aria-expanded={false}
         aria-label="Expand changes"
         onClick={() => setExpanded(true)}
-        className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-3.5 text-[13.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+        className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
       >
         <FileDiff className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.6} />
         <span>Changes</span>
@@ -106,7 +106,7 @@ export function GitToolsCard() {
   return (
     <div className="w-[280px] overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[0_8px_28px_rgba(0,0,0,0.35)]">
       <div className="flex h-8 items-center px-3">
-        <span className="text-[12px] text-[var(--text-tertiary)]">Git tools</span>
+        <span className="type-caption text-[var(--text-tertiary)]">Git tools</span>
         <div className="ml-auto flex items-center gap-0.5">
           <button
             type="button"
@@ -129,7 +129,7 @@ export function GitToolsCard() {
         </div>
       </div>
 
-      <div className="flex h-8 w-full items-center gap-1 px-3 text-[13px] text-[var(--text-primary)]">
+      <div className="flex h-8 w-full items-center gap-1 px-3 type-caption text-[var(--text-primary)]">
         <button
           type="button"
           className="flex min-w-0 flex-1 items-center gap-2 text-left hover:text-[var(--text-primary)]"
@@ -158,7 +158,7 @@ export function GitToolsCard() {
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-8 w-full items-center gap-2 px-3 text-left text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+            className="flex h-8 w-full items-center gap-2 px-3 text-left type-caption text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
           >
             <GitBranch className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.6} />
             <span className="min-w-0 flex-1 truncate">
@@ -180,7 +180,7 @@ export function GitToolsCard() {
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-8 w-full items-center gap-2 rounded-b-xl px-3 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+            className="flex h-8 w-full items-center gap-2 rounded-b-xl px-3 text-left type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
           >
             <GitCommitHorizontal
               className="h-3.5 w-3.5 text-[var(--text-tertiary)]"
@@ -196,14 +196,14 @@ export function GitToolsCard() {
         >
           <div className="flex items-center gap-2 px-3 py-2.5">
             <GitBranch className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.6} />
-            <span className="text-[13px] text-[var(--text-primary)]">
+            <span className="type-caption text-[var(--text-primary)]">
               {current?.name ?? "main"}
             </span>
             <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" />
-            <span className="ml-auto tabular-nums text-[12.5px] text-[var(--success)]">
+            <span className="ml-auto tabular-nums type-caption text-[var(--success)]">
               +{additions.toLocaleString()}
             </span>
-            <span className="tabular-nums text-[12.5px] text-[var(--error)]">
+            <span className="tabular-nums type-caption text-[var(--error)]">
               -{deletions.toLocaleString()}
             </span>
           </div>
@@ -213,7 +213,7 @@ export function GitToolsCard() {
               onChange={(e) => setCommitMessage(e.target.value)}
               rows={3}
               placeholder="Commit message (leave empty to generate)"
-              className="w-full resize-none rounded-lg bg-[var(--bg-surface-raised)] px-3 py-2.5 pr-8 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+              className="w-full resize-none rounded-lg bg-[var(--bg-surface-raised)] px-3 py-2.5 pr-8 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
             />
             <button
               type="button"
@@ -224,14 +224,14 @@ export function GitToolsCard() {
               <Sparkles className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           </div>
-          <label className="mt-2 flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--text-secondary)]">
+          <label className="mt-2 flex items-center gap-2 px-3 py-2 type-caption text-[var(--text-secondary)]">
             <Checkbox
               checked={includeUnstaged}
               onCheckedChange={(v) => setIncludeUnstaged(v === true)}
               className="h-3.5 w-3.5 border-white/30"
             />
             Include unstaged changes
-            <span className="ml-auto text-[12px] text-[#7a7a7a]">
+            <span className="ml-auto type-caption text-[#7a7a7a]">
               {fileCount} files
             </span>
           </label>
@@ -240,17 +240,17 @@ export function GitToolsCard() {
               type="button"
               disabled={operation === "committing"}
               onClick={() => void runCommit(false)}
-              className="flex h-8 w-full items-center gap-2 bg-[var(--bg-surface-raised)] px-3 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+              className="flex h-8 w-full items-center gap-2 bg-[var(--bg-surface-raised)] px-3 type-caption text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
             >
               <GitCommitHorizontal className="h-3.5 w-3.5" strokeWidth={1.6} />
               Commit
-              <span className="ml-auto text-[11px] text-[#7a7a7a]">Ctrl+↵</span>
+              <span className="ml-auto type-caption text-[#7a7a7a]">Ctrl+↵</span>
             </button>
             <button
               type="button"
               disabled={operation === "committing" || operation === "pushing"}
               onClick={() => void runCommit(true)}
-              className="flex h-8 w-full items-center gap-2 px-3 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+              className="flex h-8 w-full items-center gap-2 px-3 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
               <CloudUpload className="h-3.5 w-3.5" strokeWidth={1.6} />
               Commit and push
@@ -260,7 +260,7 @@ export function GitToolsCard() {
               disabled={!canPush || operation === "pushing"}
               onClick={() => void push()}
               className={cn(
-                "flex h-8 w-full items-center gap-2 px-3 text-[13px] hover:bg-[var(--bg-hover)]",
+                "flex h-8 w-full items-center gap-2 px-3 type-caption hover:bg-[var(--bg-hover)]",
                 canPush ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]",
               )}
             >

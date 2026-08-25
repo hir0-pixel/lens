@@ -35,7 +35,7 @@ function DiffLineRow({ line }: { line: DiffFileChange["lines"][0] }) {
   return (
     <div
       className={cn(
-        "flex font-mono text-[11px] leading-5",
+        "flex type-code leading-5",
         line.type === "add" && "bg-[var(--success-muted)]",
         line.type === "delete" && "bg-[var(--error-muted)]",
         line.type === "modify" && "bg-[var(--warning)]/10",
@@ -146,8 +146,8 @@ export function DiffViewer({
           )}
         />
         <GitCompareArrows className="h-3.5 w-3.5 text-accent" />
-        <span className="text-[12px] font-medium text-[var(--text-secondary)]">Review changes</span>
-        <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
+        <span className="type-caption font-medium text-[var(--text-secondary)]">Review changes</span>
+        <span className="ml-auto type-caption text-[var(--text-tertiary)]">
           {files.length} file{files.length !== 1 ? "s" : ""}
           {pendingCount > 0 && ` · ${pendingCount} pending`}
         </span>
@@ -160,7 +160,7 @@ export function DiffViewer({
               size="sm"
               variant="ghost"
               onClick={acceptAll}
-              className="h-7 gap-1 px-2 text-[11px] text-[var(--success)] hover:bg-[var(--success-muted)] hover:text-[var(--success)]"
+              className="h-7 gap-1 px-2 type-caption text-[var(--success)] hover:bg-[var(--success-muted)] hover:text-[var(--success)]"
             >
               <Check className="h-3 w-3" />
               Accept all
@@ -169,7 +169,7 @@ export function DiffViewer({
               size="sm"
               variant="ghost"
               onClick={rejectAll}
-              className="h-7 gap-1 px-2 text-[11px] text-[var(--error)] hover:bg-[var(--error-muted)] hover:text-[var(--error)]"
+              className="h-7 gap-1 px-2 type-caption text-[var(--error)] hover:bg-[var(--error-muted)] hover:text-[var(--error)]"
             >
               <X className="h-3 w-3" />
               Reject all
@@ -197,12 +197,12 @@ export function DiffViewer({
                       )}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-mono text-[11px] text-[var(--text-primary)]">
+                      <div className="truncate type-code text-[var(--text-primary)]">
                         {file.path.split("/").pop()}
                       </div>
-                      <div className="truncate text-[10px] text-[var(--text-disabled)]">{file.path}</div>
+                      <div className="truncate type-caption text-[var(--text-disabled)]">{file.path}</div>
                     </div>
-                    <span className="flex shrink-0 flex-col items-end font-mono text-[10px]">
+                    <span className="flex shrink-0 flex-col items-end type-code">
                       <span className="text-[var(--success)]">+{file.additions}</span>
                       <span className="text-[var(--error)]">−{file.deletions}</span>
                     </span>
@@ -215,7 +215,7 @@ export function DiffViewer({
               {activeFile && (
                 <>
                   <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-2.5 py-1.5">
-                    <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">
+                    <span className="truncate type-code text-[var(--text-tertiary)]">
                       {activeFile.path}
                     </span>
                     {activeFile.status === "pending" && (
@@ -224,7 +224,7 @@ export function DiffViewer({
                           size="sm"
                           variant="ghost"
                           onClick={() => accept(activeFile.path)}
-                          className="h-6 px-2 text-[10px] text-[var(--success)] hover:bg-[var(--success-muted)]"
+                          className="h-6 px-2 type-caption text-[var(--success)] hover:bg-[var(--success-muted)]"
                         >
                           Accept
                         </Button>
@@ -232,17 +232,17 @@ export function DiffViewer({
                           size="sm"
                           variant="ghost"
                           onClick={() => reject(activeFile.path)}
-                          className="h-6 px-2 text-[10px] text-[var(--error)] hover:bg-[var(--error-muted)]"
+                          className="h-6 px-2 type-caption text-[var(--error)] hover:bg-[var(--error-muted)]"
                         >
                           Reject
                         </Button>
                       </div>
                     )}
                     {activeFile.status === "accepted" && (
-                      <span className="text-[10px] text-[var(--success)]">Accepted</span>
+                      <span className="type-caption text-[var(--success)]">Accepted</span>
                     )}
                     {activeFile.status === "rejected" && (
-                      <span className="text-[10px] text-[var(--error)]">Rejected</span>
+                      <span className="type-caption text-[var(--error)]">Rejected</span>
                     )}
                   </div>
                   <ScrollArea className="max-h-52">

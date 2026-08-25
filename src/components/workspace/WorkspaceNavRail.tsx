@@ -158,7 +158,7 @@ function NavAction({
           {children}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right" className="text-[12px]">
+      <TooltipContent side="right" className="type-caption">
         {label}
         {shortcut ? ` · ${shortcut}` : ""}
       </TooltipContent>

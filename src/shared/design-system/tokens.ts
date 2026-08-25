@@ -40,20 +40,30 @@ export const LAYOUT = {
 } as const;
 
 export const TYPE = {
+  captionUppercase: 11,
+  caption: 13,
+  code: 13,
+  button: 14,
+  nav: 14,
+  bodySm: 14,
+  titleSm: 16,
+  bodyMd: 16,
+  titleMd: 18,
+  displaySm: 22,
+  displayMd: 26,
   xs: 11,
-  sm: 12,
+  sm: 13,
   base: 13,
   md: 14,
   lg: 16,
   xl: 22,
   meta: 11,
-  caption: 11,
-  body: 12,
+  body: 13,
   bodyEmphasis: 13,
-  title: 14,
+  title: 16,
   heading: 16,
   palette: 13,
-  status: 11,
+  status: 13,
 } as const;
 
 export const ICON = {
@@ -145,11 +155,11 @@ export const cx = {
   panelHeader:
     "flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3",
   panelHeaderTitle:
-    "truncate text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--text-tertiary)]",
+    "type-caption-uppercase truncate text-[var(--text-tertiary)]",
   toolbar:
     "flex h-7 shrink-0 items-center gap-1 border-b border-[var(--border-subtle)] px-2",
   listRow:
-    "relative flex h-[22px] items-center gap-1 px-3 text-[12px] text-[var(--text-primary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)]",
+    "relative flex h-[22px] items-center gap-1 px-3 type-caption text-[var(--text-primary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)]",
 } as const;
 
 export function cnTokens(...parts: Array<string | false | null | undefined>) {

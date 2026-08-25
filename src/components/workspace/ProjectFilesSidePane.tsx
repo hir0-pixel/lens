@@ -81,7 +81,7 @@ export function ProjectFilesSidePane({
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-3">
         <div className="flex items-center gap-2 min-w-0">
           <LayoutGrid className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.5} />
-          <span className="truncate text-[11.5px] font-bold tracking-wider text-[var(--text-primary)] uppercase">
+          <span className="truncate type-caption-uppercase text-[var(--text-primary)]">
             {projectName}
           </span>
         </div>
@@ -107,7 +107,7 @@ export function ProjectFilesSidePane({
               placeholder="Search files..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
+              className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
             />
           </div>
         </div>
@@ -118,10 +118,10 @@ export function ProjectFilesSidePane({
         {isEmpty ? (
           /* Exact Empty State matching uploaded screenshot */
           <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-            <h3 className="text-[13px] font-bold tracking-widest text-[var(--text-tertiary)] uppercase">
+            <h3 className="type-caption font-semibold tracking-widest text-[var(--text-tertiary)] uppercase">
               EMPTY
             </h3>
-            <p className="mt-1 text-[12.5px] text-[var(--text-tertiary)]">
+            <p className="mt-1 type-caption text-[var(--text-tertiary)]">
               This folder is empty.
             </p>
           </div>
@@ -146,7 +146,7 @@ export function ProjectFilesSidePane({
                     ) : (
                       <FileText className="h-4 w-4 text-emerald-400 shrink-0" strokeWidth={1.5} />
                     )}
-                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+                    <span className="min-w-0 flex-1 truncate type-caption text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
                       {file.name}
                     </span>
 

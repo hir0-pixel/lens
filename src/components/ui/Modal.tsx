@@ -37,9 +37,9 @@ export default function Modal({
       <DialogContent className={`max-h-[85vh] gap-0 overflow-hidden p-0 ${SIZES[size]}`}>
         {(title || subtitle) && (
           <DialogHeader className="border-b border-border px-5 py-3 pr-12">
-            {title && <DialogTitle className="text-[15px]">{title}</DialogTitle>}
+            {title && <DialogTitle className="type-title-sm">{title}</DialogTitle>}
             {subtitle && (
-              <DialogDescription className="mt-0.5 text-[12px]">
+              <DialogDescription className="mt-0.5 type-caption">
                 {subtitle}
               </DialogDescription>
             )}

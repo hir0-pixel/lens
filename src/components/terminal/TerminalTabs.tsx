@@ -59,7 +59,7 @@ export function TerminalTabs() {
                 aria-selected={active}
                 onClick={() => setActiveSession(session.id)}
                 className={cn(
-                  "group relative flex h-full max-w-[160px] shrink-0 items-center gap-1.5 px-2 font-mono text-[12px] transition-colors duration-[var(--cursor-dur-fast)]",
+                  "group relative flex h-full max-w-[160px] shrink-0 items-center gap-1.5 px-2 type-code transition-colors duration-[var(--cursor-dur-fast)]",
                   active
                     ? "bg-[var(--cursor-editor-bg)] text-[var(--cursor-fg)] after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:bg-[var(--cursor-focus)]"
                     : "text-[var(--cursor-fg-muted)] hover:bg-[var(--cursor-list-hover)] hover:text-[var(--cursor-fg)]",
@@ -95,7 +95,7 @@ export function TerminalTabs() {
                 </span>
               </button>
             </ContextMenuTrigger>
-            <ContextMenuContent className="rounded-none border-[var(--cursor-border)] bg-[var(--cursor-menu-bg,#1f1f1f)] text-[13px]">
+            <ContextMenuContent className="rounded-none border-[var(--cursor-border)] bg-[var(--cursor-menu-bg,#1f1f1f)] type-caption">
               <ContextMenuItem
                 onClick={() => {
                   const next = window.prompt("Rename terminal", session.title);
@@ -138,7 +138,7 @@ export function TerminalTabs() {
             <Plus className="h-4 w-4" strokeWidth={1.5} />
           </button>
         </TooltipTrigger>
-        <TooltipContent className="rounded-none text-[12px]">
+        <TooltipContent className="rounded-none type-caption">
           New Terminal
         </TooltipContent>
       </Tooltip>

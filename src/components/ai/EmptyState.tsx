@@ -29,13 +29,13 @@ export function EmptyState({
             strokeWidth={1.5}
           />
         </div>
-        <h2 className="mb-1 text-[var(--text-lg)] font-semibold leading-[24px] text-[var(--text-primary)]">
+        <h2 className="mb-1 type-title-sm text-[var(--text-primary)]">
           Start an agent session
         </h2>
-        <p className="mb-1 text-[var(--text-base)] leading-5 text-[var(--text-secondary)]">
+        <p className="mb-1 type-body-md text-[var(--text-secondary)]">
           Ask questions, edit code, or run multi-step agent tasks in this workspace.
         </p>
-        <p className="mb-4 text-[var(--text-sm)] leading-[18px] text-[var(--text-tertiary)]">
+        <p className="mb-4 type-caption text-[var(--text-tertiary)]">
           Tip: use @ to attach files, folders, terminals, or past sessions.
         </p>
 
@@ -68,7 +68,7 @@ export function EmptyState({
               type="button"
               title={item.prompt}
               onClick={() => onPromptSelect(item.prompt)}
-              className="rounded-[var(--radius-sm)] px-2 py-1.5 text-left text-[12px] text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]"
+              className="rounded-[var(--radius-sm)] px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]"
             >
               <span className="block truncate">{item.label}</span>
             </button>
@@ -77,7 +77,7 @@ export function EmptyState({
 
         {recentWorkspaces.length > 0 && onWorkspaceSelect && (
           <div className="mb-3">
-            <div className="mb-1 flex items-center gap-1.5 px-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--text-tertiary)]">
+            <div className="mb-1 flex items-center gap-1.5 px-2 type-caption-uppercase text-[var(--text-tertiary)]">
               <FolderOpen className="h-3 w-3" strokeWidth={1.5} />
               Recent
             </div>
@@ -93,7 +93,7 @@ export function EmptyState({
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{ backgroundColor: ws.color }}
                 />
-                <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--text-primary)]">
+                <span className="min-w-0 flex-1 truncate type-caption text-[var(--text-primary)]">
                   {ws.name}
                 </span>
               </button>
@@ -102,19 +102,19 @@ export function EmptyState({
         )}
 
         <div className="mt-auto border-t border-[var(--border-subtle)] pt-2">
-          <div className="mb-1 flex items-center gap-1 px-2 text-[11px] text-[var(--text-tertiary)]">
+          <div className="mb-1 flex items-center gap-1 px-2 type-caption text-[var(--text-tertiary)]">
             <Keyboard className="h-3 w-3" strokeWidth={1.5} />
             Shortcuts
           </div>
           {KEYBOARD_SHORTCUTS.slice(0, 4).map((s) => (
             <div
               key={s.keys}
-              className="flex items-center justify-between px-2 py-0.5 text-[11px] text-[var(--text-tertiary)]"
+              className="flex items-center justify-between px-2 py-0.5 type-caption text-[var(--text-tertiary)]"
             >
               <span className="truncate" title={s.action}>
                 {s.action}
               </span>
-              <kbd className="shrink-0 rounded-[var(--radius-sm)] bg-[var(--bg-hover)] px-1.5 py-0.5 font-[family-name:var(--font-mono)] text-[10px] tabular-nums">
+              <kbd className="shrink-0 rounded-[var(--radius-sm)] bg-[var(--bg-hover)] px-1.5 py-0.5 font-[family-name:var(--font-mono)] type-caption tabular-nums">
                 {s.keys}
               </kbd>
             </div>

@@ -153,7 +153,7 @@ export default function BrowserView({
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && navigate()}
             placeholder="Enter a URL"
-            className="w-full bg-transparent font-mono text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+            className="w-full bg-transparent type-code text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
           />
         </div>
 
@@ -167,7 +167,7 @@ export default function BrowserView({
 
         <DisabledControl
           reason="Element picker needs agent edit mode — coming soon"
-          className="flex h-7 items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--bg-hover)] px-2.5 text-[12px] font-medium text-[var(--text-secondary)]"
+          className="flex h-7 items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--bg-hover)] px-2.5 type-caption font-medium text-[var(--text-secondary)]"
           aria-label="Select to Edit"
         >
           <Crosshair className="h-3.5 w-3.5" />
@@ -191,10 +191,10 @@ export default function BrowserView({
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-            <p className="text-[14px] font-medium text-[var(--text-primary)]">
+            <p className="type-nav text-[var(--text-primary)]">
               No page loaded
             </p>
-            <p className="max-w-sm text-[12px] text-[var(--text-tertiary)]">
+            <p className="max-w-sm type-caption text-[var(--text-tertiary)]">
               Type a URL above and press Enter. If a local dev server is
               running, Lens will open it automatically when available.
             </p>

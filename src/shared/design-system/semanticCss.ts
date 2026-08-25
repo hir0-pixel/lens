@@ -51,7 +51,7 @@ export const SEMANTIC_CSS = `
   --ds-font-ui: var(--cursor-font-ui);
   --ds-font-mono: var(--cursor-font-mono);
   --ds-text-xs: 11px;
-  --ds-text-sm: 12px;
+  --ds-text-sm: 13px;
   --ds-text-md: 13px;
   --ds-text-lg: 14px;
 }

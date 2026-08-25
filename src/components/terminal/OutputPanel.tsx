@@ -21,7 +21,7 @@ export function OutputPanel() {
             aria-selected={ch.id === activeChannel}
             onClick={() => setActiveChannel(ch.id)}
             className={cn(
-              "h-7 shrink-0 px-2.5 text-[11px] transition-colors",
+              "h-7 shrink-0 px-2.5 type-caption transition-colors",
               ch.id === activeChannel
                 ? "border-b-2 border-accent text-zinc-100"
                 : "text-zinc-500 hover:text-zinc-300",
@@ -33,7 +33,7 @@ export function OutputPanel() {
       </div>
       <ScrollArea className="flex-1">
         <pre
-          className="whitespace-pre-wrap p-2.5 font-mono text-[11px] leading-relaxed text-zinc-400"
+          className="whitespace-pre-wrap p-2.5 type-code leading-relaxed text-zinc-400"
           role="log"
           aria-label={`${channel.name} output`}
         >

@@ -51,10 +51,10 @@ export default function ProjectListView({
       <div className="border-b border-border px-5 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[15px] font-semibold text-foreground">
+            <h1 className="type-title-sm font-semibold text-foreground">
               Projects
             </h1>
-            <p className="text-[12px] text-muted-foreground">
+            <p className="type-caption text-muted-foreground">
               {projects.length} recent project{projects.length === 1 ? "" : "s"}
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function ProjectListView({
             <button
               type="button"
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-1.5 text-[12px] font-medium text-foreground/90 transition-colors duration-150 hover:bg-secondary/80"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-1.5 type-caption font-medium text-foreground/90 transition-colors duration-150 hover:bg-secondary/80"
             >
               <CloudDownload className="h-3.5 w-3.5" />
               Import
@@ -70,7 +70,7 @@ export default function ProjectListView({
             <button
               type="button"
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-[12px] font-semibold text-accent-foreground transition-colors duration-150 hover:bg-accent-600"
+              className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 type-caption font-semibold text-accent-foreground transition-colors duration-150 hover:bg-accent-600"
             >
               <Plus className="h-3.5 w-3.5" />
               New
@@ -115,26 +115,26 @@ export default function ProjectListView({
                     </div>
                     <span
                       className={cn(
-                        "rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                        "rounded-full border px-2 py-0.5 type-caption font-medium",
                         status.cls,
                       )}
                     >
                       {status.label}
                     </span>
                   </div>
-                  <div className="mt-3 truncate text-[14px] font-medium text-foreground">
+                  <div className="mt-3 truncate type-nav text-foreground">
                     {p.name}
                   </div>
-                  <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                  <div className="mt-0.5 truncate type-caption text-muted-foreground">
                     {p.stack}
                   </div>
-                  <div className="mt-3 flex items-center gap-3 border-t border-border pt-2.5 text-[11px] text-muted-foreground">
+                  <div className="mt-3 flex items-center gap-3 border-t border-border pt-2.5 type-caption text-muted-foreground">
                     <span className="flex min-w-0 items-center gap-1">
                       <Folder className="h-3 w-3 shrink-0" />
                       <span className="truncate">{p.path}</span>
                     </span>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground/80">
+                  <div className="mt-1.5 flex items-center gap-3 type-caption text-muted-foreground/80">
                     <span className="flex items-center gap-1">
                       <GitBranch className="h-3 w-3" />
                       {p.branch}
@@ -158,7 +158,7 @@ export default function ProjectListView({
         <button
           type="button"
           onClick={onBack}
-          className="text-[12px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          className="type-caption text-muted-foreground transition-colors duration-150 hover:text-foreground"
         >
           ← Back to workspace
         </button>

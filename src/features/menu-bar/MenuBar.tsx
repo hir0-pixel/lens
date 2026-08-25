@@ -31,7 +31,7 @@ export function MenuBar({
               role="menuitem"
               aria-haspopup="menu"
               className={cn(
-                "px-2 text-[13px] text-[var(--cursor-title-fg)] outline-none",
+                "type-nav px-2 text-[var(--cursor-title-fg)] outline-none",
                 "transition-colors duration-[100ms] ease-[cubic-bezier(0.33,1,0.68,1)]",
                 "hover:bg-[var(--cursor-list-hover)]",
                 "focus-visible:bg-[var(--cursor-list-hover)]",
@@ -44,7 +44,7 @@ export function MenuBar({
           <DropdownMenuContent
             align="start"
             sideOffset={0}
-            className="min-w-[240px] rounded-none border-[var(--cursor-border)] bg-popover p-0 text-[13px] text-popover-foreground shadow-[var(--shadow-overlay)] animate-cursor-fade"
+            className="type-nav min-w-[240px] rounded-none border-[var(--cursor-border)] bg-popover p-0 text-popover-foreground shadow-[var(--shadow-overlay)] animate-cursor-fade"
           >
             {menu.items.map((item) => (
               <MenuItemRow key={item.id} item={item} />
@@ -66,14 +66,14 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
       <DropdownMenuSub>
         <DropdownMenuSubTrigger
           disabled={item.disabled}
-          className="h-[26px] rounded-none px-3 text-[13px] focus:bg-[var(--cursor-list-hover)] focus:text-[var(--cursor-fg)] data-[state=open]:bg-[var(--cursor-list-hover)] data-[state=open]:text-[var(--cursor-fg)]"
+          className="h-[26px] rounded-none px-3 type-caption focus:bg-[var(--cursor-list-hover)] focus:text-[var(--cursor-fg)] data-[state=open]:bg-[var(--cursor-list-hover)] data-[state=open]:text-[var(--cursor-fg)]"
         >
           {item.icon && (
             <item.icon className="mr-2 h-3.5 w-3.5 opacity-80" strokeWidth={1.5} />
           )}
           <span className="flex-1">{item.label}</span>
         </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent className="min-w-[200px] rounded-none border-[var(--cursor-border)] bg-popover p-0 text-[13px] text-popover-foreground">
+        <DropdownMenuSubContent className="min-w-[200px] rounded-none border-[var(--cursor-border)] bg-popover p-0 type-caption text-popover-foreground">
           {item.submenu.map((sub) => (
             <Fragment key={sub.id}>
               {sub.separator ? (
@@ -89,7 +89,7 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
                   )}
                   <span className="flex-1">{sub.label}</span>
                   {sub.shortcut && (
-                    <span className="ml-6 text-[11px] text-[var(--cursor-fg-muted)] group-focus:text-[var(--cursor-fg)]">
+                    <span className="ml-6 type-caption text-[var(--cursor-fg-muted)] group-focus:text-[var(--cursor-fg)]">
                       {sub.shortcut}
                     </span>
                   )}
@@ -106,7 +106,7 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
     <DropdownMenuItem
       disabled={item.disabled}
       onSelect={() => item.action?.()}
-      className="h-[26px] gap-0 rounded-none px-3 text-[13px] focus:bg-[var(--cursor-list-hover)] focus:text-[var(--cursor-fg)] data-[disabled]:opacity-40"
+      className="h-[26px] gap-0 rounded-none px-3 type-caption focus:bg-[var(--cursor-list-hover)] focus:text-[var(--cursor-fg)] data-[disabled]:opacity-40"
     >
       {item.icon ? (
         <item.icon className="mr-2 h-3.5 w-3.5 opacity-80" strokeWidth={1.5} />
@@ -115,7 +115,7 @@ function MenuItemRow({ item }: { item: MenuCommand }) {
       )}
       <span className="flex-1">{item.label}</span>
       {item.shortcut && (
-        <span className="ml-8 text-[11px] tabular-nums text-[var(--cursor-fg-muted)] group-focus:text-[var(--cursor-fg)]">
+        <span className="ml-8 type-caption tabular-nums text-[var(--cursor-fg-muted)] group-focus:text-[var(--cursor-fg)]">
           {item.shortcut}
         </span>
       )}

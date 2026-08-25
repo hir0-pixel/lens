@@ -132,7 +132,7 @@ export function TerminalToolbar({ onOpenSettings }: TerminalToolbarProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 gap-1 px-2 text-[11px] font-normal text-zinc-400"
+            className="h-7 gap-1 px-2 type-caption font-normal text-zinc-400"
           >
             {activeSession?.shell ?? "bash"}
           </Button>

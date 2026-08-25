@@ -78,7 +78,7 @@ export function WorkspaceNavigator({
   return (
     <div className="flex h-full flex-col bg-[var(--bg-surface)] animate-cursor-fade">
       <div className="flex h-8 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-3">
-        <h2 className="truncate text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--text-tertiary)]">
+        <h2 className="truncate type-caption-uppercase text-[var(--text-tertiary)]">
           {TITLES[navView]}
         </h2>
         {(navView === "agents" || navView === "history") && (
@@ -105,7 +105,7 @@ export function WorkspaceNavigator({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Filter ${TITLES[navView].toLowerCase()}…`}
-              className="h-7 border-[var(--border-default)] bg-[var(--bg-canvas)] pl-7 text-[12px]"
+              className="h-7 border-[var(--border-default)] bg-[var(--bg-canvas)] pl-7 type-caption"
             />
           </div>
         </div>
@@ -134,12 +134,12 @@ export function WorkspaceNavigator({
                           strokeWidth={1.75}
                         />
                       )}
-                      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[var(--text-primary)]">
+                      <span className="min-w-0 flex-1 truncate type-caption font-medium text-[var(--text-primary)]">
                         {c.title}
                       </span>
                     </span>
                     <span
-                      className="truncate text-[11px] text-[var(--text-tertiary)]"
+                      className="truncate type-caption text-[var(--text-tertiary)]"
                       title={c.preview}
                     >
                       {c.preview}
@@ -171,7 +171,7 @@ export function WorkspaceNavigator({
                         className="h-2 w-2 shrink-0 rounded-full"
                         style={{ backgroundColor: p.color }}
                       />
-                      <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--text-primary)]">
+                      <span className="min-w-0 flex-1 truncate type-caption text-[var(--text-primary)]">
                         {p.name}
                       </span>
                       {i < 2 && navView === "workspaces" && (
@@ -193,7 +193,7 @@ export function WorkspaceNavigator({
                           onClick={() => onProjectSelect?.(p)}
                           className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-[5px] text-left transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)]"
                         >
-                          <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--text-secondary)]">
+                          <span className="min-w-0 flex-1 truncate type-caption text-[var(--text-secondary)]">
                             {p.name}
                           </span>
                         </button>
@@ -207,10 +207,10 @@ export function WorkspaceNavigator({
 
           {STUB_COPY[navView] && (
             <div className="px-2 py-6 text-center">
-              <p className="text-[12px] leading-5 text-[var(--text-secondary)]">
+              <p className="type-caption leading-5 text-[var(--text-secondary)]">
                 {STUB_COPY[navView]}
               </p>
-              <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+              <p className="mt-1 type-caption text-[var(--text-tertiary)]">
                 Extensible slot — no shell restructure required.
               </p>
             </div>
@@ -223,7 +223,7 @@ export function WorkspaceNavigator({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.04em] text-[var(--text-tertiary)]">
+    <div className="px-2 pb-1 pt-3 type-caption-uppercase text-[var(--text-tertiary)]">
       {children}
     </div>
   );

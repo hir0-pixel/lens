@@ -48,31 +48,31 @@ export function CommitEditor() {
   return (
     <div className="border-b border-[var(--border-subtle)] p-2">
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+        <span className="type-caption-uppercase text-[var(--text-tertiary)]">
           Message
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5 text-[10px] text-[var(--text-tertiary)]">
+            <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5 type-caption text-[var(--text-tertiary)]">
               Templates
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel className="text-[10px]">Conventional commits</DropdownMenuLabel>
+            <DropdownMenuLabel className="type-caption">Conventional commits</DropdownMenuLabel>
             {COMMIT_TEMPLATES.map((t) => (
               <DropdownMenuItem key={t.id} onClick={() => applyTemplate(t.message)}>
-                <span className="font-mono text-[11px] text-accent">{t.label}</span>
-                <span className="ml-2 text-[11px] text-[var(--text-tertiary)]">{t.description}</span>
+                <span className="type-code text-accent">{t.label}</span>
+                <span className="ml-2 type-caption text-[var(--text-tertiary)]">{t.description}</span>
               </DropdownMenuItem>
             ))}
             {recentMessages.length > 0 && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px]">Recent</DropdownMenuLabel>
+                <DropdownMenuLabel className="type-caption">Recent</DropdownMenuLabel>
                 {recentMessages.slice(0, 5).map((m) => (
                   <DropdownMenuItem key={m} onClick={() => applyTemplate(m)}>
-                    <span className="truncate text-[11px]">{m}</span>
+                    <span className="truncate type-caption">{m}</span>
                   </DropdownMenuItem>
                 ))}
               </>
@@ -87,7 +87,7 @@ export function CommitEditor() {
         onChange={(e) => setCommitMessage(e.target.value)}
         placeholder="Message (Ctrl+Enter to commit)"
         rows={2}
-        className="min-h-[52px] resize-none border-[var(--border-default)] bg-surface-2 text-[12px] leading-relaxed placeholder:text-[var(--text-tertiary)]"
+        className="min-h-[52px] resize-none border-[var(--border-default)] bg-surface-2 type-caption leading-relaxed placeholder:text-[var(--text-tertiary)]"
         onKeyDown={(e) => {
           if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && canCommit) {
             e.preventDefault();
@@ -102,11 +102,11 @@ export function CommitEditor() {
         onChange={(e) => setCommitDescription(e.target.value)}
         placeholder="Description (optional)"
         rows={2}
-        className="mt-1.5 min-h-[40px] resize-none border-[var(--border-default)] bg-surface-2 text-[12px] placeholder:text-[var(--text-tertiary)]"
+        className="mt-1.5 min-h-[40px] resize-none border-[var(--border-default)] bg-surface-2 type-caption placeholder:text-[var(--text-tertiary)]"
         aria-label="Commit description"
       />
 
-      <div className="mt-1.5 flex items-center justify-between text-[10px]">
+      <div className="mt-1.5 flex items-center justify-between type-caption">
         <span
           className={cn(
             "tabular-nums text-[var(--text-tertiary)]",
@@ -123,7 +123,7 @@ export function CommitEditor() {
               onCheckedChange={(v) => setAmend(v === true)}
               className="h-3.5 w-3.5"
             />
-            <Label className="text-[10px] font-normal text-[var(--text-tertiary)]">Amend</Label>
+            <Label className="type-caption font-normal text-[var(--text-tertiary)]">Amend</Label>
           </label>
           <label className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
             <Checkbox
@@ -131,13 +131,13 @@ export function CommitEditor() {
               onCheckedChange={(v) => setSignOff(v === true)}
               className="h-3.5 w-3.5"
             />
-            <Label className="text-[10px] font-normal text-[var(--text-tertiary)]">Sign-off</Label>
+            <Label className="type-caption font-normal text-[var(--text-tertiary)]">Sign-off</Label>
           </label>
         </div>
       </div>
 
       <Button
-        className="mt-2 h-8 w-full gap-1.5 text-[12px]"
+        className="mt-2 h-8 w-full gap-1.5 type-caption"
         disabled={!canCommit}
         onClick={() => void handleCommit()}
       >

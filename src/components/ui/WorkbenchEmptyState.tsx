@@ -63,14 +63,14 @@ export function WorkbenchEmptyState({
       <h3
         className={cn(
           "font-semibold text-[var(--text-primary)]",
-          compact ? "text-[13px]" : "text-[16px] leading-6",
+          compact ? "type-caption font-semibold" : "type-title-md",
         )}
       >
         {title}
       </h3>
       <p
         className={cn(
-          "mt-3 max-w-[400px] text-[13px] leading-6 text-[var(--text-secondary)]",
+          "mt-3 max-w-[400px] type-body-md text-[var(--text-secondary)]",
           compact && "mt-1 max-w-[280px] text-left",
         )}
       >
@@ -103,7 +103,7 @@ export function WorkbenchEmptyState({
               >
                 {a.label}
                 {a.shortcut && (
-                  <kbd className="ml-1 font-mono text-[11px] opacity-70">
+                  <kbd className="ml-1 type-code opacity-70">
                     {a.shortcut}
                   </kbd>
                 )}
@@ -118,10 +118,10 @@ export function WorkbenchEmptyState({
           {shortcuts.map((s) => (
             <div
               key={s.keys}
-              className="flex items-center justify-between gap-3 text-[12px]"
+              className="flex items-center justify-between gap-3 type-caption"
             >
               <span className="text-[var(--text-tertiary)]">{s.label}</span>
-              <kbd className="rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
+              <kbd className="rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-1.5 py-0.5 type-code text-[var(--text-secondary)]">
                 {s.keys}
               </kbd>
             </div>

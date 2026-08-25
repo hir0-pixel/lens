@@ -26,10 +26,10 @@ export function SourceControlPanel() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-surface-1" data-source-control>
       <div className="wb-panel-header justify-between !h-[35px] !border-[var(--cursor-border)] !bg-[var(--cursor-sidebar-bg)] !px-5">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--cursor-fg)]">
+        <span className="type-caption-uppercase text-[var(--cursor-fg)]">
           Source Control
         </span>
-        <span className="tabular-nums text-[10px] text-muted-foreground">
+        <span className="tabular-nums type-caption text-muted-foreground">
           {staged + unstaged}
           {conflictCount > 0 && (
             <span className="ml-1 text-error">· {conflictCount} conflict</span>
@@ -61,7 +61,7 @@ export function SourceControlPanel() {
       </div>
 
       <div
-        className="flex h-6 shrink-0 items-center gap-2 border-t border-border px-2.5 text-[10px] text-muted-foreground"
+        className="flex h-6 shrink-0 items-center gap-2 border-t border-border px-2.5 type-caption text-muted-foreground"
         aria-live="polite"
       >
         <span className="truncate">{branch?.name ?? "—"}</span>

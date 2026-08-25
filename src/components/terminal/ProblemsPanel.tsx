@@ -32,7 +32,7 @@ export function ProblemsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-7 shrink-0 items-center gap-3 border-b border-border px-2.5 text-[11px] text-muted-foreground">
+      <div className="flex h-7 shrink-0 items-center gap-3 border-b border-border px-2.5 type-caption text-muted-foreground">
         <span>
           <span className="text-error">{errors}</span> errors
         </span>
@@ -41,8 +41,8 @@ export function ProblemsPanel() {
         </span>
       </div>
       <ScrollArea className="flex-1">
-        <table className="w-full text-left text-[12px]" role="grid" aria-label="Problems">
-          <thead className="sticky top-0 bg-surface-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+        <table className="w-full text-left type-caption" role="grid" aria-label="Problems">
+          <thead className="sticky top-0 bg-surface-1 type-caption-uppercase text-muted-foreground">
             <tr>
               <th className="w-8 px-2 py-1.5" scope="col" />
               <th className="px-2 py-1.5" scope="col">
@@ -79,7 +79,7 @@ export function ProblemsPanel() {
                   <td className="px-2 py-1.5 text-foreground/90">
                     {problem.message}
                   </td>
-                  <td className="px-2 py-1.5 font-mono text-[11px] text-muted-foreground">
+                  <td className="px-2 py-1.5 type-code text-muted-foreground">
                     {problem.file}
                   </td>
                   <td className="px-2 py-1.5 tabular-nums text-muted-foreground">

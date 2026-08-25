@@ -85,12 +85,12 @@ export default function Composer({
           {attachments.map((att) => (
             <div
               key={att.id}
-              className="flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-hover)] px-2 py-1 text-[11px] text-[var(--text-secondary)]"
+              className="flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-hover)] px-2 py-1 type-caption text-[var(--text-secondary)]"
             >
               {att.kind === "image" && <ImageIcon className="h-3 w-3 text-accent" />}
               {att.kind === "video" && <Video className="h-3 w-3 text-[var(--info)]" />}
               <span className="max-w-[140px] truncate">{att.name}</span>
-              <span className="text-[10px] text-[var(--text-tertiary)]">{att.sizeLabel}</span>
+              <span className="type-caption text-[var(--text-tertiary)]">{att.sizeLabel}</span>
               <button
                 onClick={() =>
                   setAttachments((prev) =>
@@ -133,13 +133,13 @@ export default function Composer({
           onKeyDown={handleKeyDown}
           rows={1}
           placeholder="Build, edit, plan or fix…"
-          className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-1.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+          className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-1.5 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
         />
 
         <div className="relative">
           <button
             onClick={() => setModelMenuOpen((v) => !v)}
-            className="flex h-8 items-center gap-1 rounded-lg px-2 text-[12px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]"
+            className="flex h-8 items-center gap-1 rounded-lg px-2 type-caption font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]"
           >
             <span
               className={cn(
@@ -169,7 +169,7 @@ export default function Composer({
                       setModelMenuOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]",
+                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]",
                       m.id === activeModel.id && "bg-[var(--bg-hover)] text-[var(--text-primary)]",
                     )}
                   >
@@ -209,7 +209,7 @@ export default function Composer({
         </button>
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-[var(--text-tertiary)]">
+      <div className="mt-1.5 flex items-center justify-between px-1 type-caption text-[var(--text-tertiary)]">
         <span>1 credit ≈ 1 word of AI output</span>
         <span>Enter to send · Shift+Enter for newline</span>
       </div>

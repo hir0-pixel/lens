@@ -72,17 +72,17 @@ function ToolActionRow({ call }: { call: ToolCallRecord }) {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-[12px] font-medium text-[var(--text-secondary)]">{meta.label}</span>
-              <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">{call.name}</span>
+              <span className="type-caption font-medium text-[var(--text-secondary)]">{meta.label}</span>
+              <span className="truncate type-code text-[var(--text-tertiary)]">{call.name}</span>
             </div>
-            <div className="truncate text-[11px] text-[var(--text-disabled)]">{call.detail}</div>
+            <div className="truncate type-caption text-[var(--text-disabled)]">{call.detail}</div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {call.timestamp && (
-              <span className="text-[10px] tabular-nums text-[var(--text-disabled)]">{call.timestamp}</span>
+              <span className="type-caption tabular-nums text-[var(--text-disabled)]">{call.timestamp}</span>
             )}
             {call.durationMs != null && call.status === "done" && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
+              <Badge variant="secondary" className="h-5 px-1.5 type-caption font-normal">
                 {(call.durationMs / 1000).toFixed(1)}s
               </Badge>
             )}
@@ -93,7 +93,7 @@ function ToolActionRow({ call }: { call: ToolCallRecord }) {
         <ChevronRight className="chevron h-3.5 w-3.5 shrink-0 text-[var(--text-disabled)] transition-transform" />
       </AccordionTrigger>
       <AccordionContent className="px-3 pb-3">
-        <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 font-mono text-[11px] leading-relaxed text-[var(--text-secondary)]">
+        <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 type-code leading-relaxed text-[var(--text-secondary)]">
           {call.expandedContent ?? call.detail}
         </div>
       </AccordionContent>
@@ -119,8 +119,8 @@ export function AgentWorkflow({ calls, thinking }: AgentWorkflowProps) {
             <Brain className="h-4 w-4 animate-pulse text-[var(--accent-primary)]" />
           </span>
           <div className="flex-1">
-            <div className="text-[12px] font-medium text-[var(--text-secondary)]">Thinking…</div>
-            <div className="text-[11px] text-[var(--text-disabled)]">Planning next steps</div>
+            <div className="type-caption font-medium text-[var(--text-secondary)]">Thinking…</div>
+            <div className="type-caption text-[var(--text-disabled)]">Planning next steps</div>
           </div>
           <span className="flex gap-1">
             {[0, 1, 2].map((i) => (
@@ -143,10 +143,10 @@ export function AgentWorkflow({ calls, thinking }: AgentWorkflowProps) {
       <div className="border-b border-[var(--border-subtle)] px-3 py-2">
         <div className="flex items-center gap-2">
           <FolderSearch className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
-          <span className="text-[12px] font-medium text-[var(--text-secondary)]">
+          <span className="type-caption font-medium text-[var(--text-secondary)]">
             {running ? "Agent is working…" : "Completed actions"}
           </span>
-          <span className="ml-auto text-[11px] tabular-nums text-[var(--text-tertiary)]">
+          <span className="ml-auto type-caption tabular-nums text-[var(--text-tertiary)]">
             {done}/{calls.length}
           </span>
         </div>
@@ -169,7 +169,7 @@ export function ThinkingIndicator({
   label?: string;
 }) {
   return (
-    <div className="flex items-center gap-1 text-[12.5px] text-[var(--text-tertiary)] animate-cursor-fade">
+    <div className="flex items-center gap-1 type-caption text-[var(--text-tertiary)] animate-cursor-fade">
       <span>{label}</span>
       <ChevronRight className="h-3 w-3" strokeWidth={2} />
     </div>

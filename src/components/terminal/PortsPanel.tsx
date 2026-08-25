@@ -10,8 +10,8 @@ const MOCK_PORTS = [
  */
 export function PortsPanel() {
   return (
-    <div className="flex h-full flex-col bg-[var(--ds-panel)] text-[13px]">
-      <div className="flex h-[28px] shrink-0 items-center px-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--ds-fg-muted)]">
+    <div className="flex h-full flex-col bg-[var(--ds-panel)] type-caption">
+      <div className="flex h-[28px] shrink-0 items-center px-3 type-caption-uppercase text-[var(--ds-fg-muted)]">
         Forwarded Ports
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto">
@@ -33,7 +33,7 @@ export function PortsPanel() {
               href={`http://localhost:${p.port}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 text-[12px] text-[var(--cursor-focus)] transition-colors hover:underline"
+              className="flex items-center gap-1 type-caption text-[var(--cursor-focus)] transition-colors hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               Open

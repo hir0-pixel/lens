@@ -79,10 +79,10 @@ export function ReviewChangesPanel({
           className="h-3.5 w-3.5 text-[var(--accent-primary)]"
           strokeWidth={1.5}
         />
-        <span className="text-[12px] font-medium text-[var(--text-primary)]">
+        <span className="type-caption font-medium text-[var(--text-primary)]">
           Review changes
         </span>
-        <span className="ml-auto tabular-nums text-[11px] text-[var(--text-tertiary)]">
+        <span className="ml-auto tabular-nums type-caption text-[var(--text-tertiary)]">
           {files.length} files
           {pending > 0 ? ` · ${pending} pending` : ""}
         </span>
@@ -94,7 +94,7 @@ export function ReviewChangesPanel({
             <button
               type="button"
               onClick={acceptAll}
-              className="btn-ghost h-7 gap-1 text-[11px] text-[var(--success)] hover:bg-[var(--success-muted)]"
+              className="btn-ghost h-7 gap-1 type-caption text-[var(--success)] hover:bg-[var(--success-muted)]"
             >
               <Check className="h-3 w-3" />
               Accept all
@@ -102,7 +102,7 @@ export function ReviewChangesPanel({
             <button
               type="button"
               onClick={rejectAll}
-              className="btn-ghost h-7 gap-1 text-[11px] text-[var(--error)] hover:bg-[var(--error-muted)]"
+              className="btn-ghost h-7 gap-1 type-caption text-[var(--error)] hover:bg-[var(--error-muted)]"
             >
               <X className="h-3 w-3" />
               Reject all
@@ -137,15 +137,15 @@ export function ReviewChangesPanel({
                       />
                       <FileCode2 className="h-3.5 w-3.5 shrink-0 text-[var(--info)]" />
                       <span
-                        className="min-w-0 flex-1 truncate font-mono text-[12px] text-[var(--text-primary)]"
+                        className="min-w-0 flex-1 truncate type-code text-[var(--text-primary)]"
                         title={file.path}
                       >
                         {name}
                       </span>
-                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-[var(--success)]">
+                      <span className="shrink-0 type-code tabular-nums text-[var(--success)]">
                         +{file.additions}
                       </span>
-                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-[var(--error)]">
+                      <span className="shrink-0 type-code tabular-nums text-[var(--error)]">
                         −{file.deletions}
                       </span>
                     </button>
@@ -171,7 +171,7 @@ export function ReviewChangesPanel({
                     )}
                   </div>
                   {isExp && (
-                    <pre className="max-h-32 overflow-auto border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 font-mono text-[11px] leading-5 text-[var(--text-secondary)]">
+                    <pre className="max-h-32 overflow-auto border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 type-code leading-5 text-[var(--text-secondary)]">
                       {file.lines.slice(0, 12).map((line, i) => (
                         <div
                           key={i}

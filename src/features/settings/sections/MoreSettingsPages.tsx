@@ -183,10 +183,10 @@ export function KeyboardSettingsPage() {
             key={`${b.commandId}-${b.keys}`}
             className="flex items-center justify-between gap-3 px-3.5 py-2.5"
           >
-            <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">
+            <span className="truncate type-code text-[var(--text-tertiary)]">
               {b.commandId}
             </span>
-            <Kbd className="shrink-0 rounded border border-[var(--border-default)] bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
+            <Kbd className="shrink-0 rounded border border-[var(--border-default)] bg-surface-2 px-2 py-0.5 type-code text-[var(--text-secondary)]">
               {formatShortcut(b.keys)}
             </Kbd>
           </div>
@@ -236,7 +236,7 @@ export function AboutSettingsPage() {
         description="Lens Desktop IDE · Settings backup and restore."
       />
       <SettingsGroup title="Application">
-        <div className="space-y-1 px-3.5 py-3 text-[12px] text-[var(--text-secondary)]">
+        <div className="space-y-1 px-3.5 py-3 type-caption text-[var(--text-secondary)]">
           <div>
             Version <span className="text-[var(--text-primary)]">0.1.0</span>
           </div>

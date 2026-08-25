@@ -91,12 +91,12 @@ export default function BottomPanel() {
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  "relative h-full rounded-none border-0 bg-transparent px-2 text-[10px] font-normal tracking-wide shadow-none",
+                  "relative h-full rounded-none border-0 bg-transparent px-2 type-caption font-normal tracking-wide shadow-none",
                   "text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)]",
                   "hover:text-[var(--text-secondary)]",
                   "data-[state=active]:bg-transparent data-[state=active]:text-[var(--text-secondary)] data-[state=active]:shadow-none",
                   !bottomPanelSlim &&
-                    "px-2.5 text-[11px] data-[state=active]:text-[var(--text-primary)] data-[state=active]:after:absolute data-[state=active]:after:inset-x-2 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[var(--accent-primary)]",
+                    "px-2.5 type-caption data-[state=active]:text-[var(--text-primary)] data-[state=active]:after:absolute data-[state=active]:after:inset-x-2 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[var(--accent-primary)]",
                 )}
               >
                 {tab.label}
@@ -110,7 +110,7 @@ export default function BottomPanel() {
           </TabsList>
 
           {bottomPanelSlim && (ERROR_COUNT > 0 || WARN_COUNT > 0) && (
-            <div className="ml-1 flex items-center gap-1.5 text-[10px] tabular-nums text-[var(--text-tertiary)]">
+            <div className="ml-1 flex items-center gap-1.5 type-caption tabular-nums text-[var(--text-tertiary)]">
               {ERROR_COUNT > 0 && (
                 <span className="text-[var(--error)]">{ERROR_COUNT}×</span>
               )}
@@ -227,7 +227,7 @@ function PanelIconBtn({
           {children}
         </button>
       </TooltipTrigger>
-      <TooltipContent className="rounded-[var(--radius-sm)] border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[12px]">
+      <TooltipContent className="rounded-[var(--radius-sm)] border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] type-caption">
         {label}
       </TooltipContent>
     </Tooltip>

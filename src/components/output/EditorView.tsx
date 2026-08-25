@@ -15,7 +15,7 @@ export default function App() {
       <Sidebar />
       <main className="overflow-y-auto p-8">
         <header className="mb-6">
-          <h1 className="text-2xl font-bold">Finance Dashboard</h1>
+          <h1 className="text-2xl font-semibold">Finance Dashboard</h1>
           <p className="text-zinc-400">Personal money overview</p>
         </header>
         <CashFlowChart />
@@ -197,7 +197,7 @@ export default function EditorView({ path = "src/App.tsx" }: EditorViewProps) {
         }}
         theme="vs-dark"
         loading={
-          <div className="flex h-full items-center justify-center bg-[var(--ds-editor)] text-[12px] text-[var(--ds-fg-muted)]">
+          <div className="flex h-full items-center justify-center bg-[var(--ds-editor)] type-caption text-[var(--ds-fg-muted)]">
             Loading editor…
           </div>
         }

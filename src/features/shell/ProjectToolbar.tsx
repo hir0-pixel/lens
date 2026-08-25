@@ -55,12 +55,12 @@ export function ProjectToolbar({
           className="btn-ghost h-7 max-w-[280px] gap-2 px-2"
         >
           <span
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--accent-primary)] text-[9px] font-bold text-[var(--text-on-accent)]"
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--accent-primary)] text-[9px] font-semibold text-[var(--text-on-accent)]"
             aria-hidden
           >
             O
           </span>
-          <span className="min-w-0 truncate text-[12px] font-medium text-[var(--text-primary)]">
+          <span className="min-w-0 truncate type-caption font-medium text-[var(--text-primary)]">
             {project.name}
           </span>
           <ChevronDown
@@ -88,7 +88,7 @@ export function ProjectToolbar({
             className="h-3.5 w-3.5 text-[var(--text-secondary)]"
             strokeWidth={1.5}
           />
-          <span className="font-mono text-[12px] text-[var(--text-secondary)] tabular-nums">
+          <span className="type-code text-[var(--text-secondary)] tabular-nums">
             {project.branch}
           </span>
         </button>
@@ -103,7 +103,7 @@ export function ProjectToolbar({
             title={p.name}
             onClick={() => onOpenProject(p)}
             className={cn(
-              "h-7 max-w-[120px] truncate rounded-[var(--radius-md)] px-2 text-[12px] font-medium transition-[background-color,color] duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
+              "h-7 max-w-[120px] truncate rounded-[var(--radius-md)] px-2 type-caption font-medium transition-[background-color,color] duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
               p.id === project.id
                 ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
@@ -129,7 +129,7 @@ export function ProjectToolbar({
               className="h-1.5 w-1.5 rounded-full bg-[var(--success)]"
               aria-hidden
             />
-            <span className="max-w-[120px] truncate text-[12px]">
+            <span className="max-w-[120px] truncate type-caption">
               {model.label}
             </span>
           </button>
@@ -144,7 +144,7 @@ export function ProjectToolbar({
               className="h-3.5 w-3.5 text-[var(--accent-primary)]"
               strokeWidth={1.5}
             />
-            <span className="tabular-nums text-[12px] text-[var(--text-secondary)]">
+            <span className="tabular-nums type-caption text-[var(--text-secondary)]">
               {formatCredits(credits)}
             </span>
           </button>

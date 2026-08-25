@@ -105,11 +105,11 @@ function ConversationRow({
         >
           <div className="flex items-center gap-1.5">
             {conv.pinned && <Pin className="h-3 w-3 shrink-0 text-accent" />}
-            <span className="truncate text-[13px] font-medium text-[var(--text-primary)]" title={conv.title}>
+            <span className="type-caption truncate font-medium text-[var(--text-primary)]" title={conv.title}>
               {conv.title}
             </span>
           </div>
-          <div className="truncate text-[11px] text-[var(--text-disabled)]" title={conv.preview}>
+          <div className="type-caption truncate text-[var(--text-disabled)]" title={conv.preview}>
             {conv.preview}
           </div>
         </button>
@@ -209,7 +209,7 @@ function GroupSection({
 
   return (
     <div className="mb-3">
-      <div className="mb-1 px-2.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-disabled)]">
+      <div className="type-caption-uppercase mb-1 px-2.5 text-[var(--text-disabled)]">
         {label}
       </div>
       {items.map((conv) => (
@@ -255,7 +255,7 @@ export function ConversationHistory({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-[300px] border-[var(--border-default)] bg-surface-1 p-0 sm:max-w-[300px]">
         <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
-          <SheetTitle className="text-[13px] font-semibold text-[var(--text-primary)]">
+          <SheetTitle className="type-caption font-semibold text-[var(--text-primary)]">
             Conversation history
           </SheetTitle>
         </SheetHeader>
@@ -267,7 +267,7 @@ export function ConversationHistory({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search conversations…"
-              className="h-8 border-[var(--border-default)] bg-surface-2 pl-8 text-[12px]"
+              className="type-caption h-8 border-[var(--border-default)] bg-surface-2 pl-8"
             />
           </div>
         </div>
@@ -311,7 +311,7 @@ export function ConversationHistory({
               onRename={onRename}
             />
             {filtered.length === 0 && (
-              <div className="px-2 py-8 text-center text-[12px] text-[var(--text-disabled)]">
+              <div className="px-2 py-8 text-center type-caption text-[var(--text-disabled)]">
                 No conversations found
               </div>
             )}

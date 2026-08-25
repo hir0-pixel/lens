@@ -208,7 +208,7 @@ export function SettingsLayout() {
                 }
               }}
               placeholder="Search settings"
-              className="h-8 text-[12px]"
+              className="h-8 type-caption"
               aria-label="Search settings"
             />
             {searchQuery && (
@@ -280,9 +280,9 @@ export function SettingsLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-4 text-[12px] text-muted-foreground">
+        <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-4 type-caption text-muted-foreground">
           <Breadcrumb>
-            <BreadcrumbList className="gap-1 text-[12px] sm:gap-1.5">
+            <BreadcrumbList className="gap-1 type-caption sm:gap-1.5">
               <BreadcrumbItem>
                 <span className="text-muted-foreground">Settings</span>
               </BreadcrumbItem>
@@ -319,11 +319,11 @@ export function SettingsLayout() {
         >
           {searchQuery.trim() ? (
             <div>
-              <h2 className="mb-3 text-[14px] font-semibold text-[var(--text-primary)]">
+              <h2 className="mb-3 type-body-sm font-semibold text-[var(--text-primary)]">
                 Results for &ldquo;{searchQuery}&rdquo;
               </h2>
               {searchHits.length === 0 ? (
-                <p className="text-[13px] text-[var(--text-tertiary)]">No settings found.</p>
+                <p className="type-caption text-[var(--text-tertiary)]">No settings found.</p>
               ) : (
                 <div className="space-y-1" role="listbox" aria-label="Search results">
                   {searchHits.map((hit) => (
@@ -345,10 +345,10 @@ export function SettingsLayout() {
                       }}
                       className="h-auto w-full flex-col items-start gap-0.5 rounded-lg border border-[var(--border-subtle)] px-3 py-2.5 text-left hover:bg-[var(--bg-hover)]"
                     >
-                      <span className="text-[13px] text-[var(--text-primary)]">
+                      <span className="type-caption text-[var(--text-primary)]">
                         {highlightMatch(hit.title, searchQuery)}
                       </span>
-                      <span className="text-[11px] text-[var(--text-tertiary)]">
+                      <span className="type-caption text-[var(--text-tertiary)]">
                         {SETTINGS_NAV.find((n) => n.id === hit.section)?.label}
                         {hit.description ? ` · ${hit.description}` : ""}
                       </span>
@@ -375,7 +375,7 @@ function NavGroup({
 }) {
   return (
     <div className="mb-2">
-      <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+      <div className="px-2 py-1 type-caption-uppercase text-[var(--text-tertiary)]">
         {label}
       </div>
       {children}
@@ -414,7 +414,7 @@ function NavButton({
         ref={buttonRef}
         onClick={onSelect}
         aria-current={active ? "page" : undefined}
-        className="h-auto min-w-0 flex-1 justify-start gap-2 px-2 py-1.5 text-left text-[12.5px] font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-inset"
+        className="h-auto min-w-0 flex-1 justify-start gap-2 px-2 py-1.5 text-left type-caption font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-inset"
       >
         <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
         <span className="truncate">{item.label}</span>

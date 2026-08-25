@@ -57,7 +57,7 @@ export function ContextChips({ chips, onRemove }: ContextChipsProps) {
                   className={cn(
                     "group inline-flex h-7 max-w-[180px] shrink-0 items-center gap-1.5 rounded-[var(--radius-sm)]",
                     "border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] pl-2 pr-1",
-                    "text-[12px] text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)]",
+                    "type-caption text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)]",
                     "hover:border-[var(--border-default)] hover:text-[var(--text-primary)]",
                   )}
                 >
@@ -78,7 +78,7 @@ export function ContextChips({ chips, onRemove }: ContextChipsProps) {
                 </span>
               </TooltipTrigger>
               {chip.detail && (
-                <TooltipContent side="bottom" className="text-[11px]">
+                <TooltipContent side="bottom" className="type-caption">
                   {chip.detail}
                 </TooltipContent>
               )}

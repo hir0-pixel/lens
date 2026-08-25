@@ -111,7 +111,7 @@ export function WelcomeScreen({
         <div className="mb-10 flex items-center gap-3">
           <LensWordmark size="welcome" />
           <div className="flex items-end gap-2 self-end pb-1">
-            <Badge variant="secondary" className="h-auto px-1.5 py-0.5 text-[11px] leading-none">
+            <Badge variant="secondary" className="h-auto px-1.5 py-0.5 type-caption leading-none">
               {planLabel}
             </Badge>
             <Button
@@ -119,7 +119,7 @@ export function WelcomeScreen({
               variant="ghost"
               size="sm"
               onClick={onOpenSettings}
-              className="ml-1 h-auto gap-1 px-1 text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+              className="ml-1 h-auto gap-1 px-1 type-caption text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
             >
               <Settings className="h-3 w-3" strokeWidth={1.75} />
               Settings
@@ -155,13 +155,13 @@ export function WelcomeScreen({
                       className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--accent-primary)]"
                       strokeWidth={1.75}
                     />
-                    <span className="text-[13px] font-semibold text-[var(--text-primary)]">
+                    <span className="type-title-sm text-[var(--text-primary)]">
                       {card.label}
                     </span>
                     {card.badge && (
                       <Badge
                         variant="secondary"
-                        className="mt-auto h-auto px-1 text-[10px] font-medium uppercase tracking-wide"
+                        className="mt-auto h-auto px-1 type-caption-uppercase"
                       >
                         {card.badge}
                       </Badge>
@@ -175,7 +175,7 @@ export function WelcomeScreen({
 
         <div className="mt-12 w-full">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[12px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+            <h2 className="type-caption-uppercase text-[var(--text-tertiary)]">
               Recent projects
             </h2>
             {recentProjects.length > 5 && (
@@ -184,7 +184,7 @@ export function WelcomeScreen({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAllRecent((v) => !v)}
-                className="h-auto px-1 text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                className="h-auto px-1 type-caption text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
               >
                 {showAllRecent ? "Show less" : "View all"}
               </Button>
@@ -193,7 +193,7 @@ export function WelcomeScreen({
 
           {visibleRecent.length === 0 ? (
             <Alert variant="default" className="gap-1 bg-transparent px-0 py-0.5">
-              <AlertDescription className="text-[13px]">
+              <AlertDescription className="type-caption">
                 No recent projects yet. Open or clone a folder to get started.
               </AlertDescription>
             </Alert>
@@ -207,10 +207,10 @@ export function WelcomeScreen({
                     onClick={() => void openRecent(p.path)}
                     className="h-auto w-full items-center justify-between gap-4 rounded-[var(--radius-sm)] px-2 py-2"
                   >
-                    <span className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
+                    <span className="truncate type-caption font-semibold text-[var(--text-primary)]">
                       {p.name}
                     </span>
-                    <span className="max-w-[55%] truncate text-[11px] text-[var(--text-tertiary)]">
+                    <span className="max-w-[55%] truncate type-caption text-[var(--text-tertiary)]">
                       {p.path}
                     </span>
                   </Button>
@@ -257,7 +257,7 @@ function ModalMissing({
             list?
           </DialogDescription>
         </DialogHeader>
-        <p className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">
+        <p className="truncate type-code text-[var(--text-tertiary)]">
           {path}
         </p>
         <DialogFooter>

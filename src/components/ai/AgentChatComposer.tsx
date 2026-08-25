@@ -135,14 +135,14 @@ export function AgentChatComposer({
   }
 
   return (
-    <div className="rounded-2xl border border-transparent bg-[var(--bg-surface)] shadow-xl transition-all">
+    <div className="rounded-2xl border border-transparent bg-[var(--bg-surface)] transition-all">
       {fileInput}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-1.5 px-3.5 pt-3">
           {attachments.map((a) => (
             <span
               key={a.id}
-              className="inline-flex items-center gap-1 rounded-md bg-[var(--bg-hover)] px-2 py-1 text-[11px] text-[var(--text-secondary)]"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--bg-hover)] px-2 py-1 type-caption text-[var(--text-secondary)]"
             >
               <Paperclip className="h-3 w-3" strokeWidth={1.5} />
               <span className="max-w-[140px] truncate">{a.name}</span>
@@ -180,7 +180,7 @@ export function AgentChatComposer({
         }}
         rows={1}
         placeholder={placeholder}
-        className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent px-4 pt-3.5 text-[14px] leading-[1.45] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+        className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent px-4 pt-3.5 type-body-sm leading-[1.45] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
       />
 
       <div className="flex items-center gap-0.5 px-2.5 pb-2.5">
@@ -210,7 +210,7 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
               <ApplyIcon className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.6} />
               <span className="max-w-[160px] truncate">{applyOption.label}</span>
@@ -240,8 +240,8 @@ export function AgentChatComposer({
                     strokeWidth={1.6}
                   />
                   <span className="min-w-0 flex-1 leading-tight">
-                    <span className="block text-[13.5px]">{opt.label}</span>
-                    <span className="mt-0.5 block text-[12px] text-[var(--text-secondary)]">
+                    <span className="block type-caption">{opt.label}</span>
+                    <span className="mt-0.5 block type-caption text-[var(--text-secondary)]">
                       {opt.hint}
                     </span>
                   </span>
@@ -263,7 +263,7 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded-full px-2 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+              className="inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded-full px-2 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
               <span className="truncate">{activeModel.label}</span>
               <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
@@ -271,13 +271,13 @@ export function AgentChatComposer({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             {catalogStatus === "loading" && (
-              <div className="px-2 py-1.5 text-[12px] text-[var(--text-tertiary)]">Loading models…</div>
+              <div className="px-2 py-1.5 type-caption text-[var(--text-tertiary)]">Loading models…</div>
             )}
             {catalogStatus === "empty" && (
-              <div className="px-2 py-1.5 text-[12px] text-[var(--text-tertiary)]">No approved models</div>
+              <div className="px-2 py-1.5 type-caption text-[var(--text-tertiary)]">No approved models</div>
             )}
             {catalogStatus === "error" && (
-              <div className="px-2 py-1.5 text-[12px] text-[var(--text-tertiary)]">{catalogError ?? "Models unavailable"}</div>
+              <div className="px-2 py-1.5 type-caption text-[var(--text-tertiary)]">{catalogError ?? "Models unavailable"}</div>
             )}
             {models.map((m) => (
               <DropdownMenuItem
@@ -304,7 +304,7 @@ export function AgentChatComposer({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full px-2 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
               <Gauge className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.6} />
               <span>{effortLabel}</span>

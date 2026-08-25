@@ -85,13 +85,13 @@ export default function TerminalPanel({
         }}
       />
       <div className="flex h-[34px] shrink-0 items-center gap-1 border-b border-white/[0.08] bg-[#181818] px-2">
-        <span className="px-2 py-1 text-[12px] font-semibold text-white">
+        <span className="px-2 py-1 type-caption font-semibold text-white">
           {title}
         </span>
-        <span className="px-2 py-1 text-[12px] text-[#666]">{subtitle}</span>
-        <span className="flex items-center gap-1.5 rounded bg-[#2a2a2a] px-2.5 py-1 text-[12px] font-medium text-white">
+        <span className="px-2 py-1 type-caption text-[#666]">{subtitle}</span>
+        <span className="flex items-center gap-1.5 rounded bg-[#2a2a2a] px-2.5 py-1 type-caption font-medium text-white">
           {name ?? "shell"}
-          <span className="font-mono text-[11px] text-[#888]" title={cwd}>
+          <span className="type-code text-[#888]" title={cwd}>
             {projectName ?? ""}
           </span>
         </span>
@@ -103,7 +103,7 @@ export default function TerminalPanel({
             title="New terminal"
             aria-label="New terminal"
           >
-            <span className="text-[15px] leading-none">+</span>
+            <span className="type-title-sm leading-none">+</span>
           </button>
           <button
             type="button"
@@ -112,7 +112,7 @@ export default function TerminalPanel({
             title="Close panel"
             aria-label="Close panel"
           >
-            <span className="text-[13px] leading-none">×</span>
+            <span className="type-caption leading-none">×</span>
           </button>
         </div>
       </div>

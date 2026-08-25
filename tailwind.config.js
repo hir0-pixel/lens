@@ -71,14 +71,14 @@ export default {
   				'Inter',
   				'ui-sans-serif',
   				'system-ui',
-  				'-apple-system',
-  				'Segoe UI',
+  				'Helvetica Neue',
+  				'Helvetica',
+  				'Arial',
   				'sans-serif'
   			],
   			mono: [
   				'JetBrains Mono',
-  				'Geist Mono',
-  				'SFMono-Regular',
+  				'Fira Code',
   				'Menlo',
   				'Consolas',
   				'monospace'

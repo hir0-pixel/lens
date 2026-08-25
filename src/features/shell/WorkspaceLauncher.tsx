@@ -104,7 +104,7 @@ function ClionLogo({ className }: { className?: string }) {
 }
 
 const itemClass =
-  "h-9 cursor-pointer gap-2.5 rounded-md px-2.5 text-[13px] text-[var(--text-primary)] focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]";
+  "h-9 cursor-pointer gap-2.5 rounded-md px-2.5 type-caption text-[var(--text-primary)] focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]";
 
 async function openInEditor(
   name: "VS Code" | "Cursor" | "CLion",
@@ -173,7 +173,7 @@ export function WorkspaceLauncher() {
           className={itemClass}
           onClick={() => void openIdeWindow()}
         >
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] bg-[var(--bg-hover)] text-[10px] font-semibold text-[var(--text-primary)]">
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] bg-[var(--bg-hover)] type-caption font-semibold text-[var(--text-primary)]">
             L
           </span>
           Lens IDE

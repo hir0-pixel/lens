@@ -43,7 +43,7 @@ export function TerminalSearch() {
           if (e.key === "Escape") setSearch({ open: false, query: "" });
         }}
         placeholder="Find in terminal…"
-        className="h-7 flex-1 border-white/10 bg-surface-1 text-[12px]"
+        className="h-7 flex-1 border-white/10 bg-surface-1 type-caption"
         aria-label="Search query"
       />
       <Button

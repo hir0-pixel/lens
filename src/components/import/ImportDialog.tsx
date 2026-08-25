@@ -64,11 +64,11 @@ export default function ImportDialog({ open, onClose, onImport, onCloneRequest }
                 <source.icon className="h-[18px] w-[18px]" />
               </span>
               <span className="min-w-0">
-                <span className="block text-[13.5px] font-medium text-foreground">
+                <span className="block type-caption font-medium text-foreground">
                   {source.name}
-                  {!source.ready && <span className="ml-2 text-[10px] font-normal uppercase text-muted-foreground">Soon</span>}
+                  {!source.ready && <span className="ml-2 type-caption-uppercase text-muted-foreground">Soon</span>}
                 </span>
-                <span className="block truncate text-[11.5px] font-normal text-muted-foreground">{source.desc}</span>
+                <span className="block truncate type-caption font-normal text-muted-foreground">{source.desc}</span>
               </span>
             </Button>
           ))}
@@ -77,11 +77,11 @@ export default function ImportDialog({ open, onClose, onImport, onCloneRequest }
         {filtered.length === 0 && (
           <div className="flex flex-col items-center py-10 text-center">
             <Boxes className="h-8 w-8 text-muted-foreground" />
-            <p className="mt-3 text-[13px] text-muted-foreground">No sources match &quot;{query}&quot;</p>
+            <p className="mt-3 type-caption text-muted-foreground">No sources match &quot;{query}&quot;</p>
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+        <div className="mt-4 flex items-center gap-1.5 type-caption text-muted-foreground">
           <LifeBuoy className="h-3.5 w-3.5" />
           Prefer a folder path? Use File &gt; Open Folder.
         </div>

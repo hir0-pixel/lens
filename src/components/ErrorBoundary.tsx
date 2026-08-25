@@ -76,15 +76,15 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="h-7 w-7" strokeWidth={1.5} />
           </div>
 
-          <h1 className="mt-4 text-[16px] font-semibold leading-6 text-[var(--text-primary)]">
+          <h1 className="mt-4 type-title-sm leading-6 text-[var(--text-primary)]">
             {title}
           </h1>
 
-          <p className="mt-3 max-w-[400px] text-[13px] leading-6 text-[var(--text-secondary)]">
+          <p className="mt-3 max-w-[400px] type-body-md text-[var(--text-secondary)]">
             {message}
           </p>
 
-          <p className="mt-4 text-[12px] leading-[18px] text-[var(--text-tertiary)]">
+          <p className="mt-4 type-caption leading-[18px] text-[var(--text-tertiary)]">
             Recorded in application diagnostics. You can try again or reload the
             window.
           </p>
@@ -131,7 +131,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   opacity: this.state.showDetails ? 1 : 0,
                 }}
               >
-                <pre className="mt-3 max-h-60 overflow-auto rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 font-mono text-[11px] leading-4 text-[var(--text-tertiary)]">
+                <pre className="mt-3 max-h-60 overflow-auto rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 type-code leading-4 text-[var(--text-tertiary)]">
                   {stack}
                 </pre>
               </div>

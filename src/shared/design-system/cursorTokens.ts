@@ -78,11 +78,10 @@ export const CURSOR = {
   },
 
   // Typography — workbench UI font stack (VS Code)
-  fontUi:
-    '-apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, "Ubuntu", "Droid Sans", sans-serif',
-  fontMono: '"JetBrains Mono", "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace',
+  fontUi: '"Inter", ui-sans-serif, system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif',
+  fontMono: '"JetBrains Mono", "Fira Code", monospace',
   fontSizeUi: 13,
-  fontSizeStatus: 12,
+  fontSizeStatus: 13,
   fontSizeSideBarTitle: 11,
   lineHeightUi: 1.4,
 

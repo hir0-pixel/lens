@@ -25,7 +25,7 @@ export function LogsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-7 shrink-0 items-center border-b border-border px-2.5 text-[11px] text-muted-foreground">
+      <div className="flex h-7 shrink-0 items-center border-b border-border px-2.5 type-caption text-muted-foreground">
         Application logs
       </div>
       <ScrollArea className="flex-1">
@@ -33,7 +33,7 @@ export function LogsPanel() {
           {MOCK_LOGS.map((entry) => (
             <div
               key={entry.id}
-              className="flex gap-2 border-b border-border/50 px-2 py-1 font-mono text-[11px] transition-colors duration-150 hover:bg-secondary"
+              className="flex gap-2 border-b border-border/50 px-2 py-1 type-code transition-colors duration-150 hover:bg-secondary"
             >
               <span className="shrink-0 tabular-nums text-muted-foreground/70">
                 {entry.timestamp}

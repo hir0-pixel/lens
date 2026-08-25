@@ -439,7 +439,7 @@ export function EmptySessionView({
           }
         }}
         className={cn(
-          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] group",
+          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left type-caption group",
           nested && "pl-2",
           active
             ? "bg-[var(--bg-active)] text-[var(--text-primary)]"
@@ -460,7 +460,7 @@ export function EmptySessionView({
             <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] opacity-60" strokeWidth={1.5} />
           )}
         </div>
-        <span className="shrink-0 text-[11px] tabular-nums text-[var(--text-tertiary)]">
+        <span className="shrink-0 type-caption tabular-nums text-[var(--text-tertiary)]">
           {relativeFrom(s.lastActiveAt)}
         </span>
       </button>
@@ -477,13 +477,13 @@ export function EmptySessionView({
                 <FileText className="h-5 w-5 opacity-90" strokeWidth={1.5} />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-[var(--text-primary)]">Artifacts</h1>
-                <p className="text-[12.5px] text-[var(--text-tertiary)]">
+                <h1 className="type-title-sm text-[var(--text-primary)]">Artifacts</h1>
+                <p className="type-caption text-[var(--text-tertiary)]">
                   Files created by AI agents during task execution
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-[var(--success)]/10 px-3 py-1 text-[11.5px] font-medium text-[var(--success)] border border-[var(--success)]/20">
+            <span className="rounded-full bg-[var(--success)]/10 px-3 py-1 type-caption font-medium text-[var(--success)] border border-[var(--success)]/20">
               {filteredArtifacts.length} {filteredArtifacts.length === 1 ? "created file" : "created files"}
             </span>
           </div>
@@ -497,7 +497,7 @@ export function EmptySessionView({
                 placeholder="Search agent created files..."
                 value={artifactSearch}
                 onChange={(e) => setArtifactSearch(e.target.value)}
-                className="h-8.5 w-full rounded-md bg-[var(--bg-surface-raised)] pl-9 pr-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
+                className="h-8.5 w-full rounded-md bg-[var(--bg-surface-raised)] pl-9 pr-3 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
               />
             </div>
           </div>
@@ -527,34 +527,34 @@ export function EmptySessionView({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="truncate text-[13.5px] font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)]">
+                          <h3 className="truncate type-caption font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)]">
                             {art.name}
                           </h3>
-                          <span className="shrink-0 rounded bg-[var(--success)]/10 px-2 py-0.5 text-[10.5px] font-medium text-[var(--success)] border border-[var(--success)]/20">
+                          <span className="shrink-0 rounded bg-[var(--success)]/10 px-2 py-0.5 type-caption font-medium text-[var(--success)] border border-[var(--success)]/20">
                             Created by Agent
                           </span>
                         </div>
                         {art.path && (
-                          <p className="mt-0.5 truncate text-[11.5px] font-mono text-[var(--text-tertiary)]">
+                          <p className="mt-0.5 truncate type-code text-[var(--text-tertiary)]">
                             {art.path}
                           </p>
                         )}
                         {art.summary && (
-                          <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-[var(--text-secondary)]">
+                          <p className="mt-1.5 line-clamp-2 type-caption leading-snug text-[var(--text-secondary)]">
                             {art.summary}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-[11.5px] text-[var(--text-tertiary)]">
+                    <div className="mt-4 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 type-caption text-[var(--text-tertiary)]">
                       <div className="flex items-center gap-2">
                         <span className="truncate max-w-[160px] text-[var(--text-secondary)]">
                           {art.sessionTitle}
                         </span>
                         {art.sizeLabel && <span>• {art.sizeLabel}</span>}
                         {art.additions !== undefined && (
-                          <span className="font-mono text-[11px] text-[var(--success)]">
+                          <span className="type-code text-[var(--success)]">
                             +{art.additions} lines
                           </span>
                         )}
@@ -581,7 +581,7 @@ export function EmptySessionView({
                               setActiveTab("chat");
                             }
                           }}
-                          className="flex items-center gap-1 rounded bg-[var(--bg-surface-raised)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                          className="flex items-center gap-1 rounded bg-[var(--bg-surface-raised)] px-2 py-1 type-caption font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                         >
                           <span>Open Chat</span>
                           <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
@@ -595,7 +595,7 @@ export function EmptySessionView({
           ) : (
             <div className="flex h-64 flex-col items-center justify-center text-center">
               <FileText className="h-10 w-10 text-[var(--text-tertiary)] mb-3" strokeWidth={1.5} />
-              <p className="text-[13px] text-[var(--text-tertiary)]">No artifacts matching search criteria</p>
+              <p className="type-caption text-[var(--text-tertiary)]">No artifacts matching search criteria</p>
             </div>
           )}
         </ScrollArea>
@@ -630,13 +630,13 @@ export function EmptySessionView({
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[var(--text-secondary)] shadow-inner">
             <IconComponent className="h-7 w-7 opacity-90" strokeWidth={1.5} />
           </div>
-          <span className="mb-1 rounded-full bg-[var(--bg-hover)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] border border-[var(--border-subtle)]">
+          <span className="mb-1 rounded-full bg-[var(--bg-hover)] px-3 py-1 type-caption-uppercase text-[var(--text-tertiary)] border border-[var(--border-subtle)]">
             Coming Soon
           </span>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+          <h2 className="mt-3 type-display-sm text-[var(--text-primary)]">
             {meta.title}
           </h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-tertiary)]">
+          <p className="mt-2 type-body-md text-[var(--text-tertiary)]">
             {meta.description}
           </p>
           <button
@@ -645,7 +645,7 @@ export function EmptySessionView({
               setActiveTab("chat");
               newChat();
             }}
-            className="mt-6 inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--bg-hover)] px-4 text-[13px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-colors"
+            className="mt-6 inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--bg-hover)] px-4 type-button text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-colors"
           >
             <Bot className="h-4 w-4" strokeWidth={1.5} />
             Start New Session
@@ -662,7 +662,7 @@ export function EmptySessionView({
         aria-label="Session navigator"
       >
         <div className="flex items-center gap-1 px-3.5 pt-3 pb-1">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--bg-hover)] text-[12px] font-semibold text-[var(--text-primary)]">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--bg-hover)] type-caption font-semibold text-[var(--text-primary)]">
             L
           </span>
           <button
@@ -707,15 +707,15 @@ export function EmptySessionView({
                   newChat();
                 }}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left type-caption hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "chat" ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
                 )}
               >
                 <Bot className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
                 <span className="min-w-0 flex-1 truncate font-medium">New session</span>
                 <span className="flex items-center gap-0.5">
-                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 text-[10px] font-sans text-[var(--text-tertiary)]">Ctrl</kbd>
-                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 text-[10px] font-sans text-[var(--text-tertiary)]">N</kbd>
+                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 type-caption font-sans text-[var(--text-tertiary)]">Ctrl</kbd>
+                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 type-caption font-sans text-[var(--text-tertiary)]">N</kbd>
                 </span>
               </button>
 
@@ -723,7 +723,7 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("capabilities")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left type-caption hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "capabilities"
                     ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
                     : "text-[var(--text-secondary)]",
@@ -737,7 +737,7 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("messaging")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left type-caption hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "messaging"
                     ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
                     : "text-[var(--text-secondary)]",
@@ -751,7 +751,7 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("artifacts")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left type-caption hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "artifacts"
                     ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
                     : "text-[var(--text-secondary)]",
@@ -765,7 +765,7 @@ export function EmptySessionView({
                 type="button"
                 onClick={() => setActiveTab("scheduled-jobs")}
                 className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                  "flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left type-caption hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                   activeTab === "scheduled-jobs"
                     ? "bg-[var(--bg-active)] text-[var(--text-primary)] font-medium"
                     : "text-[var(--text-secondary)]",
@@ -785,14 +785,14 @@ export function EmptySessionView({
                   placeholder="Search sessions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full rounded-md border border-transparent bg-[var(--bg-surface-raised)] pl-8 pr-2 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--border-focus)] focus:bg-[var(--bg-overlay)]"
+                  className="h-8 w-full rounded-md border border-transparent bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--border-focus)] focus:bg-[var(--bg-overlay)]"
                 />
               </div>
             </div>
 
             {/* PINNED Section */}
             <div className="mt-4 px-2">
-              <div className="flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold tracking-wider text-[var(--text-tertiary)] uppercase">
+              <div className="flex items-center gap-1.5 px-1 py-1 type-caption font-semibold tracking-wider text-[var(--text-tertiary)] uppercase">
                 <LayoutGrid className="h-3 w-3 shrink-0" strokeWidth={2} />
                 <span>PINNED</span>
               </div>
@@ -803,7 +803,7 @@ export function EmptySessionView({
                   ))}
                 </ul>
               ) : (
-                <div className="flex items-center gap-2 px-1 py-1 text-[12px] text-[var(--text-tertiary)]">
+                <div className="flex items-center gap-2 px-1 py-1 type-caption text-[var(--text-tertiary)]">
                   <Pin className="h-3.5 w-3.5 shrink-0 rotate-45" strokeWidth={1.5} />
                   <span>Shift-click a chat to pin</span>
                 </div>
@@ -812,7 +812,7 @@ export function EmptySessionView({
 
             {/* PROJECTS Section */}
             <div className="mt-4 flex flex-col px-2">
-              <div className="flex items-center justify-between px-1 py-1 text-[11px] font-bold tracking-wider text-[var(--text-tertiary)] uppercase">
+              <div className="flex items-center justify-between px-1 py-1 type-caption font-semibold tracking-wider text-[var(--text-tertiary)] uppercase">
                 <div className="flex items-center gap-1.5">
                   <LayoutGrid className="h-3 w-3 shrink-0" strokeWidth={2} />
                   <span>PROJECTS</span>
@@ -829,7 +829,7 @@ export function EmptySessionView({
               <button
                 type="button"
                 onClick={() => onAddFolder?.()}
-                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 <FolderPlus className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
                 <span className="min-w-0 flex-1 truncate font-medium">New Project</span>
@@ -860,7 +860,7 @@ export function EmptySessionView({
                             className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]"
                             strokeWidth={1.5}
                           />
-                          <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--text-secondary)]">
+                          <span className="min-w-0 flex-1 truncate type-caption text-[var(--text-secondary)]">
                             {repo.name}
                           </span>
                         </button>
@@ -962,7 +962,7 @@ export function EmptySessionView({
           <>
             <div className="flex flex-1 flex-col items-center justify-center px-6">
               <div className="w-full max-w-[720px]">
-                <div className="mb-3 flex flex-wrap items-center gap-3 text-[12px] text-[var(--text-tertiary)]">
+                <div className="mb-3 flex flex-wrap items-center gap-3 type-caption text-[var(--text-tertiary)]">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
@@ -1046,17 +1046,17 @@ export function EmptySessionView({
                   <button
                     type="button"
                     onClick={planNewIdea}
-                    className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3.5 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                    className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   >
                     Plan New Idea
-                    <span className="text-[11px] tabular-nums text-[var(--text-tertiary)]">
+                    <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
                       ⇧Tab
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={onMultitask}
-                    className="inline-flex h-8 items-center rounded-full border border-[var(--border-subtle)] px-3.5 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                    className="inline-flex h-8 items-center rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   >
                     Multitask
                   </button>
@@ -1068,7 +1068,7 @@ export function EmptySessionView({
               <button
                 type="button"
                 onClick={onImport}
-                className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 type-caption text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                 <span>
@@ -1081,14 +1081,14 @@ export function EmptySessionView({
           <>
             <div className="lens-chat-session-header flex min-h-12 shrink-0 items-start gap-2 px-4 pb-2 pt-2">
               <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
-                <span className="max-w-[220px] truncate text-[13.5px] font-medium leading-8 text-[var(--text-primary)]">
+                <span className="max-w-[220px] truncate type-caption font-medium leading-8 text-[var(--text-primary)]">
                   {session?.title ?? "New chat"}
                 </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 max-w-[180px] items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex h-7 max-w-[180px] items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
                     <Folder className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
                     <span className="truncate">{activeRepo?.name ?? "lens"}</span>
@@ -1127,7 +1127,7 @@ export function EmptySessionView({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 text-[12.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
                     <GitBranch className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.5} />
                     <span>{branchName}</span>

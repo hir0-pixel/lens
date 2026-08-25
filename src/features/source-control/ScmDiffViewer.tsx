@@ -17,7 +17,7 @@ function DiffLineRow({
     return (
       <div
         className={cn(
-          "flex font-mono text-[11px] leading-5",
+          "flex type-code leading-5",
           line.type === "add" && "bg-[var(--success-muted)]",
           line.type === "delete" && "bg-[var(--error-muted)]",
           line.type === "modify" && "bg-[var(--bg-hover)]",
@@ -91,7 +91,7 @@ function SideBySideHunk({ lines }: { lines: DiffLine[] }) {
         <div key={idx} className="grid grid-cols-2 border-b border-[var(--border-subtle)]">
           <div
             className={cn(
-              "flex font-mono text-[11px] leading-5",
+              "flex type-code leading-5",
               row.left?.type === "delete" && "bg-[var(--error-muted)]",
               row.left?.type === "modify" && "bg-[var(--bg-hover)]",
             )}
@@ -114,7 +114,7 @@ function SideBySideHunk({ lines }: { lines: DiffLine[] }) {
           </div>
           <div
             className={cn(
-              "flex border-l border-[var(--border-subtle)] font-mono text-[11px] leading-5",
+              "flex border-l border-[var(--border-subtle)] type-code leading-5",
               row.right?.type === "add" && "bg-[var(--success-muted)]",
               row.right?.type === "modify" && "bg-[var(--bg-hover)]",
             )}
@@ -157,7 +157,7 @@ function CollapsibleContext({ lines }: { lines: DiffLine[] }) {
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="w-full bg-surface-0/40 py-1 text-center font-mono text-[10px] text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
+        className="w-full bg-surface-0/40 py-1 text-center type-code text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
       >
         ··· {lines.length} unchanged lines ···
       </button>
@@ -171,7 +171,7 @@ function CollapsibleContext({ lines }: { lines: DiffLine[] }) {
       <button
         type="button"
         onClick={() => setExpanded(false)}
-        className="w-full py-0.5 text-center text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+        className="w-full py-0.5 text-center type-caption text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
       >
         Collapse
       </button>
@@ -212,11 +212,11 @@ function ScmDiffViewerComponent() {
   return (
     <div className="flex h-full min-h-0 flex-col border-t border-[var(--border-subtle)] bg-surface-0">
       <div className="sticky top-0 z-10 flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-surface-1 px-2">
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--text-secondary)]">
+        <span className="min-w-0 flex-1 truncate type-code text-[var(--text-secondary)]">
           {fallback.path}
         </span>
-        <span className="font-mono text-[10px] text-[var(--success)]">+{fallback.additions}</span>
-        <span className="font-mono text-[10px] text-[var(--error)]">−{fallback.deletions}</span>
+        <span className="type-code text-[var(--success)]">+{fallback.additions}</span>
+        <span className="type-code text-[var(--error)]">−{fallback.deletions}</span>
         <Button
           variant="ghost"
           size="icon"
@@ -249,7 +249,7 @@ function ScmDiffViewerComponent() {
       <ScrollArea className="min-h-0 flex-1">
         {fallback.hunks.map((hunk, hi) => (
           <div key={hi} className="mb-2">
-            <div className="sticky top-0 z-[1] bg-[var(--bg-hover)] px-2 py-0.5 font-mono text-[10px] text-[var(--info)]">
+            <div className="sticky top-0 z-[1] bg-[var(--bg-hover)] px-2 py-0.5 type-code text-[var(--info)]">
               {hunk.header}
             </div>
             {diffMode === "side-by-side" ? (

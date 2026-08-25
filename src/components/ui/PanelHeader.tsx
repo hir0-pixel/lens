@@ -23,7 +23,7 @@ export function PanelHeader({
         className={cn(
           uppercase
             ? cx.panelHeaderTitle
-            : "truncate text-[13px] font-medium text-foreground/90",
+            : "truncate type-caption font-medium text-foreground/90",
         )}
       >
         {title}

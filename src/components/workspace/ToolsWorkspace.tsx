@@ -81,7 +81,7 @@ export function ToolsWorkspace() {
           type="button"
           onClick={() => setActiveToolsTab("editor")}
           className={cn(
-            "inline-flex h-7 items-center gap-1 rounded-md px-2 text-[12px]",
+            "inline-flex h-7 items-center gap-1 rounded-md px-2 type-caption",
             editorActive
               ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
               : "text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)]",
@@ -96,7 +96,7 @@ export function ToolsWorkspace() {
             window.dispatchEvent(new CustomEvent("lens:focus-terminal"));
           }}
           className={cn(
-            "inline-flex h-7 items-center gap-1 rounded-md px-2 font-mono text-[12px]",
+            "inline-flex h-7 items-center gap-1 rounded-md px-2 type-code",
             activeToolsTab === "terminal"
               ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
               : "text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)]",
@@ -108,7 +108,7 @@ export function ToolsWorkspace() {
           type="button"
           onClick={() => setActiveToolsTab("browser")}
           className={cn(
-            "inline-flex h-7 items-center gap-1 rounded-md px-2 text-[12px]",
+            "inline-flex h-7 items-center gap-1 rounded-md px-2 type-caption",
             activeToolsTab === "browser"
               ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
               : "text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)]",
@@ -156,13 +156,13 @@ function ToolStub({ title, body }: { title: string; body: string }) {
         "bg-[var(--bg-canvas)]",
       )}
     >
-      <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">
+      <h3 className="type-body-sm font-semibold text-[var(--text-primary)]">
         {title}
       </h3>
-      <p className="max-w-xs text-[12px] leading-5 text-[var(--text-secondary)]">
+      <p className="max-w-xs type-caption leading-5 text-[var(--text-secondary)]">
         {body}
       </p>
-      <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+      <p className="mt-1 type-caption text-[var(--text-tertiary)]">
         Coming soon — this pane isn’t connected yet.
       </p>
     </div>

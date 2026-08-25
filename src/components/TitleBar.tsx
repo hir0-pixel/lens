@@ -81,7 +81,7 @@ export default function TitleBar({
           data-tauri-drag-region
           className="pointer-events-none absolute left-1/2 top-0 flex h-full max-w-[40%] -translate-x-1/2 items-center px-4"
         >
-          <span className="truncate text-[12px] text-[var(--text-tertiary)]">
+          <span className="truncate type-caption text-[var(--text-tertiary)]">
             {projectName}
           </span>
         </div>
@@ -112,7 +112,7 @@ export default function TitleBar({
             type="button"
             variant="secondary"
             size="sm"
-            className="mx-1 h-full text-[12px]"
+            className="mx-1 h-full type-caption"
             aria-label="Agents Window"
             title="Switch to Agents Window"
             onClick={() => {
@@ -168,7 +168,7 @@ export default function TitleBar({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-full rounded-none px-3 text-[12px]"
+            className="h-full rounded-none px-3 type-caption"
             onClick={onOpenSettings}
             aria-label="Open Settings"
           >
@@ -217,7 +217,7 @@ function ServersPopover() {
               key={tab}
               type="button"
               className={cn(
-                "px-3 py-2 text-[13px] transition-colors",
+                "px-3 py-2 type-caption transition-colors",
                 activeTab === tab
                   ? "border-b-2 border-[var(--accent-primary)] text-[var(--text-primary)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
@@ -234,8 +234,8 @@ function ServersPopover() {
             <div className="flex items-center justify-between py-1.5">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[var(--success)]" />
-                <span className="text-[13px] text-[var(--text-primary)] font-medium">Local Server</span>
-                <span className="text-[12px] text-[var(--text-tertiary)]">vlocal</span>
+                <span className="type-caption text-[var(--text-primary)] font-medium">Local Server</span>
+                <span className="type-caption text-[var(--text-tertiary)]">vlocal</span>
               </div>
               <Check className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.8} />
             </div>
@@ -244,12 +244,12 @@ function ServersPopover() {
             <McpEntry />
           )}
           {activeTab === "LSP" && (
-            <p className="py-3 text-center text-[13px] text-[var(--text-secondary)]">LSPs auto-detected from file types</p>
+            <p className="py-3 text-center type-caption text-[var(--text-secondary)]">LSPs auto-detected from file types</p>
           )}
           {activeTab === "Plugins" && (
             <div className="flex items-center gap-2 py-1.5">
               <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--success)]" />
-              <span className="truncate text-[13px] text-[var(--text-primary)]">
+              <span className="truncate type-caption text-[var(--text-primary)]">
                 file:///C:/Users/PMYLS/.config/opencode/plu...
               </span>
             </div>
@@ -260,7 +260,7 @@ function ServersPopover() {
           <div className="border-t border-[var(--border-subtle)] px-3 py-2">
             <button
               type="button"
-              className="rounded-lg bg-[var(--bg-hover)] px-3 py-1.5 text-[12px] text-[var(--text-primary)] hover:bg-[var(--bg-active)]"
+              className="rounded-lg bg-[var(--bg-hover)] px-3 py-1.5 type-caption text-[var(--text-primary)] hover:bg-[var(--bg-active)]"
               onClick={() => setManageOpen(true)}
             >
               Manage servers
@@ -287,7 +287,7 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
         {view === "list" ? (
           <>
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              <h2 className="text-[16px] font-semibold text-[var(--text-primary)]">Servers</h2>
+              <h2 className="type-title-sm text-[var(--text-primary)]">Servers</h2>
               <button type="button" className="rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]" onClick={close}>
                 <X className="h-4 w-4" />
               </button>
@@ -300,7 +300,7 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
                 placeholder="Search servers"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+                className="flex-1 bg-transparent type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
               />
             </div>
 
@@ -308,8 +308,8 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
               <div className="flex items-center justify-between rounded-lg px-1 py-2">
                 <div className="flex items-center gap-2.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-[var(--success)]" />
-                  <span className="text-[14px] font-medium text-[var(--text-primary)]">Local Server</span>
-                  <span className="text-[13px] text-[var(--text-tertiary)]">vlocal</span>
+                  <span className="type-nav text-[var(--text-primary)]">Local Server</span>
+                  <span className="type-caption text-[var(--text-tertiary)]">vlocal</span>
                 </div>
                 <Check className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.8} />
               </div>
@@ -318,7 +318,7 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
             <div className="border-t border-[var(--border-subtle)] px-5 py-3">
               <button
                 type="button"
-                className="flex items-center gap-1.5 text-[13px] text-[var(--text-primary)] hover:text-[var(--text-secondary)]"
+                className="flex items-center gap-1.5 type-caption text-[var(--text-primary)] hover:text-[var(--text-secondary)]"
                 onClick={() => setView("add")}
               >
                 <Plus className="h-4 w-4" />
@@ -341,7 +341,7 @@ function AddServerView({ onBack, onClose }: { onBack: () => void; onClose: () =>
   const [password, setPassword] = useState("");
 
   const fieldClass =
-    "w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--border-focus)]";
+    "w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-3 py-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--border-focus)]";
 
   return (
     <div className="flex flex-col">
@@ -349,7 +349,7 @@ function AddServerView({ onBack, onClose }: { onBack: () => void; onClose: () =>
         <button type="button" className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h2 className="text-[16px] font-semibold text-[var(--text-primary)]">Add server</h2>
+        <h2 className="type-title-sm text-[var(--text-primary)]">Add server</h2>
         <button type="button" className="ml-auto rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]" onClick={onClose}>
           <X className="h-4 w-4" />
         </button>
@@ -357,22 +357,22 @@ function AddServerView({ onBack, onClose }: { onBack: () => void; onClose: () =>
 
       <div className="flex flex-col gap-4 px-5 pb-5">
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-[var(--text-secondary)]">Server address</span>
+          <span className="type-caption text-[var(--text-secondary)]">Server address</span>
           <input type="text" placeholder="http://localhost:4096" value={address} onChange={(e) => setAddress(e.target.value)} className={fieldClass} />
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-[var(--text-secondary)]">Server name (optional)</span>
+          <span className="type-caption text-[var(--text-secondary)]">Server name (optional)</span>
           <input type="text" placeholder="Localhost" value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
         </label>
 
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-[13px] text-[var(--text-secondary)]">Username (optional)</span>
+            <span className="type-caption text-[var(--text-secondary)]">Username (optional)</span>
             <input type="text" placeholder="opencode" value={username} onChange={(e) => setUsername(e.target.value)} className={fieldClass} />
           </label>
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-[13px] text-[var(--text-secondary)]">Password (optional)</span>
+            <span className="type-caption text-[var(--text-secondary)]">Password (optional)</span>
             <input type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} className={fieldClass} />
           </label>
         </div>
@@ -381,7 +381,7 @@ function AddServerView({ onBack, onClose }: { onBack: () => void; onClose: () =>
       <div className="border-t border-[var(--border-subtle)] px-5 py-3">
         <button
           type="button"
-          className="rounded-lg bg-[var(--accent-primary)] px-4 py-1.5 text-[13px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--accent-primary-hover)]"
+          className="rounded-lg bg-[var(--accent-primary)] px-4 py-1.5 type-caption font-medium text-[var(--text-on-accent)] hover:bg-[var(--accent-primary-hover)]"
         >
           Add server
         </button>
@@ -396,7 +396,7 @@ function McpEntry() {
     <div className="flex items-center justify-between py-1.5">
       <div className="flex items-center gap-2">
         <span className={cn("h-2 w-2 rounded-full transition-colors", on ? "bg-[var(--success)]" : "bg-[var(--bg-active)]")} />
-        <span className="text-[13px] text-[var(--text-primary)] font-medium">shadcn</span>
+        <span className="type-caption text-[var(--text-primary)] font-medium">shadcn</span>
       </div>
       <button
         type="button"

@@ -37,7 +37,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
             <h1 className="text-base font-semibold text-[var(--text-primary)]">
               {project.name}
             </h1>
-            <div className="flex items-center gap-2 text-[12px] text-[var(--text-tertiary)]">
+            <div className="flex items-center gap-2 type-caption text-[var(--text-tertiary)]">
               <Globe className="h-3 w-3" />
               {project.deployedUrl}
               <span className="flex items-center gap-1 text-[var(--success)]">
@@ -46,7 +46,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-3 py-1.5 text-[12px]">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-3 py-1.5 type-caption">
           <span className="text-[var(--text-tertiary)]">Last</span>
           <select className="bg-transparent text-[var(--text-primary)] outline-none">
             <option>7 days</option>
@@ -65,15 +65,15 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
                 className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] text-[var(--text-tertiary)]">{s.label}</span>
+                  <span className="type-caption text-[var(--text-tertiary)]">{s.label}</span>
                   <s.icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 </div>
-                <div className="mt-1.5 text-xl font-bold text-[var(--text-primary)]">
+                <div className="mt-1.5 text-xl font-semibold text-[var(--text-primary)]">
                   {s.value}
                 </div>
                 <span
                   className={cn(
-                    "text-[12px] font-medium",
+                    "type-caption font-medium",
                     s.delta.startsWith("+")
                       ? "text-[var(--success)]"
                       : "text-[var(--error)]",
@@ -81,7 +81,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
                 >
                   {s.delta}
                 </span>
-                <span className="text-[11px] text-[var(--text-disabled)]"> vs prev</span>
+                <span className="type-caption text-[var(--text-disabled)]"> vs prev</span>
               </div>
             ))}
           </div>
@@ -89,7 +89,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
           {/* Traffic chart */}
           <div className="rounded-lg border border-white/10 bg-white/5 p-5">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-[var(--text-primary)]">
+              <h2 className="type-caption font-semibold text-[var(--text-primary)]">
                 Visitors
               </h2>
               <div className="flex gap-1.5">
@@ -97,7 +97,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
                   <button
                     key={d}
                     className={cn(
-                      "rounded-md px-2 py-0.5 text-[11px] transition-colors",
+                      "rounded-md px-2 py-0.5 type-caption transition-colors",
                       d === 14
                         ? "bg-accent text-surface-0"
                         : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
@@ -124,7 +124,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
 
           {/* Top pages */}
           <div className="rounded-lg border border-white/10 bg-white/5 p-5">
-            <h2 className="mb-3 text-[13px] font-semibold text-[var(--text-primary)]">
+            <h2 className="mb-3 type-caption font-semibold text-[var(--text-primary)]">
               Top pages
             </h2>
             <div className="space-y-2">
@@ -135,7 +135,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
                 { path: "/savings-goals", views: "4,980", pct: 12 },
               ].map((row) => (
                 <div key={row.path} className="flex items-center gap-3">
-                  <span className="w-40 truncate font-mono text-[12px] text-[var(--text-secondary)]">
+                  <span className="w-40 truncate type-code text-[var(--text-secondary)]">
                     {row.path}
                   </span>
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--bg-hover)]">
@@ -144,7 +144,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
                       style={{ width: `${row.pct}%` }}
                     />
                   </div>
-                  <span className="w-16 text-right text-[12px] text-[var(--text-tertiary)]">
+                  <span className="w-16 text-right type-caption text-[var(--text-tertiary)]">
                     {row.views}
                   </span>
                 </div>

@@ -34,7 +34,7 @@ export default function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         }}
       >
         <DialogHeader className="flex-row items-center justify-between border-b px-5 py-3 pr-14">
-          <DialogTitle className="text-[15px] font-semibold">Settings</DialogTitle>
+          <DialogTitle className="type-title-sm font-semibold">Settings</DialogTitle>
         </DialogHeader>
         <SettingsLayout />
       </DialogContent>

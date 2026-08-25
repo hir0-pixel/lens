@@ -323,7 +323,7 @@ export default function OutputTabs() {
 
       {active?.view === "editor" && (
         <nav
-          className="flex h-[22px] shrink-0 items-center gap-0.5 overflow-hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-[12px] text-[var(--text-tertiary)]"
+          className="flex h-[22px] shrink-0 items-center gap-0.5 overflow-hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 type-caption text-[var(--text-tertiary)]"
           aria-label="Breadcrumbs"
         >
           {crumbs.map((c, i) => (
@@ -369,10 +369,10 @@ export default function OutputTabs() {
               className="h-8 w-8 text-[var(--accent-primary)]"
               strokeWidth={1.25}
             />
-            <h2 className="text-[16px] font-semibold text-[var(--text-primary)]">
+            <h2 className="type-title-sm text-[var(--text-primary)]">
               {active.label}
             </h2>
-            <p className="max-w-sm text-[13px] leading-6 text-[var(--text-secondary)]">
+            <p className="max-w-sm type-caption leading-6 text-[var(--text-secondary)]">
               Agent task surface — run logs, tool traces, and outputs appear here
               while the session drives the work from the agent panel.
             </p>

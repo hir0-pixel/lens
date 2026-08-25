@@ -22,8 +22,8 @@ export function ToolCallRecordRow({ call }: { call: ToolCallRecord }) {
   return (
     <div className="flex items-center gap-2 px-2 py-1">
       <span className="text-[var(--text-tertiary)]">{TOOL_ICONS[call.name] ?? <CircleDashed className="h-3.5 w-3.5" />}</span>
-      <span className="font-mono text-[11px] text-[var(--text-secondary)]">{call.name}</span>
-      <span className="truncate text-[11px] text-[var(--text-disabled)]">{call.detail}</span>
+      <span className="type-code text-[var(--text-secondary)]">{call.name}</span>
+      <span className="truncate type-caption text-[var(--text-disabled)]">{call.detail}</span>
       <span className="ml-auto shrink-0">
         {call.status === "running" && (
           <Loader2 className="h-3 w-3 animate-spin text-accent" />
@@ -54,10 +54,10 @@ export function ToolCallsList({ calls }: { calls: ToolCallRecord[] }) {
             open && "rotate-90",
           )}
         />
-        <span className="text-[12px] font-medium text-[var(--text-secondary)]">
+        <span className="type-caption font-medium text-[var(--text-secondary)]">
           {running ? "Working…" : "Tool calls"}
         </span>
-        <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
+        <span className="ml-auto type-caption text-[var(--text-tertiary)]">
           {done}/{calls.length}
         </span>
         {running && (

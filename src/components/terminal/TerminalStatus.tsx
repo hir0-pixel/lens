@@ -10,7 +10,7 @@ export function TerminalStatus() {
 
   return (
     <div
-      className="flex h-6 shrink-0 items-center gap-3 border-t border-white/5 bg-surface-1 px-2.5 text-[10px] text-zinc-500"
+      className="flex h-6 shrink-0 items-center gap-3 border-t border-white/5 bg-surface-1 px-2.5 type-caption text-zinc-500"
       aria-live="polite"
     >
       <span className="flex items-center gap-1">

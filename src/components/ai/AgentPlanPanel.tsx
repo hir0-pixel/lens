@@ -46,10 +46,10 @@ export function AgentPlanPanel({ steps, forceOpen }: AgentPlanPanelProps) {
           )}
           strokeWidth={1.75}
         />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--text-tertiary)]">
+        <span className="type-caption-uppercase text-[var(--text-tertiary)]">
           Plan
         </span>
-        <span className="tabular-nums text-[11px] text-[var(--text-tertiary)]">
+        <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
           {doneCount}/{steps.length}
         </span>
       </button>
@@ -59,7 +59,7 @@ export function AgentPlanPanel({ steps, forceOpen }: AgentPlanPanelProps) {
           {steps.map((step, i) => (
             <li
               key={step.id}
-              className="flex items-start gap-2 rounded-[var(--radius-sm)] px-1 py-1 text-[12px] leading-[18px]"
+              className="flex items-start gap-2 rounded-[var(--radius-sm)] px-1 py-1 type-caption leading-[18px]"
             >
               <StepIcon status={step.status} />
               <span

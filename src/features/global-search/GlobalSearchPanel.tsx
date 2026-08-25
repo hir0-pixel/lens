@@ -59,7 +59,7 @@ function MatchLine({
   return (
     <button
       onClick={onOpen}
-      className="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-left font-mono text-[12px] hover:bg-[var(--bg-hover)]"
+      className="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-left type-code hover:bg-[var(--bg-hover)]"
     >
       <span className="w-8 shrink-0 select-none text-right tabular-nums text-[var(--text-tertiary)]">
         {line}
@@ -84,7 +84,7 @@ function FileGroup({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[12px] hover:bg-[var(--bg-hover)]">
+      <CollapsibleTrigger className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left type-caption hover:bg-[var(--bg-hover)]">
         {open ? (
           <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         ) : (
@@ -94,8 +94,8 @@ function FileGroup({
         <span className="truncate font-medium text-[var(--text-primary)]">
           {group.file.split("/").pop()}
         </span>
-        <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">{group.file}</span>
-        <span className="ml-auto shrink-0 rounded-full bg-[var(--bg-hover)] px-1.5 text-[10px] tabular-nums text-[var(--text-tertiary)]">
+        <span className="truncate type-code text-[var(--text-tertiary)]">{group.file}</span>
+        <span className="ml-auto shrink-0 rounded-full bg-[var(--bg-hover)] px-1.5 type-caption tabular-nums text-[var(--text-tertiary)]">
           {group.matches.length}
         </span>
       </CollapsibleTrigger>
@@ -205,7 +205,7 @@ export function GlobalSearchPanel() {
         <DialogTitle className="sr-only">Search in workspace</DialogTitle>
 
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-3 py-2">
-          <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--text-primary)]">
+          <div className="flex items-center gap-2 type-caption font-medium text-[var(--text-primary)]">
             <Search className="h-4 w-4 text-accent" />
             Search
           </div>
@@ -227,7 +227,7 @@ export function GlobalSearchPanel() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search"
-                className="h-9 border-[var(--border-default)] bg-surface-2 pr-24 text-[13px]"
+                className="h-9 border-[var(--border-default)] bg-surface-2 pr-24 type-caption"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter") runSearch(options);
@@ -275,7 +275,7 @@ export function GlobalSearchPanel() {
               </PopoverTrigger>
               <PopoverContent align="end" className="w-56 p-1">
                 {searchHistory.length === 0 ? (
-                  <div className="px-2 py-3 text-center text-[12px] text-[var(--text-tertiary)]">
+                  <div className="px-2 py-3 text-center type-caption text-[var(--text-tertiary)]">
                     No recent searches
                   </div>
                 ) : (
@@ -283,7 +283,7 @@ export function GlobalSearchPanel() {
                     <button
                       key={q}
                       onClick={() => setQuery(q)}
-                      className="flex w-full rounded-md px-2 py-1.5 text-left text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                      className="flex w-full rounded-md px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                     >
                       {q}
                     </button>
@@ -299,7 +299,7 @@ export function GlobalSearchPanel() {
                 value={replace}
                 onChange={(e) => setReplace(e.target.value)}
                 placeholder="Replace"
-                className="h-9 flex-1 border-[var(--border-default)] bg-surface-2 text-[13px]"
+                className="h-9 flex-1 border-[var(--border-default)] bg-surface-2 type-caption"
                 aria-label="Replace with"
               />
               <Button
@@ -316,31 +316,31 @@ export function GlobalSearchPanel() {
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="mb-1 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+              <Label className="mb-1 type-caption-uppercase text-[var(--text-tertiary)]">
                 files to include
               </Label>
               <Input
                 value={include}
                 onChange={(e) => setInclude(e.target.value)}
                 placeholder="e.g. src/**/*.tsx"
-                className="h-8 border-[var(--border-default)] bg-surface-2 font-mono text-[11px]"
+                className="h-8 border-[var(--border-default)] bg-surface-2 type-code"
               />
             </div>
             <div>
-              <Label className="mb-1 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+              <Label className="mb-1 type-caption-uppercase text-[var(--text-tertiary)]">
                 files to exclude
               </Label>
               <Input
                 value={exclude}
                 onChange={(e) => setExclude(e.target.value)}
                 placeholder="e.g. **/node_modules/**"
-                className="h-8 border-[var(--border-default)] bg-surface-2 font-mono text-[11px]"
+                className="h-8 border-[var(--border-default)] bg-surface-2 type-code"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex h-7 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3 text-[11px] text-[var(--text-tertiary)]">
+        <div className="flex h-7 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3 type-caption text-[var(--text-tertiary)]">
           {pending ? (
             <span className="animate-pulse">Searching…</span>
           ) : query.trim() ? (
@@ -362,14 +362,14 @@ export function GlobalSearchPanel() {
               <FileGroup key={group.file} group={group} />
             ))}
             {!pending && query.trim() && results.length === 0 && (
-              <div className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+              <div className="px-4 py-10 text-center type-caption text-muted-foreground">
                 No results found for &ldquo;{query}&rdquo;
               </div>
             )}
             {!pending && !query.trim() && (
               <div className="px-4 py-12 text-center">
-                <p className="text-[13px] text-foreground/80">Search the workspace</p>
-                <p className="mt-1 text-[12px] text-muted-foreground">
+                <p className="type-caption text-foreground/80">Search the workspace</p>
+                <p className="mt-1 type-caption text-muted-foreground">
                   Use match options below · <kbd className="wb-kbd">Enter</kbd> to search
                 </p>
               </div>
@@ -377,7 +377,7 @@ export function GlobalSearchPanel() {
           </div>
         </ScrollArea>
 
-        <div className="flex items-center gap-3 border-t border-[var(--border-subtle)] px-3 py-1.5 text-[10px] text-[var(--text-tertiary)]">
+        <div className="flex items-center gap-3 border-t border-[var(--border-subtle)] px-3 py-1.5 type-caption text-[var(--text-tertiary)]">
           <label className="flex items-center gap-1.5">
             <Checkbox
               checked={caseSensitive}

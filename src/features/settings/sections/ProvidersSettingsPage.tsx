@@ -26,18 +26,18 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
     <Card className="gap-0 rounded-lg bg-surface-0/40 p-4 ring-[var(--border-default)]">
       <div className="flex items-center gap-3">
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold text-white"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white"
           style={{ background: KIND_COLOR[provider.kind] ?? "var(--text-tertiary)" }}
         >
           {provider.name.slice(0, 1)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-medium text-[var(--text-primary)]">{provider.name}</span>
+            <span className="type-caption font-medium text-[var(--text-primary)]">{provider.name}</span>
             <Badge
               variant="secondary"
               className={cn(
-                "h-5 text-[10px] font-normal",
+                "h-5 type-caption font-normal",
                 provider.status === "connected" && "bg-[var(--success-muted)] text-[var(--success)]",
                 provider.status === "error" && "bg-[var(--error-muted)] text-[var(--error)]",
                 provider.status === "testing" && "bg-[var(--bg-hover)] text-[var(--warning)]",
@@ -46,36 +46,36 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
               {provider.status}
             </Badge>
           </div>
-          <p className="text-[11px] text-[var(--text-tertiary)]">{provider.baseUrl}</p>
+          <p className="type-caption text-[var(--text-tertiary)]">{provider.baseUrl}</p>
         </div>
       </div>
 
       <div className="mt-3 space-y-3 border-t border-[var(--border-subtle)] pt-3">
         <div>
-          <Label className="mb-1 block text-[11px] font-normal text-[var(--text-tertiary)]">Routing</Label>
-          <div className="rounded-md border border-[var(--border-default)] bg-surface-2 px-3 py-2 text-[12px] text-[var(--text-secondary)]">
+          <Label className="mb-1 block type-caption font-normal text-[var(--text-tertiary)]">Routing</Label>
+          <div className="rounded-md border border-[var(--border-default)] bg-surface-2 px-3 py-2 type-caption text-[var(--text-secondary)]">
             Credentials, provider routing, and model access are managed by the sovereign platform deployment.
           </div>
         </div>
         {models.length > 0 && (
           <div>
-            <Label className="mb-1 block text-[11px] font-normal text-[var(--text-tertiary)]">
+            <Label className="mb-1 block type-caption font-normal text-[var(--text-tertiary)]">
               Default model
             </Label>
-            <div className="rounded-md border border-[var(--border-default)] bg-surface-2 px-3 py-2 text-[12px] text-[var(--text-secondary)]">
+            <div className="rounded-md border border-[var(--border-default)] bg-surface-2 px-3 py-2 type-caption text-[var(--text-secondary)]">
               {models[0].label}
             </div>
           </div>
         )}
         <div className="flex items-center justify-between pt-1">
-          <span className="text-[11px] text-[var(--text-tertiary)]">
+          <span className="type-caption text-[var(--text-tertiary)]">
             Priority {provider.priority}
             {provider.statusMessage ? ` · ${provider.statusMessage}` : ""}
           </span>
           <Button
             size="sm"
             variant="secondary"
-            className="h-7 gap-1.5 text-[11px]"
+            className="h-7 gap-1.5 type-caption"
             disabled={provider.status === "testing"}
             onClick={() => void testConnection(provider.id)}
           >
@@ -144,16 +144,16 @@ export function ProvidersSettingsPage() {
       </div>
       {administrator && (
         <Card className="mt-4 gap-0 rounded-lg bg-surface-0/40 p-4 ring-[var(--border-default)]">
-          <p className="text-[13px] font-medium text-[var(--text-primary)]">Register an internal model gateway</p>
-          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">The API key is sent once over the authenticated BFF and is never written to browser storage.</p>
+          <p className="type-caption font-medium text-[var(--text-primary)]">Register an internal model gateway</p>
+          <p className="mt-1 type-caption text-[var(--text-tertiary)]">The API key is sent once over the authenticated BFF and is never written to browser storage.</p>
           <div className="mt-3 space-y-2">
-            <Input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://models.company.internal/v1" className="h-9 border-[var(--border-default)] bg-surface-2 text-[13px]" />
-            <Input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Provider API key" className="h-9 border-[var(--border-default)] bg-surface-2 text-[13px]" />
-            <Input value={allowlist} onChange={(event) => setAllowlist(event.target.value)} placeholder="allowed model ids, comma-separated" className="h-9 border-[var(--border-default)] bg-surface-2 text-[13px]" />
+            <Input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://models.company.internal/v1" className="h-9 border-[var(--border-default)] bg-surface-2 type-caption" />
+            <Input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Provider API key" className="h-9 border-[var(--border-default)] bg-surface-2 type-caption" />
+            <Input value={allowlist} onChange={(event) => setAllowlist(event.target.value)} placeholder="allowed model ids, comma-separated" className="h-9 border-[var(--border-default)] bg-surface-2 type-caption" />
             <Button size="sm" disabled={busy || !baseUrl || !apiKey || !allowlist} onClick={() => void submitOnboard()}>
               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Register provider"}
             </Button>
-            {message && <p className="text-[11px] text-[var(--text-tertiary)]">{message}</p>}
+            {message && <p className="type-caption text-[var(--text-tertiary)]">{message}</p>}
           </div>
         </Card>
       )}
@@ -191,12 +191,12 @@ export function ModelsSettingsPage() {
         value={query}
         readOnly
         placeholder="Search is locked to deployment-provided models"
-        className="mb-4 h-9 border-[var(--border-default)] bg-surface-2 text-[13px]"
+        className="mb-4 h-9 border-[var(--border-default)] bg-surface-2 type-caption"
       />
 
       {recentModelIds.length > 0 && (
         <div className="mb-4">
-          <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+          <h3 className="mb-2 type-caption-uppercase text-[var(--text-tertiary)]">
             Recent
           </h3>
           <div className="flex flex-wrap gap-1.5">
@@ -216,7 +216,7 @@ export function ModelsSettingsPage() {
       <div className="space-y-4">
         {byProvider.map(({ provider, models: groupedModels }) => (
           <div key={provider.id}>
-            <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+            <h3 className="mb-2 type-caption-uppercase text-[var(--text-tertiary)]">
               {provider.name}
             </h3>
             <div className="overflow-hidden divide-y divide-white/5 rounded-lg border border-[var(--border-default)]">
@@ -241,10 +241,10 @@ export function ModelsSettingsPage() {
                     />
                   </Button>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px] text-[var(--text-primary)]">{model.label}</div>
-                    <div className="font-mono text-[10px] text-[var(--text-tertiary)]">{model.id}</div>
+                    <div className="type-caption text-[var(--text-primary)]">{model.label}</div>
+                    <div className="type-code text-[var(--text-tertiary)]">{model.id}</div>
                   </div>
-                  <span className="text-[10px] tabular-nums text-[var(--text-tertiary)]">
+                  <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
                     {(model.contextWindow / 1000).toFixed(0)}K
                   </span>
                   {model.vision && (

@@ -16,7 +16,7 @@ import { UpdateService } from "@/shared/release/UpdateService";
 import { logger } from "@/shared/diagnostics/logger";
 
 function itemClass() {
-  return "h-8 cursor-pointer rounded-md px-3 text-[13px] text-[var(--text-primary)] focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]";
+  return "h-8 cursor-pointer rounded-md px-3 type-caption text-[var(--text-primary)] focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]";
 }
 
 export function TitleBarOverflowMenu() {
@@ -102,7 +102,7 @@ export function TitleBarOverflowMenu() {
           }
         >
           New task
-          <DropdownMenuShortcut className="text-[11px] tracking-normal text-[var(--text-tertiary)]">
+          <DropdownMenuShortcut className="type-caption tracking-normal text-[var(--text-tertiary)]">
             Ctrl+N
           </DropdownMenuShortcut>
         </DropdownMenuItem>
@@ -111,7 +111,7 @@ export function TitleBarOverflowMenu() {
           onClick={() => void openFolder()}
         >
           Open workspace
-          <DropdownMenuShortcut className="text-[11px] tracking-normal text-[var(--text-tertiary)]">
+          <DropdownMenuShortcut className="type-caption tracking-normal text-[var(--text-tertiary)]">
             Ctrl+O
           </DropdownMenuShortcut>
         </DropdownMenuItem>

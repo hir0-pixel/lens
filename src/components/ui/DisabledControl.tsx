@@ -35,7 +35,7 @@ export function DisabledControl({
             {children}
           </button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[220px] text-[11px]">
+        <TooltipContent side="top" className="max-w-[220px] type-caption">
           {reason}
         </TooltipContent>
       </Tooltip>

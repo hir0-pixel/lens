@@ -101,14 +101,14 @@ export function AIPanelHeader({
                 <Clock className="h-4 w-4" strokeWidth={1.5} />
               </button>
             </TooltipTrigger>
-            <TooltipContent className="text-[12px]">Past sessions</TooltipContent>
+            <TooltipContent className="type-caption">Past sessions</TooltipContent>
           </Tooltip>
 
           <button
             type="button"
             onClick={onRenameTitle}
             title={title}
-            className="min-w-0 flex-1 truncate rounded-[var(--radius-sm)] px-2 py-1 text-left text-[14px] font-semibold text-[var(--text-primary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)]"
+            className="min-w-0 flex-1 truncate rounded-[var(--radius-sm)] px-2 py-1 text-left type-body-sm font-semibold text-[var(--text-primary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)]"
           >
             {title}
           </button>
@@ -126,7 +126,7 @@ export function AIPanelHeader({
                   </button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent className="text-[12px]">
+              <TooltipContent className="type-caption">
                 New session · Open pane
               </TooltipContent>
             </Tooltip>
@@ -136,7 +136,7 @@ export function AIPanelHeader({
                 New session
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.04em] text-[var(--text-tertiary)]">
+              <DropdownMenuLabel className="type-caption-uppercase text-[var(--text-tertiary)]">
                 Open pane
               </DropdownMenuLabel>
               {PANE_ITEMS.map(({ id, label, icon: Icon }) => (
@@ -200,7 +200,7 @@ export function AIPanelHeader({
                 title={m.hint}
                 onClick={() => onModeChange(m.id)}
                 className={cn(
-                  "rounded-[var(--radius-sm)] px-2 py-1.5 text-[12px] font-medium transition-[background-color,color] duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
+                  "rounded-[var(--radius-sm)] px-2 py-1.5 type-caption font-medium transition-[background-color,color] duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
                   "focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]",
                   mode === m.id
                     ? "bg-[var(--bg-surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
@@ -216,7 +216,7 @@ export function AIPanelHeader({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="btn-ghost h-8 max-w-[140px] gap-1.5 px-2 text-[12px]"
+                className="btn-ghost h-8 max-w-[140px] gap-1.5 px-2 type-caption"
                 title={`Model · ${MODES.find((m) => m.id === mode)?.hint}`}
               >
                 <ProviderDot provider={activeModel.provider} />

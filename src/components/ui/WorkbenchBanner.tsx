@@ -59,9 +59,9 @@ export function WorkbenchBanner({
       <span className={cn("absolute inset-y-0 left-0 w-0.5", t.bar)} />
       <Icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", t.text)} />
       <div className="min-w-0 flex-1">
-        <div className={cn("text-[12px] font-medium", t.text)}>{title}</div>
+        <div className={cn("type-caption font-medium", t.text)}>{title}</div>
         {description && (
-          <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+          <p className="mt-0.5 type-caption leading-relaxed text-muted-foreground">
             {description}
           </p>
         )}
@@ -70,7 +70,7 @@ export function WorkbenchBanner({
             size="sm"
             variant="ghost"
             onClick={onRetry}
-            className="mt-1.5 h-6 gap-1 px-1.5 text-[11px]"
+            className="mt-1.5 h-6 gap-1 px-1.5 type-caption"
           >
             <RefreshCw className="h-3 w-3" />
             Retry

@@ -116,10 +116,10 @@ export function MentionPicker({
           value={query}
           onValueChange={onQueryChange}
           placeholder="Search files, folders, terminal…"
-          className="h-9 border-none text-[12px]"
+          className="h-9 border-none type-caption"
         />
         <CommandList className="max-h-48">
-          <CommandEmpty className="py-4 text-[12px] text-[var(--text-tertiary)]">
+          <CommandEmpty className="py-4 type-caption text-[var(--text-tertiary)]">
             No matches found
           </CommandEmpty>
           {(Object.keys(grouped) as MentionKind[]).map((kind) => {
@@ -128,7 +128,7 @@ export function MentionPicker({
               <CommandGroup
                 key={kind}
                 heading={KIND_LABELS[kind]}
-                className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide"
+                className="[&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.88px] [&_[cmdk-group-heading]]:leading-[1.4]"
               >
                 {grouped[kind].map((item) => {
                   const globalIndex = filtered.indexOf(item);
@@ -138,14 +138,14 @@ export function MentionPicker({
                       value={item.id}
                       onSelect={() => onSelect(item)}
                       className={cn(
-                        "gap-2 text-[12px]",
+                        "gap-2 type-caption",
                         globalIndex === activeIndex && "bg-[var(--bg-hover)]",
                       )}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
                       <span className="truncate">{item.label}</span>
                       {item.detail && (
-                        <span className="ml-auto truncate text-[10px] text-[var(--text-disabled)]">
+                        <span className="ml-auto truncate type-caption text-[var(--text-disabled)]">
                           {item.detail}
                         </span>
                       )}

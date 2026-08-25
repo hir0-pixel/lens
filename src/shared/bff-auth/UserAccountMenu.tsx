@@ -34,7 +34,7 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
             className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 text-left hover:bg-[var(--bg-hover)]"
             title={session?.email ?? displayName}
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-active)] text-[11px] font-medium text-[var(--text-primary)]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-active)] type-caption font-medium text-[var(--text-primary)]">
               {session?.picture ? (
                 <img
                   src={session.picture}
@@ -46,14 +46,14 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
                 initial
               )}
             </span>
-            <span className="min-w-0 truncate text-[13px] text-[var(--text-secondary)]">
+            <span className="min-w-0 truncate type-caption text-[var(--text-secondary)]">
               {displayName}
             </span>
           </button>
         ) : (
           <button
             type="button"
-            className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[12px] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
+            className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] type-caption font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
             aria-label="Account menu"
             title={session?.email ?? displayName}
           >
@@ -76,7 +76,7 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
         className="w-64 p-0"
       >
         <div className="flex items-center gap-3 border-b border-[var(--border-subtle)] px-3 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[14px] font-semibold text-[var(--text-primary)]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] type-body-sm font-semibold text-[var(--text-primary)]">
             {session?.picture ? (
               <img
                 src={session.picture}
@@ -89,11 +89,11 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
             )}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
+            <p className="truncate type-caption font-semibold text-[var(--text-primary)]">
               {displayName}
             </p>
             {session?.email && (
-              <p className="truncate text-[11px] text-[var(--text-tertiary)]">
+              <p className="truncate type-caption text-[var(--text-tertiary)]">
                 {session.email}
               </p>
             )}
@@ -104,7 +104,7 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
             <Button
               type="button"
               variant="ghost"
-              className="h-9 w-full justify-start gap-2 px-2 text-[13px]"
+              className="h-9 w-full justify-start gap-2 px-2 type-caption"
               onClick={() => void logout()}
             >
               <LogOut className="h-4 w-4" strokeWidth={1.75} />

@@ -22,8 +22,8 @@ export function LensWordmark({
       className={cn(
         "inline-flex items-center font-[family-name:var(--font-display)] font-semibold text-[var(--text-primary)]",
         welcome
-          ? "gap-2.5 text-[26px] tracking-[-0.02em]"
-          : "gap-1.5 text-[13px] tracking-[-0.01em]",
+          ? "gap-2.5 text-[26px] tracking-[-0.39px] leading-[1.25]"
+          : "gap-1.5 text-[13px] font-semibold leading-[1.4] tracking-normal",
         className,
       )}
     >
@@ -38,7 +38,7 @@ export function LensWordmark({
           aria-hidden
         />
       )}
-      <span className={cn(welcome ? "leading-none" : "leading-none")}>
+      <span className="leading-none">
         Lens
       </span>
     </span>

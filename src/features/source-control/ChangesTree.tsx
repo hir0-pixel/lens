@@ -93,7 +93,7 @@ function ChangeRow({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className="group flex h-7 items-center gap-1.5 px-2 text-[12px] hover:bg-[var(--bg-hover)]"
+          className="group flex h-7 items-center gap-1.5 px-2 type-caption hover:bg-[var(--bg-hover)]"
           role="treeitem"
         >
           <button
@@ -104,12 +104,12 @@ function ChangeRow({
             <FileIcon change={change} />
             <span className="truncate text-[var(--text-primary)]">{name}</span>
             {dir && (
-              <span className="truncate font-mono text-[10px] text-[var(--text-tertiary)]">{dir}</span>
+              <span className="truncate type-code text-[var(--text-tertiary)]">{dir}</span>
             )}
           </button>
           <span
             className={cn(
-              "font-mono text-[10px] font-semibold",
+              "type-code font-semibold",
               STATUS_COLOR[change.status],
             )}
           >
@@ -219,14 +219,14 @@ function ChangeSection({
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="mb-1">
       <div className="flex h-7 items-center gap-1 px-1">
-        <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]">
+        <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 type-caption-uppercase text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]">
           {open ? (
             <ChevronDown className="h-3.5 w-3.5" />
           ) : (
             <ChevronRight className="h-3.5 w-3.5" />
           )}
           <span className="truncate">{title}</span>
-          <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] font-normal">
+          <Badge variant="secondary" className="ml-1 h-4 px-1 type-caption font-normal">
             {count}
           </Badge>
         </CollapsibleTrigger>
@@ -259,7 +259,7 @@ function ChangesTreeComponent() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-1.5 text-[10px] text-[var(--error)]"
+            className="h-6 px-1.5 type-caption text-[var(--error)]"
             onClick={() => setShowConflicts(true)}
           >
             Resolve
@@ -349,8 +349,8 @@ function ChangesTreeComponent() {
         untracked.length === 0 && (
           <div className="flex flex-col items-center px-4 py-8 text-center">
             <Check className="mb-2 h-6 w-6 text-[var(--success)] opacity-60" />
-            <p className="text-[12px] text-[var(--text-secondary)]">No changes</p>
-            <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+            <p className="type-caption text-[var(--text-secondary)]">No changes</p>
+            <p className="mt-1 type-caption text-[var(--text-tertiary)]">
               Your working tree is clean
             </p>
           </div>

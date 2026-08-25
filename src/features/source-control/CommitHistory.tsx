@@ -39,7 +39,7 @@ export function CommitHistory() {
   return (
     <div className="flex h-full min-h-0 flex-col border-t border-[var(--border-subtle)] bg-surface-0">
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-surface-1 px-2">
-        <span className="text-[12px] font-medium text-[var(--text-primary)]">History</span>
+        <span className="type-caption font-medium text-[var(--text-primary)]">History</span>
         <Button
           variant="ghost"
           size="icon"
@@ -58,7 +58,7 @@ export function CommitHistory() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search commits…"
-            className="h-8 border-[var(--border-default)] bg-surface-2 pl-7 text-[12px]"
+            className="h-8 border-[var(--border-default)] bg-surface-2 pl-7 type-caption"
             aria-label="Search commits"
           />
         </div>
@@ -67,7 +67,7 @@ export function CommitHistory() {
             type="button"
             onClick={() => setAuthorFilter(null)}
             className={cn(
-              "rounded-full px-2 py-0.5 text-[10px]",
+              "rounded-full px-2 py-0.5 type-caption",
               !authorFilter ? "bg-accent/20 text-accent" : "bg-[var(--bg-hover)] text-[var(--text-tertiary)]",
             )}
           >
@@ -79,7 +79,7 @@ export function CommitHistory() {
               type="button"
               onClick={() => setAuthorFilter(a)}
               className={cn(
-                "rounded-full px-2 py-0.5 text-[10px]",
+                "rounded-full px-2 py-0.5 type-caption",
                 authorFilter === a ? "bg-accent/20 text-accent" : "bg-[var(--bg-hover)] text-[var(--text-tertiary)]",
               )}
             >
@@ -96,15 +96,15 @@ export function CommitHistory() {
               <CollapsibleTrigger className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left hover:bg-[var(--bg-hover)]">
                 <Avatar className="mt-0.5 h-6 w-6">
                   <AvatarFallback
-                    className="text-[10px] font-semibold text-surface-0"
+                    className="type-caption font-semibold text-surface-0"
                     style={{ backgroundColor: commit.avatarColor }}
                   >
                     {commit.author.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[12px] text-[var(--text-primary)]">{commit.message}</div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-[var(--text-tertiary)]">
+                  <div className="truncate type-caption text-[var(--text-primary)]">{commit.message}</div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 type-caption text-[var(--text-tertiary)]">
                     <span className="font-mono text-[var(--text-tertiary)]">{commit.shortHash}</span>
                     <span>{commit.author}</span>
                     <span>·</span>
@@ -119,17 +119,17 @@ export function CommitHistory() {
                     ))}
                   </div>
                 </div>
-                <div className="shrink-0 text-right font-mono text-[10px]">
+                <div className="shrink-0 text-right type-code">
                   <div className="text-[var(--success)]">+{commit.additions}</div>
                   <div className="text-[var(--error)]">−{commit.deletions}</div>
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="ml-10 mb-2 rounded-md border border-[var(--border-subtle)] bg-surface-1 p-2 text-[11px] text-[var(--text-secondary)]">
+                <div className="ml-10 mb-2 rounded-md border border-[var(--border-subtle)] bg-surface-1 p-2 type-caption text-[var(--text-secondary)]">
                   {commit.description && (
                     <p className="mb-2 whitespace-pre-wrap">{commit.description}</p>
                   )}
-                  <div className="flex gap-3 text-[10px] text-[var(--text-tertiary)]">
+                  <div className="flex gap-3 type-caption text-[var(--text-tertiary)]">
                     <span>{commit.filesChanged} files</span>
                     <span className="font-mono">{commit.hash.slice(0, 16)}…</span>
                     <span>{commit.email}</span>
@@ -139,7 +139,7 @@ export function CommitHistory() {
             </Collapsible>
           ))}
           {filtered.length === 0 && (
-            <div className="py-8 text-center text-[12px] text-[var(--text-tertiary)]">No commits found</div>
+            <div className="py-8 text-center type-caption text-[var(--text-tertiary)]">No commits found</div>
           )}
         </div>
       </ScrollArea>

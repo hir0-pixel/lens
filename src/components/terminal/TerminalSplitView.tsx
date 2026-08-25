@@ -60,7 +60,7 @@ function TerminalSplitViewComponent({ projectName }: { projectName?: string }) {
 
   if (!splitRoot) {
     return (
-      <div className="flex h-full items-center justify-center text-[12px] text-zinc-600">
+      <div className="flex h-full items-center justify-center type-caption text-zinc-600">
         No terminal sessions — click + to create one
       </div>
     );

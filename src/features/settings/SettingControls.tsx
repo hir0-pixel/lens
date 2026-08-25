@@ -28,9 +28,9 @@ export function SettingsSectionHeader({
 }) {
   return (
     <div className="mb-5">
-      <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">{title}</h2>
+      <h2 className="type-title-sm font-semibold text-[var(--text-primary)]">{title}</h2>
       {description && (
-        <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">{description}</p>
+        <p className="mt-1 type-caption leading-relaxed text-[var(--text-secondary)]">{description}</p>
       )}
     </div>
   );
@@ -46,7 +46,7 @@ export function SettingsGroup({
   return (
     <div className="mb-6">
       {title && (
-        <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+        <h3 className="mb-2 type-caption-uppercase text-[var(--text-tertiary)]">
           {title}
         </h3>
       )}
@@ -75,11 +75,11 @@ export function SettingRow({
       className="items-start justify-between gap-4 bg-surface-0/40 px-3.5 py-3 transition-colors hover:bg-[var(--bg-hover)]"
     >
       <FieldLabel className="flex-col items-start gap-1 pt-0.5">
-        <FieldTitle className="text-[13px] font-medium text-[var(--text-primary)]">
+        <FieldTitle className="type-caption font-medium text-[var(--text-primary)]">
           {title}
         </FieldTitle>
         {description && (
-          <FieldDescription className="text-[11.5px] leading-relaxed text-[var(--text-secondary)]">
+          <FieldDescription className="type-caption leading-relaxed text-[var(--text-secondary)]">
             {description}
           </FieldDescription>
         )}
@@ -129,12 +129,12 @@ export function SettingSelect({
   return (
     <SettingRow title={title} description={description} id={id}>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="h-8 w-[180px] border-[var(--border-default)] bg-surface-2 text-[12px]">
+        <SelectTrigger className="h-8 w-[180px] border-[var(--border-default)] bg-surface-2 type-caption">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
-            <SelectItem key={o.value} value={o.value} className="text-[12px]">
+            <SelectItem key={o.value} value={o.value} className="type-caption">
               {o.label}
             </SelectItem>
           ))}
@@ -177,7 +177,7 @@ export function SettingSlider({
           className="flex-1"
           aria-label={title}
         />
-        <span className="w-10 text-right font-mono text-[11px] tabular-nums text-[var(--text-secondary)]">
+        <span className="w-10 text-right type-code tabular-nums text-[var(--text-secondary)]">
           {value}
           {suffix ?? ""}
         </span>
@@ -213,7 +213,7 @@ export function SettingInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          "h-8 w-[220px] border-[var(--border-default)] bg-surface-2 text-[12px]",
+          "h-8 w-[220px] border-[var(--border-default)] bg-surface-2 type-caption",
           mono && "font-mono",
         )}
         aria-label={title}
@@ -245,7 +245,7 @@ export function SettingRadio({
         className="flex flex-wrap justify-end gap-3"
       >
         {options.map((o) => (
-          <label key={o.value} className="flex items-center gap-1.5 text-[12px] text-[var(--text-secondary)]">
+          <label key={o.value} className="flex items-center gap-1.5 type-caption text-[var(--text-secondary)]">
             <RadioGroupItem value={o.value} id={`${id}-${o.value}`} />
             {o.label}
           </label>

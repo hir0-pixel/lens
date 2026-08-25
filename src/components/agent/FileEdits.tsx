@@ -29,10 +29,10 @@ export default function FileEdits({ edits }: { edits: FileEdit[] }) {
           )}
         />
         <GitCompareArrows className="h-3.5 w-3.5 text-accent" />
-        <span className="text-[12px] font-medium text-[var(--text-secondary)]">
+        <span className="type-caption font-medium text-[var(--text-secondary)]">
           Files changed
         </span>
-        <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
+        <span className="ml-auto type-caption text-[var(--text-tertiary)]">
           {edits.length} files
         </span>
       </button>
@@ -45,21 +45,21 @@ export default function FileEdits({ edits }: { edits: FileEdit[] }) {
             >
               <span
                 className={cn(
-                  "font-mono text-[11px]",
+                  "type-code",
                   LANG_COLORS[edit.language] ?? "text-[var(--text-tertiary)]",
                 )}
               >
                 {edit.language}
               </span>
               <div className="min-w-0">
-                <div className="truncate font-mono text-[12px] text-[var(--text-primary)]">
+                <div className="truncate type-code text-[var(--text-primary)]">
                   {edit.path}
                 </div>
-                <div className="truncate text-[11px] text-[var(--text-tertiary)]">
+                <div className="truncate type-caption text-[var(--text-tertiary)]">
                   {edit.summary}
                 </div>
               </div>
-              <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono text-[11px]">
+              <span className="ml-auto flex shrink-0 items-center gap-1.5 type-code">
                 <span className="text-[var(--success)]">+{edit.additions}</span>
                 <span className="text-[var(--error)]">−{edit.deletions}</span>
               </span>
