@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { createHash } from "node:crypto";
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import http from "node:http";

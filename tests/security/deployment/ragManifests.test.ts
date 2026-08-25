@@ -1,14 +1,17 @@
+/** @vitest-environment node */
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-const ROOT = "D:\\Lens\\lens";
+const ROOT = process.cwd();
+const nodeBin = existsSync(process.execPath) ? process.execPath : "node";
 
 function runNode(script: string) {
-  return execFileSync(process.execPath, [script], {
+  return execFileSync(nodeBin, [script], {
     cwd: ROOT,
     encoding: "utf8",
+    env: process.env,
   });
 }
 
