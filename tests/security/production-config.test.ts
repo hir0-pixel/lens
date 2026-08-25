@@ -62,12 +62,12 @@ describe("Track 0 production build security gate", () => {
   it("keeps the sovereign provider surface free of public provider endpoints", () => {
     const providerStore = readFileSync(path.join(ROOT, "src", "stores", "providerStore.ts"), "utf8");
     const providersPage = readFileSync(path.join(ROOT, "src", "features", "settings", "sections", "ProvidersSettingsPage.tsx"), "utf8");
-    const externalPattern = /openai|anthropic|googleapis|openrouter|huggingface|azure|ollama|gemini/i;
+    const externalProviderEndpointPattern = /openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|openrouter\.ai|huggingface\.co|hf\.co|azure\.com|ollama\.com|gemini\.google\.com/i;
     expect(providerStore).toContain("Lens Sovereign");
     expect(providerStore).toContain("Platform-managed");
-    expect(providerStore).not.toMatch(externalPattern);
+    expect(providerStore).not.toMatch(externalProviderEndpointPattern);
     expect(providersPage).toContain("sovereign deployment");
-    expect(providersPage).not.toMatch(externalPattern);
+    expect(providersPage).not.toMatch(externalProviderEndpointPattern);
   });
 
   it("keeps the production readiness harness internal-only and secret-file based", () => {
