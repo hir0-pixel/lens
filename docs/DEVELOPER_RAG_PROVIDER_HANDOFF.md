@@ -20,6 +20,7 @@ An admin should be able to onboard a provider or internal model gateway, discove
 
 - `docs/PROVIDER_KEY_SETUP.md` - detailed provider onboarding and environment reference.
 - `docs/PROVIDER_AND_RAG_PROFILE.md` - provider adapter and company RAG profile design.
+- `docs/rag-final-provider-handoff-report.md` - Task 10 final verdict (implementation vs production GO/NO-GO).
 - `docs/RAG_PRODUCTION_IMPLEMENTATION_REPORT.md` - current implementation status and remaining production gates.
 - `server/src/routes/providers.ts` - admin provider onboarding routes.
 - `server/src/routes/api.ts` - BFF API composition, including model catalog and RAG routes.
