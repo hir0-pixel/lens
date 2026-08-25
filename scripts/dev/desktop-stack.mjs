@@ -4,10 +4,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = new URL("../../", import.meta.url);
 const rootPath = fileURLToPath(root);
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-// A cold Vite start can exceed 30 seconds on Windows while esbuild scans a
-// large workspace. Give the desktop host a realistic budget rather than
-// failing just before the frontend becomes available.
-const READINESS_TIMEOUT_MS = 90_000;
+// A cold Vite start can take more than 90 seconds on Windows while esbuild
+// scans this large workspace. Tauri only starts after this command succeeds,
+// so leave enough headroom for a cold cache instead of aborting just before
+// the frontend is ready. It remains configurable for constrained environments.
+const READINESS_TIMEOUT_MS = Number(process.env.LENS_DEV_READY_TIMEOUT_MS ?? 180_000);
 const POLL_INTERVAL_MS = 250;
 
 export function serviceDefinitions(env = process.env) {
@@ -23,6 +24,17 @@ export function serviceDefinitions(env = process.env) {
     {
       name: "bff", args: ["run", "dev", "--prefix", "server"], cwd: rootPath,
       url: `${bffUrl.replace(/\/$/, "")}/health`,
+      // Keep the BFF and bundled local IdP configured as one development
+      // stack. This avoids a healthy-but-unconfigured BFF returning 503 from
+      // /auth/login when a developer has not created server/.env OIDC values.
+      env: {
+        APP_ORIGIN: frontendUrl,
+        OIDC_ISSUER: idpUrl,
+        OIDC_CLIENT_ID: "lens-bff",
+        OIDC_CLIENT_SECRET: "dev-client-secret",
+        OIDC_REDIRECT_URI: `${bffUrl.replace(/\/$/, "")}/auth/callback`,
+        OIDC_REQUIRE_HTTPS_ISSUER: "false",
+      },
       validate: (response, body) => {
         if (!response.ok) return false;
         try { return JSON.parse(body)?.ok === true; } catch { return false; }
@@ -86,6 +98,7 @@ function startChild(service) {
     cwd: service.cwd,
     stdio: "inherit",
     windowsHide: true,
+    env: { ...process.env, ...service.env },
   });
 }
 

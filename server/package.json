@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "node ./scripts/tsx-dev.mjs watch src/index.ts",
     "start": "node dist/server/src/index.js",
     "build": "node ../scripts/build/server-production.mjs",
     "typecheck": "tsc --noEmit",

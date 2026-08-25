@@ -144,8 +144,8 @@
     --bg-active: #ebebeb;
     --bg-selected: #f5f5f5;
 
-    --border-subtle: #f5f5f5;
-    --border-default: #ebebeb;
+    --border-subtle: #ebebeb;
+    --border-default: #a1a1a1;
     --border-strong: #a1a1a1;
     --border-focus: #0070f3;
 
@@ -157,7 +157,7 @@
 
     /* Solid accent — status dots, borders, links, small elements */
     --accent-primary: #0070f3;
-    --accent-primary-hover: #0070f3;
+    --accent-primary-hover: #0761d1;
     --accent-primary-active: #0761d1;
     --accent-primary-muted: #d3e5ff;
 
@@ -234,11 +234,11 @@
     --radius-pill: var(--radius-full);
 
     /* —— Elevation —— */
-    --shadow-sm: none;
-    --shadow-md: none;
-    --shadow-lg: none;
-    --shadow-overlay: var(--shadow-md);
-    --shadow-focus-ring: none;
+    --shadow-sm: 0 1px 1px rgb(23 23 23 / 0.04), inset 0 0 0 1px rgb(23 23 23 / 0.05);
+    --shadow-md: 0 2px 4px rgb(23 23 23 / 0.08), inset 0 0 0 1px rgb(23 23 23 / 0.05);
+    --shadow-lg: 0 8px 16px -4px rgb(23 23 23 / 0.12), inset 0 0 0 1px rgb(23 23 23 / 0.06);
+    --shadow-overlay: var(--shadow-lg);
+    --shadow-focus-ring: 0 0 0 3px color-mix(in srgb, #0070f3 32%, transparent);
 
     /* —— Typography (DESIGN-cursor.md roles; Inter replaces CursorGothic) —— */
     --font-ui: "Inter", ui-sans-serif, system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -536,7 +536,9 @@
   input:focus-visible,
   textarea:focus-visible,
   [contenteditable="true"]:focus-visible {
-    box-shadow: none;
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+    box-shadow: var(--shadow-focus-ring);
   }
 
   button:focus:not(:focus-visible),
@@ -1209,9 +1211,18 @@
     }
   }
 
-  .high-contrast {
+  html.light.high-contrast {
     --border-default: #a1a1a1;
     --text-secondary: #171717;
+    --ds-border: var(--border-default);
+    --ds-fg-muted: var(--text-secondary);
+  }
+
+  html.dark.high-contrast {
+    --border-subtle: #a1a1a1;
+    --border-default: #ffffff;
+    --text-secondary: #ffffff;
+    --text-tertiary: #ebebeb;
     --ds-border: var(--border-default);
     --ds-fg-muted: var(--text-secondary);
   }
@@ -1227,8 +1238,8 @@
     --bg-active: #ebebeb;
     --bg-selected: #f5f5f5;
 
-    --border-subtle: #f5f5f5;
-    --border-default: #ebebeb;
+    --border-subtle: #ebebeb;
+    --border-default: #a1a1a1;
     --border-strong: #a1a1a1;
     --border-focus: #0070f3;
 
@@ -1238,7 +1249,7 @@
     --text-disabled: #a1a1a1;
 
     --accent-primary: #0070f3;
-    --accent-primary-hover: #0070f3;
+    --accent-primary-hover: #0761d1;
     --accent-primary-active: #0761d1;
     --accent-primary-muted: #d3e5ff;
 
@@ -1389,28 +1400,28 @@
   html.dark {
     color-scheme: dark;
     --bg-canvas: #171717;
-    --bg-surface: #171717;
-    --bg-surface-raised: #171717;
-    --bg-overlay: #171717;
-    --bg-hover: #171717;
-    --bg-active: #171717;
-    --bg-selected: #171717;
+    --bg-surface: color-mix(in srgb, #171717 92%, #ffffff);
+    --bg-surface-raised: color-mix(in srgb, #171717 84%, #ffffff);
+    --bg-overlay: color-mix(in srgb, #171717 78%, #ffffff);
+    --bg-hover: color-mix(in srgb, #171717 88%, #ffffff);
+    --bg-active: color-mix(in srgb, #171717 80%, #ffffff);
+    --bg-selected: color-mix(in srgb, #0070f3 20%, #171717);
 
-    --border-subtle: #ebebeb;
-    --border-default: #ebebeb;
+    --border-subtle: color-mix(in srgb, #ffffff 14%, #171717);
+    --border-default: color-mix(in srgb, #ffffff 28%, #171717);
     --border-strong: #a1a1a1;
     --border-focus: #0070f3;
 
     --text-primary: #ffffff;
-    --text-secondary: #ffffff;
-    --text-tertiary: #888888;
+    --text-secondary: #ebebeb;
+    --text-tertiary: #a1a1a1;
     --text-disabled: #888888;
     --text-on-accent: #171717;
 
-    --accent-primary: #0070f3;
-    --accent-primary-hover: #0070f3;
-    --accent-primary-active: #0761d1;
-    --accent-primary-muted: #171717;
+    --accent-primary: #50e3c2;
+    --accent-primary-hover: #29bc9b;
+    --accent-primary-active: #29bc9b;
+    --accent-primary-muted: color-mix(in srgb, #50e3c2 18%, #171717);
     --cursor-scrollbar: #a1a1a1;
     --cursor-scrollbar-hover: #a1a1a1;
 
@@ -1432,11 +1443,11 @@
       transparent 70%
     );
 
-    --success: #0070f3;
+    --success: #50e3c2;
     --warning: #f5a623;
     --error: #ee0000;
-    --error-muted:  #f7d4d6;
-    --success-muted:  #d3e5ff;
+    --error-muted: color-mix(in srgb, #ee0000 18%, #171717);
+    --success-muted: color-mix(in srgb, #50e3c2 18%, #171717);
     --info: #0070f3;
 
     --background: 0 0% 9%;
@@ -1445,25 +1456,25 @@
     --card-foreground: 0 0% 94%;
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 94%;
-    --primary: 210 34% 63%;
+    --primary: 0 0% 100%;
     --primary-foreground: 0 0% 8%;
-    --secondary: 0 0% 11%;
+    --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 94%;
-    --muted: 0 0% 11%;
-    --muted-foreground: 0 0% 94% / 0.74;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 63%;
     --destructive: 344 74% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 94% / 0.075;
-    --input: 0 0% 9%;
-    --ring: 210 34% 65%;
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 94% / 0.74;
-    --sidebar-primary: 210 34% 63%;
+    --border: 0 0% 28%;
+    --input: 0 0% 15%;
+    --ring: 163 72% 60%;
+    --sidebar-background: 0 0% 12%;
+    --sidebar-foreground: 0 0% 63%;
+    --sidebar-primary: 0 0% 100%;
     --sidebar-primary-foreground: 0 0% 8%;
-    --sidebar-accent: 0 0% 11%;
+    --sidebar-accent: 0 0% 15%;
     --sidebar-accent-foreground: 0 0% 94%;
-    --sidebar-border: 0 0% 94% / 0.075;
-    --sidebar-ring: 210 34% 65%;
+    --sidebar-border: 0 0% 28%;
+    --sidebar-ring: 163 72% 60%;
   }
 }
 @layer base {
