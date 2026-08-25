@@ -61,6 +61,8 @@ Provider API keys should live in a secrets manager or encrypted server-side secr
 
 For local/demo testing, SQLite/local files are acceptable. For multi-user or multi-replica testing, use PostgreSQL or an equivalent shared durable store so every BFF, Orchestrator, Retrieval, Authority, and ingestion replica sees the same state.
 
+Task 8 live PostgreSQL integration (`tests/unit/pgPool.test.ts`, env `LENS_TEST_DATABASE_URL`): **NOT RUN ENVIRONMENT** — no internal Postgres URL was set in this workspace. Local/demo coverage uses SQLite (`:memory:` or durable files) and production config rejects `:memory:` persistence paths plus missing `SECRET_STORE_KEY`.
+
 Recommended database test progression:
 
 1. Local developer test: SQLite/local files, `npm run validate`.

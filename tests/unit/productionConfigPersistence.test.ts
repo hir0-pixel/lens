@@ -20,6 +20,7 @@ const durableProductionEnv = {
   PUBLICATION_STORE_PATH: "./publication.sqlite",
   INGESTION_STORE_PATH_PREFIX: "./ingestion",
   AUDIT_LEDGER_STORE_PATH: "./audit.sqlite",
+  SECRET_STORE_KEY: "k".repeat(32),
 };
 
 function setEnvironment(values: Record<string, string>): void {
@@ -47,5 +48,12 @@ describe("production persistence configuration", () => {
   it.each(["PROVIDER_REGISTRY_PATH", "PUBLICATION_STORE_PATH", "INGESTION_STORE_PATH_PREFIX", "AUDIT_LEDGER_STORE_PATH"])("rejects :memory: for %s", (key) => {
     setEnvironment({ ...durableProductionEnv, [key]: ":memory:" });
     expect(() => validateProductionConfig()).toThrow(/must use a durable path in production/);
+  });
+
+  it("rejects production without SECRET_STORE_KEY so MemorySecretStore cannot hold provider keys", () => {
+    setEnvironment(durableProductionEnv);
+    delete process.env.SECRET_STORE_KEY;
+    __resetConfig();
+    expect(() => validateProductionConfig()).toThrow(/SECRET_STORE_KEY/);
   });
 });

@@ -123,6 +123,7 @@ export function validateProductionConfig(): void {
       "PUBLICATION_STORE_PATH",
       "INGESTION_STORE_PATH_PREFIX",
       "AUDIT_LEDGER_STORE_PATH",
+      "SECRET_STORE_KEY",
     ];
     const missing = required.filter(key => !cfg[key as keyof EnvConfig]);
     if (missing.length > 0) {

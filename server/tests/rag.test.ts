@@ -173,6 +173,7 @@ describe("local policy RAG", () => {
       PUBLICATION_STORE_PATH: "./publication.sqlite",
       INGESTION_STORE_PATH_PREFIX: "./ingestion",
       AUDIT_LEDGER_STORE_PATH: "./audit.sqlite",
+      SECRET_STORE_KEY: "k".repeat(32),
     };
     __resetConfig();
     try {
