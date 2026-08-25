@@ -61,6 +61,8 @@ describe("AuthorityHttpClient", () => {
           contextDigest: DIGEST,
           manifestExpiresAt: expiresAt,
           boundary: "generation_start",
+          resourceRefs: ["resource-1"],
+          indexGeneration: "index:1",
         },
         new AbortController().signal,
       ),
@@ -88,6 +90,35 @@ describe("AuthorityHttpClient", () => {
       session_ref: "session-1",
       context_digest: DIGEST,
       boundary: "generation_start",
+      resource_refs: ["resource-1"],
+      index_generation: "index:1",
+    });
+  });
+
+  it("posts RAG profile lineage with audit admissions and validates its echoed receipt", async () => {
+    const fetcher = vi.fn(async () => jsonResponse({
+      kind: "generation",
+      request_id: "req-1",
+      turn_id: "turn-1",
+      input_digest: DIGEST,
+      rag_profile_version: 7,
+      rag_profile_digest: DIGEST,
+      receipt_digest: DIGEST,
+    }));
+    const client = new AuthorityHttpClient(SERVICE_URL, TOKEN, fetcher);
+
+    await expect(client.admit({
+      kind: "generation",
+      requestId: "req-1",
+      turnId: "turn-1",
+      inputDigest: DIGEST,
+      ragProfileVersion: 7,
+      ragProfileDigest: DIGEST,
+    }, new AbortController().signal)).resolves.toEqual({ receiptDigest: DIGEST });
+
+    expect(parseBody(fetcher.mock.calls[0]!)).toMatchObject({
+      rag_profile_version: 7,
+      rag_profile_digest: DIGEST,
     });
   });
 
@@ -104,6 +135,8 @@ describe("AuthorityHttpClient", () => {
           requestId: "req-1",
           turnId: "turn-1",
           inputDigest: DIGEST,
+          ragProfileVersion: 7,
+          ragProfileDigest: DIGEST,
         },
         new AbortController().signal,
       ),
@@ -183,6 +216,8 @@ describe("AuthorityHttpClient", () => {
         requestId: "req-1",
         turnId: "turn-1",
         inputDigest: DIGEST,
+        ragProfileVersion: 7,
+        ragProfileDigest: DIGEST,
       },
       controller.signal,
     );

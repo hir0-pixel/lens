@@ -39,7 +39,7 @@ function buildService() {
   };
   const audit: RetrievalAuditPort = { admit: () => ({ receipt: "receipt:1" }) };
   const publication: PublicationPort = {
-    activeGeneration: () => ({ indexGeneration: "index:gen1", visibilitySequence: 1, sourceRevisionDigest: "sha256:source-1" }),
+    activeGeneration: () => ({ indexGeneration: "index:gen1", visibilitySequence: 1, sourceRevisionDigest: "sha256:source-1", ragProfileVersion: 1, ragProfileDigest: `sha256:${"a".repeat(64)}` }),
   };
   return new RetrievalService(pdp, indexes, content, audit, publication);
 }
@@ -62,6 +62,8 @@ const validBody = {
   retrieval_class: "enterprise-grounded",
   corpus_ref: "corpus-1",
   mode: "hybrid",
+  profile_version: 1,
+  profile_digest: `sha256:${"a".repeat(64)}`,
   candidate_limit: 100,
   deadline_at: Date.now() + 60_000,
   cancellation: false,
@@ -126,9 +128,55 @@ describe("retrieval HTTP ingress", () => {
   });
 
   it("returns 400 for a request missing required fields", async () => {
-    const { request_id, ...missing } = validBody;
+    const { request_id: _request_id, ...missing } = validBody;
     const res = await post("/v1/retrieve", missing);
     expect(res.status).toBe(400);
+  });
+
+  it("rejects a request missing profile_version", async () => {
+    const { profile_version: _profileVersion, ...missing } = validBody;
+    const res = await post("/v1/retrieve", missing);
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a request missing profile_digest", async () => {
+    const { profile_digest: _profileDigest, ...missing } = validBody;
+    const res = await post("/v1/retrieve", missing);
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a nonpositive profile_version", async () => {
+    const res = await post("/v1/retrieve", { ...validBody, profile_version: 0 });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a malformed profile_digest", async () => {
+    const res = await post("/v1/retrieve", { ...validBody, profile_digest: "sha256:not-a-digest" });
+    expect(res.status).toBe(400);
+  });
+
+  it("preserves valid profile lineage when forwarding a retrieval request", async () => {
+    let received: unknown;
+    const service = {
+      retrieve: async (input: unknown) => {
+        received = input;
+        return { status: "no_context" as const };
+      },
+    } as never;
+    const guarded = createRetrievalHttp({ service, workloadToken: token });
+    await guarded.listen(0, "127.0.0.1");
+    const { port } = guarded.server.address() as AddressInfo;
+    const res = await fetch(`http://127.0.0.1:${port}/v1/retrieve`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-lens-orchestrator-token": token, "x-lens-caller-workload": "ai-orchestrator" },
+      body: JSON.stringify(validBody),
+    });
+    expect(res.status).toBe(200);
+    expect(received).toMatchObject({
+      profile_version: validBody.profile_version,
+      profile_digest: validBody.profile_digest,
+    });
+    await guarded.close();
   });
 
   it("rejects digest mismatch before invoking retrieval dependencies", async () => {

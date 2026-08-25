@@ -1,3 +1,5 @@
+import type { Classification } from "../governance/GovernanceAuthority";
+
 export type IngestionStage =
   | "DISCOVERED"
   | "PARSING"
@@ -38,6 +40,7 @@ export class IngestionError extends Error {
 export interface ParsedChunk {
   chunkRef: string;
   contentDigest: `sha256:${string}`;
+  text: string;
   citationAnchor: string;
 }
 
@@ -55,22 +58,25 @@ export interface IngestionRequest {
   versionRef: string;
   contentDigest: `sha256:${string}`;
   parse: AttestedParseResult;
+  classificationRef: Classification;
+  aclDigest: `sha256:${string}`;
   profileRef?: string;
   contentBytes?: number;
 }
 
 export interface GovernancePort {
-  registerVersion(input: Pick<IngestionRequest, "versionRef" | "contentDigest">): Promise<{ resourceSecurityRevision: number }>;
+  registerVersion(input: Pick<IngestionRequest, "versionRef" | "contentDigest" | "classificationRef" | "aclDigest">): Promise<{ resourceSecurityRevision: number }>;
   activatePublishedVersion(input: { versionRef: string; expectedResourceSecurityRevision: number; indexGeneration: string }): Promise<{ resourceSecurityRevision: number }>;
   withdrawVersion(input: { versionRef: string; expectedResourceSecurityRevision: number }): Promise<void>;
+  getCurrentResourceSecurityRevision?(versionRef: string): Promise<number>;
 }
 
 export interface EmbeddingPort {
-  embed(input: { versionRef: string; chunks: readonly ParsedChunk[]; profileRef: string }): Promise<{ profileRef: string; vectorsDigest: `sha256:${string}` }>;
+  embed(input: { versionRef: string; chunks: readonly ParsedChunk[]; profileRef: string }): Promise<{ profileRef: string; vectorsDigest: `sha256:${string}`; vectors: readonly (readonly number[])[] }>;
 }
 
 export interface IndexPort {
-  writeGeneration(input: { generation: string; versionRef: string; chunks: readonly ParsedChunk[]; vectorsDigest: `sha256:${string}`; profileRef: string }): Promise<void>;
+  writeGeneration(input: { generation: string; versionRef: string; chunks: readonly ParsedChunk[]; vectorsDigest: `sha256:${string}`; vectors: readonly (readonly number[])[]; profileRef: string; classificationRef: Classification }): Promise<void>;
   verifyGeneration(input: { generation: string; versionRef: string; vectorsDigest: `sha256:${string}`; profileRef: string }): Promise<{ verified: boolean; reason?: string }>;
   commitGeneration(input: { documentRef: string; versionRef: string; generation: string; resourceSecurityRevision: number }): Promise<void>;
   removeGeneration(input: { documentRef: string; versionRef: string; generation: string }): Promise<void>;
@@ -322,9 +328,18 @@ export class IngestionService {
 
   async withdraw(versionRef: string): Promise<void> {
     await this.enqueueWithdraw(versionRef);
-    await this.drain();
-    const record = await this.version(versionRef);
-    if (!record || record.state !== "WITHDRAWN") throw new IngestionError("DEPENDENCY_UNAVAILABLE", "The deletion job has not reached a withdrawn state.");
+    const maxAttempts = this.bounds.maxRetryAttemptsPerStage * 2 + 1;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await this.drain();
+      const record = await this.version(versionRef);
+      if (record?.state === "WITHDRAWN") return;
+      if (attempt + 1 >= maxAttempts) break;
+      const job = this.snapshot().jobs.find((candidate) => candidate.jobId === `delete:${versionRef}`);
+      if (!job || job.state !== "QUEUED") break;
+      const waitMs = Math.max(0, job.availableAtMs - this.now());
+      if (waitMs > 0) await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+    }
+    throw new IngestionError("DEPENDENCY_UNAVAILABLE", "The deletion job has not reached a withdrawn state.");
   }
 
   async rollback(documentRef: string, targetVersionRef: string): Promise<void> {
@@ -449,7 +464,7 @@ export class IngestionService {
       await this.advance(job, "CHUNKING", () => this.assertChunks(job.request));
       const embedding = await this.advance(job, "EMBEDDING", () => this.embedding.embed({ versionRef: job.request.versionRef, chunks: job.request.parse.chunks, profileRef: job.profileRef }));
       const generation = this.generationRef(job.request.versionRef, embedding.profileRef, embedding.vectorsDigest);
-      await this.advance(job, "INDEXING", () => this.index.writeGeneration({ generation, versionRef: job.request.versionRef, chunks: job.request.parse.chunks, vectorsDigest: embedding.vectorsDigest, profileRef: embedding.profileRef }));
+      await this.advance(job, "INDEXING", () => this.index.writeGeneration({ generation, versionRef: job.request.versionRef, chunks: job.request.parse.chunks, vectorsDigest: embedding.vectorsDigest, vectors: embedding.vectors, profileRef: embedding.profileRef, classificationRef: job.request.classificationRef }));
       const verification = await this.advance(job, "VERIFYING", () => this.verifyGeneration({ generation, versionRef: job.request.versionRef, vectorsDigest: embedding.vectorsDigest, profileRef: embedding.profileRef }));
       if (!verification.verified) {
         await this.quarantine({ ...job, generation, vectorsDigest: embedding.vectorsDigest, profileRef: embedding.profileRef }, verification.reason ?? "UNVERIFIABLE_GENERATION");
@@ -512,6 +527,18 @@ export class IngestionService {
       });
       return true;
     } catch (error) {
+      if (this.isStaleAuthority(error) && this.governance.getCurrentResourceSecurityRevision) {
+        try {
+          const revision = await this.governance.getCurrentResourceSecurityRevision(job.request.versionRef);
+          await this.store.transaction((state) => {
+            const stored = this.requireJob(state, job.jobId);
+            stored.resourceSecurityRevision = revision;
+            state.versions.set(stored.request.versionRef, this.toVersion(stored));
+          });
+        } catch {
+          // Keep the original failure when governance cannot be read safely.
+        }
+      }
       await this.recordFailure(job, error);
       return true;
     }
@@ -666,7 +693,7 @@ export class IngestionService {
   }
 
   private validateRequest(request: IngestionRequest): void {
-    if (!request.sourceId || !request.documentRef || !request.version || !request.versionRef || !isSha256(request.contentDigest) || !isSha256(request.parse.renditionDigest)) {
+    if (!request.sourceId || !request.documentRef || !request.version || !request.versionRef || !isSha256(request.contentDigest) || !isSha256(request.aclDigest) || !isSha256(request.parse.renditionDigest)) {
       throw new IngestionError("INVALID_ARGUMENT", "The immutable version is invalid.");
     }
     if (request.contentBytes !== undefined && (!Number.isSafeInteger(request.contentBytes) || request.contentBytes < 0)) {
@@ -688,7 +715,7 @@ export class IngestionService {
   private assertChunks(request: IngestionRequest): void {
     if (request.parse.chunks.length === 0) throw new IngestionError("POISONED", "The document contains no accepted chunks.");
     for (const chunk of request.parse.chunks) {
-      if (!chunk.chunkRef || !chunk.citationAnchor || !isSha256(chunk.contentDigest)) throw new IngestionError("POISONED", "A chunk failed immutable reference validation.");
+      if (!chunk.chunkRef || !chunk.citationAnchor || !chunk.text || !isSha256(chunk.contentDigest)) throw new IngestionError("POISONED", "A chunk failed immutable reference validation.");
     }
   }
 
@@ -705,6 +732,10 @@ export class IngestionService {
 
   private isPoison(error: unknown): boolean {
     return error instanceof IngestionError && (error.code === "QUARANTINED" || error.code === "POISONED" || error.code === "INVALID_ARGUMENT");
+  }
+
+  private isStaleAuthority(error: unknown): boolean {
+    return typeof error === "object" && error !== null && "code" in error && error.code === "STALE_AUTHORITY";
   }
 
   private requireJob(state: IngestionOwnerMutableState, jobId: string): IngestionJobRecord {

@@ -82,6 +82,8 @@ interface EmptySessionViewProps {
   onMultitask?: () => void;
   terminalOpen?: boolean;
   onCloseTerminal?: () => void;
+  catalogStatus?: "idle" | "loading" | "ready" | "empty" | "error";
+  catalogError?: string;
 }
 
 /**
@@ -104,6 +106,8 @@ export function EmptySessionView({
   onMultitask,
   terminalOpen = false,
   onCloseTerminal,
+  catalogStatus,
+  catalogError,
 }: EmptySessionViewProps) {
   const repositories = useSessionStore((s) => s.repositories);
   const sessions = useSessionStore((s) => s.sessions);
@@ -386,6 +390,8 @@ export function EmptySessionView({
         }
         models={models}
         activeModel={activeModel}
+        catalogStatus={catalogStatus}
+        catalogError={catalogError}
         onModelChange={(m) => {
           const sess = ensureSession();
           setSessionModel(sess.id, m.id);

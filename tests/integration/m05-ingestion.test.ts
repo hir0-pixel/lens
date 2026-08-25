@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { IngestionError, IngestionService, type IngestionRequest } from "../../services/ingestion";
+import { simpleHash } from "../../services/retrieval/indexGenerationManifest";
 
-const digest = (letter: string) => `sha256:${letter.repeat(64)}` as const;
+const digest = (value: string) => `sha256:${simpleHash(value)}` as const;
 const request = (overrides: Partial<IngestionRequest> = {}): IngestionRequest => ({
   sourceId: "source-1", documentRef: "document-1", version: "v1", versionRef: "docver-1", contentDigest: digest("a"),
-  parse: { status: "accepted", renditionDigest: digest("b"), chunks: [{ chunkRef: "chunk-1", contentDigest: digest("c"), citationAnchor: "page:1" }] },
+  parse: { status: "accepted", renditionDigest: digest("b"), chunks: [{ chunkRef: "chunk-1", contentDigest: digest("chunk text"), text: "chunk text", citationAnchor: "page:1" }] },
+  classificationRef: "internal",
+  aclDigest: digest("e"),
   ...overrides,
 });
 

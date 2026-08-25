@@ -15,7 +15,6 @@ const request = (overrides: Partial<ChatRequest> = {}): ChatRequest => ({
   conversationRef: "conversation-1",
   inputDigest: digest("a"),
   deadlineAt: 2_000,
-  requireGroundedContext: false,
   ...overrides,
 });
 
@@ -28,10 +27,11 @@ function dependencies(
   const deps: OrchestratorDependencies = {
     authorizeGenerate: async () => { calls.push("authorize-generate"); },
     beginTurn: async () => { calls.push("begin-turn"); return { turnId: "turn-1", sequence: 1 }; },
+    reserveWorkflowBudget: async () => { calls.push("reserve-workflow-budget"); return "workflow-reservation-1"; },
+    beginAgentRun: async () => { calls.push("begin-run"); return { runId: "run-1", envelopeRevision: 1 }; },
+    classifyRoute: async () => { calls.push("classify-route"); return { route: "KNOWLEDGE_QUERY" }; },
     resolveContext: async () => { calls.push("resolve-context"); return { digest: digest("b"), noContext: false }; },
     authorizeContextUse: async () => { calls.push("authorize-context"); },
-    reserveBudget: async () => { calls.push("reserve-budget"); return "budget-1"; },
-    beginAgentRun: async () => { calls.push("begin-run"); return { runId: "run-1", envelopeRevision: 1, stepFence: "step-fence-1" }; },
     admitAudit: async (kind) => { calls.push(`audit-${kind}`); return `${kind}-audit-receipt`; },
     generate: (input, signal) => { calls.push("generate"); return model.generate(input, signal); },
     closeAgentRun: async () => { calls.push("close-run"); return "run-close-receipt"; },
@@ -54,12 +54,35 @@ describe("M04 Orchestrator", () => {
 
     expect(result).toMatchObject({ output: "protected answer", outputDigest: digest("c"), status: { state: "COMPLETED", turnId: "turn-1" } });
     expect(calls).toEqual([
-      "authorize-generate", "begin-turn", "resolve-context", "authorize-context", "reserve-budget", "begin-run",
-      "audit-generation", "generate", "close-run", "stage:protected answer", "reserve-disclosure", "authorize-output",
-      "audit-release", "finalize:release-audit-receipt", "commit-disclosure",
+      "authorize-generate", "begin-turn", "reserve-workflow-budget", "begin-run", "classify-route",
+      "resolve-context", "authorize-context", "audit-generation", "generate", "close-run",
+      "stage:protected answer", "reserve-disclosure", "authorize-output", "audit-release",
+      "finalize:release-audit-receipt", "commit-disclosure",
     ]);
     expect(orchestrator.getStatus("request-1")).toEqual({ requestId: "request-1", turnId: "turn-1", state: "COMPLETED" });
     expect(orchestrator.getStatus("request-1")).not.toHaveProperty("output");
+  });
+
+  it("never calls beginTurn, classifyRoute, or resolveContext/generate when top-level authorization is denied", async () => {
+    const { deps, calls } = dependencies(undefined, {
+      authorizeGenerate: async () => { calls.push("authorize-generate"); throw new OrchestratorError("FORBIDDEN", "Denied."); },
+    });
+    const result = await new Orchestrator(deps, { now: () => 1_000 }).execute(request());
+
+    expect(result).toEqual({ status: { requestId: "request-1", state: "DENIED", code: "FORBIDDEN" } });
+    expect(calls).toEqual(["authorize-generate"]);
+  });
+
+  it("classifies the route only after authorizeGenerate, beginTurn, the workflow budget reservation, and beginAgentRun", async () => {
+    const { deps, calls } = dependencies(undefined, {
+      classifyRoute: async () => {
+        calls.push("classify-route");
+        expect(calls.slice(0, 4)).toEqual(["authorize-generate", "begin-turn", "reserve-workflow-budget", "begin-run"]);
+        return { route: "KNOWLEDGE_QUERY" };
+      },
+    });
+    await new Orchestrator(deps, { now: () => 1_000 }).execute(request());
+    expect(calls).toContain("classify-route");
   });
 
   it("does not release or finalize output when final disclosure authorization is denied", async () => {
@@ -93,7 +116,7 @@ describe("M04 Orchestrator", () => {
     expect(calls.some((call) => call.startsWith("stage:"))).toBe(false);
   });
 
-  it("fails closed for output-buffer overload and required grounded no-context", async () => {
+  it("fails closed for output-buffer overload and grounded-route no-context", async () => {
     const overrun = dependencies(["four"]);
     const first = await new Orchestrator(overrun.deps, { now: () => 1_000, maxOutputBytes: 3 }).execute(request());
     expect(first).toEqual({ status: { requestId: "request-1", turnId: "turn-1", state: "FAILED", code: "OVERLOADED" } });
@@ -102,15 +125,29 @@ describe("M04 Orchestrator", () => {
     const grounded = dependencies(undefined, {
       resolveContext: async () => ({ digest: digest("b"), noContext: true }),
     });
-    const second = await new Orchestrator(grounded.deps, { now: () => 1_000 }).execute(request({ requireGroundedContext: true }));
+    const second = await new Orchestrator(grounded.deps, { now: () => 1_000 }).execute(request());
     expect(second).toEqual({ status: { requestId: "request-1", turnId: "turn-1", state: "DENIED", code: "FORBIDDEN" } });
     expect(grounded.calls).not.toContain("generate");
   });
 
+  it("skips Retrieval entirely for ungrounded routes (acknowledgement) but still authorizes and audits", async () => {
+    const { deps, calls } = dependencies(["You're welcome."], {
+      classifyRoute: async () => { calls.push("classify-route"); return { route: "ACKNOWLEDGEMENT" }; },
+    });
+    const result = await new Orchestrator(deps, { now: () => 1_000 }).execute(request());
+
+    expect(result).toMatchObject({ output: "You're welcome.", status: { state: "COMPLETED" } });
+    expect(calls).toContain("authorize-generate");
+    expect(calls).toContain("audit-generation");
+    expect(calls).not.toContain("resolve-context");
+    expect(calls).not.toContain("authorize-context");
+  });
+
   it("returns only a safe status when every protected dependency boundary fails", async () => {
     const boundaries = [
-      "authorizeGenerate", "beginTurn", "resolveContext", "authorizeContextUse", "reserveBudget", "beginAgentRun",
-      "admitAudit", "closeAgentRun", "stageOutput", "reserveDisclosure", "authorizeOutput", "finalizeTurn", "commitDisclosure",
+      "authorizeGenerate", "beginTurn", "reserveWorkflowBudget", "beginAgentRun", "classifyRoute",
+      "resolveContext", "authorizeContextUse", "admitAudit", "closeAgentRun", "stageOutput",
+      "reserveDisclosure", "authorizeOutput", "finalizeTurn", "commitDisclosure",
     ] as const;
 
     for (const boundary of boundaries) {

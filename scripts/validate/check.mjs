@@ -37,6 +37,7 @@ run("M00 provenance", "npm", ["run", "contracts:provenance"]);
 run("Production security gate", "npm", ["run", "security:production"]);
 run("Orchestrator service tests", "npm", ["run", "test:orchestrator-service"]);
 run("Retrieval service tests", "npm", ["run", "test:retrieval-service"]);
+run("Authority service tests", "npm", ["run", "test:authority-service"]);
 run("Unit tests", "npm", ["run", "test"]);
 run("Production build", "npm", ["run", "build"]);
 

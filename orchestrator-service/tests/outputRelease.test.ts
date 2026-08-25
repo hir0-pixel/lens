@@ -14,6 +14,7 @@ import {
   type RetrievalPort,
   type TurnStatePort,
 } from "../src/service";
+import { DevRoutePolicyPort } from "../src/groundingPolicy";
 
 const NOW = 1_700_000_000_000;
 const CONTEXT_DIGEST = `sha256:${"d".repeat(64)}` as const;
@@ -24,16 +25,19 @@ function request(overrides: Partial<OrchestratorChatRequest> = {}): Orchestrator
     turnId: "turn-release",
     subjectRef: "subject-1",
     sessionRef: "session-1",
+    conversationRef: "conversation-1",
     deviceRef: "device-1",
     applicationId: "lens-employee-client",
     purposeRef: "assistant",
     retrievalClass: "enterprise-grounded",
+    workspaceRef: "default-workspace",
     capability: "grounded-assistant",
     inputText: "What is the policy?",
     queryDigest: `sha256:${"a".repeat(64)}`,
     deadlineAt: NOW + 30_000,
     retryBudget: 0,
     bulkhead: "interactive",
+    delegatedSessionAssertion: "test-delegated-session-assertion",
     ...overrides,
   };
 }
@@ -180,15 +184,21 @@ function ports(events: string[] = [], overrides: {
     turnState,
     disclosure,
     resultAuthorization,
+    // This file exercises the post-retrieval release pipeline, not routing
+    // decisions — default to a grounded scope so the deterministic fallback
+    // (no turnRouter configured) reaches retrieval/generation rather than
+    // terminating early at CLARIFY, matching every test's actual intent.
+    routePolicy: new DevRoutePolicyPort({ groundingRequired: true, defaultProfileSelector: "default" }),
     ...(overrides.runtime ? { runtime: overrides.runtime } : {}),
   };
 }
 
 describe("ProductionOrchestratorService output release", () => {
   it("fails closed when production release adapters are missing", async () => {
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
+      routePolicy: new DevRoutePolicyPort(),
     });
 
     const response = await service.handleChat(request(), new AbortController().signal);
@@ -203,7 +213,7 @@ describe("ProductionOrchestratorService output release", () => {
 
   it("stores the output blob before terminal turn commit and release", async () => {
     const events: string[] = [];
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
       ...ports(events),
@@ -228,7 +238,7 @@ describe("ProductionOrchestratorService output release", () => {
 
   it("repairs a dangling output blob before terminal turn commit", async () => {
     const events: string[] = [];
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
       ...ports(events, {
@@ -250,7 +260,7 @@ describe("ProductionOrchestratorService output release", () => {
 
   it("does not release output when dangling repair reports corrupt data", async () => {
     const events: string[] = [];
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
       ...ports(events, {
@@ -277,7 +287,7 @@ describe("ProductionOrchestratorService output release", () => {
 
   it("denies release when durable result authorization fails", async () => {
     const events: string[] = [];
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
       ...ports(events, {
@@ -300,14 +310,26 @@ describe("ProductionOrchestratorService output release", () => {
   it("enforces byte-bounded output before durable staging", async () => {
     const events: string[] = [];
     const runtime: RuntimePort = {
-      async execute() {
+      async execute(input) {
         return {
           output: "123456789",
-          receipt: { usageEventId: "usage:large", generatedTokens: 1, terminal: "completed" },
+          receipt: {
+            schemaVersion: 1,
+            reservationId: input.reservationId,
+            requestId: "req-large",
+            turnId: "turn:req-large",
+            stepId: "step-large",
+            fence: input.fence,
+            artifactDigest: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            endpointGeneration: input.endpointGeneration ?? "1",
+            usageEventId: "usage:large",
+            measuredUnits: 1,
+            terminal: "completed",
+          },
         };
       },
     };
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
       maxOutputBytes: 4,
@@ -328,7 +350,7 @@ describe("ProductionOrchestratorService output release", () => {
         throw new Error("runtime unavailable");
       },
     };
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
       ...ports([], { runtime }),
@@ -343,7 +365,7 @@ describe("ProductionOrchestratorService output release", () => {
   it("propagates cancellation through output-release ports", async () => {
     const events: string[] = [];
     const controller = new AbortController();
-    const service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(),
       now: () => NOW,
       ...ports(events, {
@@ -367,7 +389,6 @@ describe("ProductionOrchestratorService output release", () => {
 
   it("exposes a tool-call boundary revalidation API while the request is active", async () => {
     const events: string[] = [];
-    let service: ProductionOrchestratorService;
     const runtime: RuntimePort = {
       async execute(_input, signal) {
         await service.revalidateToolCallBoundary({
@@ -377,16 +398,27 @@ describe("ProductionOrchestratorService output release", () => {
         }, signal);
         return {
           output: "tool checked",
-          receipt: { usageEventId: "usage:tool", generatedTokens: 1, terminal: "completed" },
+          receipt: {
+            schemaVersion: 1,
+            reservationId: _input.reservationId,
+            requestId: "req-tool",
+            turnId: "turn:req-tool",
+            stepId: "step-tool",
+            fence: _input.fence,
+            artifactDigest: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            endpointGeneration: _input.endpointGeneration ?? "1",
+            usageEventId: "usage:tool",
+            measuredUnits: 1,
+            terminal: "completed",
+          },
         };
       },
     };
-    service = new ProductionOrchestratorService({
+    const service = new ProductionOrchestratorService({ devInMemoryAuthorities: true,
       retrieval: new StaticRetrieval(retrievalResult({ request_id: "req-tool", turn_id: "turn:req-tool" })),
       now: () => NOW,
       ...ports(events, { runtime }),
     });
-
     const response = await service.handleChat(request({ requestId: "req-tool", turnId: "turn-tool" }), new AbortController().signal);
 
     expect(response.status).toBe("COMPLETED");

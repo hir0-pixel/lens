@@ -1,3 +1,13 @@
+/**
+ * QUARANTINED — not the active RAG path. `server/src/index.ts` wires
+ * `/api/rag/ask` to `OrchestratorClient` (see `orchestratorClient.ts`), which
+ * is the only production BFF → Orchestrator route. This module (and the local
+ * Gemini-backed `PolicyRagService` in `service.ts`, plus `intent.ts`,
+ * `policyCorpus.ts`, `retrieval.ts`, `authorizer.ts`, `audit.ts` in this
+ * directory) exists only for their own unit tests and must not be wired into
+ * `createApp()`. Do not treat their tests as evidence of production RAG
+ * behavior.
+ */
 const MAX_OUTPUT_CHARS = 64_000;
 const MAX_CITATIONS = 20;
 

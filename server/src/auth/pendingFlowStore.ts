@@ -1,6 +1,4 @@
-import { getConfig } from "../config";
 import { timingSafeCompare } from "../utils/crypto";
-import { randomBase64Url } from "../utils/crypto";
 
 export interface PendingFlowRecord {
   verifier: string;
@@ -15,14 +13,9 @@ export interface PendingFlowStore {
   cleanup: () => void;
 }
 
-export function createPendingFlowStore(options?: {
-  random?: (size?: number) => string;
-  now?: () => number;
-}): PendingFlowStore {
-  const cfg = getConfig();
+export function createPendingFlowStore(options?: { now?: () => number }): PendingFlowStore {
   const pending = new Map<string, PendingFlowRecord>();
   const now = options?.now ?? (() => Date.now());
-  const random = options?.random ?? randomBase64Url;
 
   function cleanup() {
     const current = now();

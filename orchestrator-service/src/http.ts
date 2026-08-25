@@ -1,5 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { DelegatedSessionAssertionError, DelegatedSessionAssertionVerifier } from "../../services/security/delegatedSessionAssertion";
+import { LENS_WORKSPACE_REF, LENS_REQUEST_CLASS, LENS_PURPOSE_REF } from "../../services/security/workspaceContext";
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_INPUT_CHARS = 12_000;
@@ -9,16 +11,30 @@ export interface OrchestratorChatRequest {
   turnId: string;
   subjectRef: string;
   sessionRef: string;
+  conversationRef: string;
   deviceRef: string;
   applicationId: "lens-employee-client";
-  purposeRef: string;
   retrievalClass: "enterprise-grounded";
+  /**
+   * NEVER parsed from the request body — set only after
+   * `sessionAssertionVerifier.verify()` succeeds, to the same server-owned
+   * constants the BFF bound into the signed assertion. See
+   * `services/security/workspaceContext.ts`. purposeRef is a route-policy
+   * lookup key exactly like workspaceRef/retrievalClass: two manifest scopes
+   * can differ only by purpose_ref, so it must never come from the body.
+   */
+  workspaceRef: string;
+  purposeRef: string;
   capability: string;
   inputText: string;
   queryDigest: `sha256:${string}`;
   deadlineAt: number;
   retryBudget: 0 | 1;
   bulkhead: "interactive" | "management";
+  /** Symbolic model alias chosen by the authenticated user; never an endpoint or provider. Validated against the server-side catalog downstream. */
+  modelRef?: string;
+  delegatedSessionAssertion: string;
+  memorySessionAssertion?: string;
 }
 
 export interface OrchestratorChatResponse {
@@ -39,6 +55,9 @@ export interface OrchestratorHttpOptions {
   maxHeaderBytes?: number;
   drainTimeoutMs?: number;
   now?: () => number;
+  /** Required in every deployment. The workload token authenticates the caller service; this proof authenticates the exact delegated user request. */
+  sessionAssertionVerifier?: DelegatedSessionAssertionVerifier;
+  memoryAssertionVerifier?: DelegatedSessionAssertionVerifier;
 }
 
 export interface OrchestratorHttp {
@@ -58,6 +77,8 @@ function safeEqual(left: string, right: string): boolean {
 function boundedRef(value: unknown, maxLength: number): value is string {
   return typeof value === "string" && value.length > 0 && value.length <= maxLength && /^[\x20-\x7e]+$/.test(value);
 }
+
+const MODEL_REF_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 
 function headerBytes(req: IncomingMessage): number {
   return Object.entries(req.headers).reduce((total, [key, value]) => total + key.length + String(value).length, 0);
@@ -105,17 +126,26 @@ function respond(res: ServerResponse, status: number, payload: Record<string, un
   res.end(body);
 }
 
-function parseChatRequest(payload: unknown, now: number): OrchestratorChatRequest {
+/** workspaceRef and purposeRef are deliberately absent — see the call site in createOrchestratorHttp, which sets them only after the signed assertion verifies, never from this parsed body. */
+function parseChatRequest(payload: unknown, now: number): Omit<OrchestratorChatRequest, "workspaceRef" | "purposeRef"> {
   const record = payload as Record<string, unknown>;
   if (!record || typeof record !== "object") throw new Error("INVALID_REQUEST");
-  for (const forbidden of ["role", "clearance", "policy_decision", "model_endpoint", "authorization_manifest"]) {
+  for (const forbidden of ["role", "clearance", "policy_decision", "model_endpoint", "authorization_manifest", "route", "route_hint"]) {
     if (record[forbidden] !== undefined) throw new Error("INVALID_REQUEST");
   }
+  if (record.model_ref !== undefined && !MODEL_REF_PATTERN.test(String(record.model_ref))) {
+    throw new Error("INVALID_REQUEST");
+  }
+  if (!boundedRef(record.session_assertion, 2_048)) {
+    throw new DelegatedSessionAssertionError("Delegated session assertion is missing or malformed.");
+  }
+  if (!boundedRef(record.memory_session_assertion, 2_048)) throw new DelegatedSessionAssertionError("Memory session assertion is missing or malformed.");
   if (
     !boundedRef(record.request_id, 128) ||
     !boundedRef(record.turn_id, 128) ||
     !boundedRef(record.subject_ref, 512) ||
     !boundedRef(record.session_ref, 512) ||
+    !boundedRef(record.conversation_ref, 256) ||
     !boundedRef(record.device_ref, 512) ||
     record.application_id !== "lens-employee-client" ||
     record.retrieval_class !== "enterprise-grounded" ||
@@ -141,9 +171,9 @@ function parseChatRequest(payload: unknown, now: number): OrchestratorChatReques
     turnId: record.turn_id,
     subjectRef: record.subject_ref,
     sessionRef: record.session_ref,
+    conversationRef: record.conversation_ref,
     deviceRef: record.device_ref,
     applicationId: "lens-employee-client",
-    purposeRef: record.purpose_ref,
     retrievalClass: "enterprise-grounded",
     capability: record.capability,
     inputText: record.input_text,
@@ -151,6 +181,9 @@ function parseChatRequest(payload: unknown, now: number): OrchestratorChatReques
     deadlineAt: record.deadline_at,
     retryBudget: record.retry_budget,
     bulkhead: record.bulkhead,
+    ...(typeof record.model_ref === "string" ? { modelRef: record.model_ref } : {}),
+    delegatedSessionAssertion: record.session_assertion,
+    memorySessionAssertion: record.memory_session_assertion,
   };
 }
 
@@ -163,6 +196,8 @@ export function createOrchestratorHttp(options: OrchestratorHttpOptions): Orches
     maxHeaderBytes = 8 * 1024,
     drainTimeoutMs = 15_000,
     now = () => Date.now(),
+    sessionAssertionVerifier,
+    memoryAssertionVerifier,
   } = options;
   if (workloadToken.length < 32) throw new Error("workloadToken must contain at least 32 characters.");
   if (maxActiveRequests < 1) throw new Error("maxActiveRequests must be at least 1.");
@@ -218,7 +253,45 @@ export function createOrchestratorHttp(options: OrchestratorHttpOptions): Orches
       if (!res.writableEnded) controller.abort();
     });
     void readJsonBody(req, maxBodyBytes)
-      .then((payload) => handleChat(parseChatRequest(payload, now()), controller.signal))
+      .then((payload) => {
+        const parsed = parseChatRequest(payload, now());
+        if (!sessionAssertionVerifier) throw new Error("SESSION_ASSERTION_UNAVAILABLE");
+        // workspace_ref/request_class/purpose_ref are NEVER trusted from the
+        // JSON body — they are route-policy lookup keys bound into the
+        // signed assertion by the BFF, and verified here against this
+        // process's own server-owned constants. A forged or replayed
+        // assertion for a different workspace/request-class/purpose fails
+        // closed at `verify()` before `handleChat` ever runs.
+        sessionAssertionVerifier.verify(parsed.delegatedSessionAssertion, {
+          issuer: "bff",
+          audience: "orchestrator",
+          requestId: parsed.requestId,
+          subjectRef: parsed.subjectRef,
+          sessionRef: parsed.sessionRef,
+          deviceRef: parsed.deviceRef,
+          conversationRef: parsed.conversationRef,
+          queryDigest: parsed.queryDigest,
+          workspaceRef: LENS_WORKSPACE_REF,
+          requestClass: LENS_REQUEST_CLASS,
+          purposeRef: LENS_PURPOSE_REF,
+        });
+        if (!memoryAssertionVerifier) throw new Error("MEMORY_ASSERTION_UNAVAILABLE");
+        memoryAssertionVerifier.verify(parsed.memorySessionAssertion!, {
+          issuer: "bff",
+          audience: "memory",
+          requestId: parsed.requestId,
+          subjectRef: parsed.subjectRef,
+          sessionRef: parsed.sessionRef,
+          deviceRef: parsed.deviceRef,
+          conversationRef: parsed.conversationRef,
+          queryDigest: parsed.queryDigest,
+          workspaceRef: LENS_WORKSPACE_REF,
+          requestClass: LENS_REQUEST_CLASS,
+          purposeRef: LENS_PURPOSE_REF,
+        });
+        const request: OrchestratorChatRequest = { ...parsed, workspaceRef: LENS_WORKSPACE_REF, purposeRef: LENS_PURPOSE_REF };
+        return handleChat(request, controller.signal);
+      })
       .then((result) => {
         const status = result.status === "COMPLETED" ? 200 : result.status === "DENIED" ? 403 : result.status === "CANCELLED" ? 499 : 503;
         respond(res, status, result as unknown as Record<string, unknown>, draining);
@@ -226,6 +299,8 @@ export function createOrchestratorHttp(options: OrchestratorHttpOptions): Orches
       .catch((error: Error) => {
         if (error.message === "PAYLOAD_TOO_LARGE") respond(res, 413, { error: "PAYLOAD_TOO_LARGE" }, draining);
         else if (error.message === "INVALID_JSON" || error.message === "INVALID_REQUEST") respond(res, 400, { error: "INVALID_ARGUMENT" }, draining);
+        else if (error instanceof DelegatedSessionAssertionError) respond(res, 403, { error: "FORBIDDEN" }, draining);
+        else if (error.message === "SESSION_ASSERTION_UNAVAILABLE" || error.message === "MEMORY_ASSERTION_UNAVAILABLE") respond(res, 503, { error: "DEPENDENCY_UNAVAILABLE" }, draining);
         else respond(res, 503, { error: "DEPENDENCY_UNAVAILABLE", retryable: true }, draining);
       })
       .finally(() => {

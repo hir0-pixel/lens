@@ -44,6 +44,12 @@ const envSchema = z.object({
   RAG_PROVIDER_MODE: z.enum(["disabled", "internal"]).default("disabled"),
   ORCHESTRATOR_URL: z.string().url().optional(),
   ORCHESTRATOR_TOKEN: z.string().min(32).optional(),
+  /** Ed25519 private key held only by the BFF for Orchestrator assertions. */
+  BFF_ASSERTION_PRIVATE_KEY: z.string().min(1).optional(),
+  /** Ed25519 private key held only by the BFF for Memory assertions. */
+  MEMORY_ASSERTION_PRIVATE_KEY: z.string().min(1).optional(),
+  /** Dedicated HMAC key used only by the BFF to issue opaque conversation references. */
+  CONVERSATION_REFERENCE_SECRET: z.string().min(32).optional(),
   OIDC_ISSUER: z.string().url().optional(),
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
@@ -64,6 +70,25 @@ const envSchema = z.object({
   OIDC_ALLOWED_ORIGINS: z.string().optional(),
   OIDC_TEST_MODE: boolFromEnv(false),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  ADMIN_SUBJECTS: z.string().optional(),
+  PROVIDER_PROFILE: z.enum(["sovereign", "development"]).default("sovereign"),
+  PROVIDER_REGISTRY_PATH: z.string().optional(),
+  PUBLICATION_STORE_PATH: z.string().optional(),
+  SECRET_STORE_KEY: z.string().min(32).optional(),
+  CATALOG_WORKLOAD_TOKEN: z.string().min(32).optional(),
+  PROVIDER_SECRET_WORKLOAD_TOKEN: z.string().min(32).optional(),
+  COMPANY_RAG_PROFILE_JSON: z.string().optional(),
+  INGESTION_ENABLED: boolFromEnv(false),
+  INGESTION_PROVIDER_ADAPTER: z.enum(["openai-compatible", "gemini-dev"]).optional(),
+  INGESTION_PROVIDER_BASE_URL: z.string().url().optional(),
+  INGESTION_PROVIDER_SECRET_REF: z.string().optional(),
+  INGESTION_PROVIDER_TLS_WORKLOAD_REF: z.string().optional(),
+  INGESTION_PROVIDER_MODEL: z.string().optional(),
+  INGESTION_PROVIDER_ALLOWED_MODELS: z.string().optional(),
+  INGESTION_PROVIDER_TIMEOUT_MS: z.coerce.number().default(30_000),
+  INGESTION_PROVIDER_MAX_CONCURRENCY: z.coerce.number().default(4),
+  INGESTION_STORE_PATH_PREFIX: z.string().optional(),
+  AUDIT_LEDGER_STORE_PATH: z.string().optional(),
 });
 
 type EnvConfig = z.infer<typeof envSchema>;
@@ -94,6 +119,10 @@ export function validateProductionConfig(): void {
       "ADMISSION_API_ORIGIN",
       "ADMISSION_WORKLOAD_TOKEN",
       "RATE_LIMIT_KEY_SECRET",
+      "PROVIDER_REGISTRY_PATH",
+      "PUBLICATION_STORE_PATH",
+      "INGESTION_STORE_PATH_PREFIX",
+      "AUDIT_LEDGER_STORE_PATH",
     ];
     const missing = required.filter(key => !cfg[key as keyof EnvConfig]);
     if (missing.length > 0) {
@@ -108,10 +137,45 @@ export function validateProductionConfig(): void {
     if (!cfg.APP_ORIGIN?.startsWith("https://")) {
       throw new Error("APP_ORIGIN must use HTTPS in production");
     }
+    if (cfg.PROVIDER_REGISTRY_PATH?.trim() === ":memory:") {
+      throw new Error("PROVIDER_REGISTRY_PATH must use a durable path in production");
+    }
+    if (cfg.PUBLICATION_STORE_PATH?.trim() === ":memory:") {
+      throw new Error("PUBLICATION_STORE_PATH must use a durable path in production");
+    }
+    if (cfg.INGESTION_STORE_PATH_PREFIX?.trim() === ":memory:") {
+      throw new Error("INGESTION_STORE_PATH_PREFIX must use a durable path in production");
+    }
+    if (cfg.AUDIT_LEDGER_STORE_PATH?.trim() === ":memory:") {
+      throw new Error("AUDIT_LEDGER_STORE_PATH must use a durable path in production");
+    }
+  }
+  if (cfg.NODE_ENV === "production" || cfg.RAG_PROVIDER_MODE === "internal") {
+    const missingRagSecurityKeys = [
+      ["BFF_ASSERTION_PRIVATE_KEY", cfg.BFF_ASSERTION_PRIVATE_KEY],
+      ["MEMORY_ASSERTION_PRIVATE_KEY", cfg.MEMORY_ASSERTION_PRIVATE_KEY],
+      ["CONVERSATION_REFERENCE_SECRET", cfg.CONVERSATION_REFERENCE_SECRET],
+    ].filter(([, value]) => !value).map(([key]) => key);
+    if (missingRagSecurityKeys.length > 0) {
+      throw new Error(`Internal RAG configuration missing dedicated security keys: ${missingRagSecurityKeys.join(", ")}`);
+    }
+    const forbiddenReuse = [cfg.SESSION_SECRET, cfg.ORCHESTRATOR_TOKEN, cfg.ADMISSION_WORKLOAD_TOKEN].filter(Boolean);
+    if ([cfg.BFF_ASSERTION_PRIVATE_KEY, cfg.MEMORY_ASSERTION_PRIVATE_KEY, cfg.CONVERSATION_REFERENCE_SECRET].some((key) => key && forbiddenReuse.includes(key))) {
+      throw new Error("RAG security keys must be distinct from session and workload credentials.");
+    }
+    if (cfg.BFF_ASSERTION_PRIVATE_KEY === cfg.MEMORY_ASSERTION_PRIVATE_KEY) throw new Error("BFF and Memory assertion private keys must be distinct.");
+    if (cfg.BFF_ASSERTION_PRIVATE_KEY === cfg.CONVERSATION_REFERENCE_SECRET || cfg.MEMORY_ASSERTION_PRIVATE_KEY === cfg.CONVERSATION_REFERENCE_SECRET) throw new Error("Assertion private keys and conversation key must be distinct.");
   }
   const admissionConfigured = [cfg.ADMISSION_API_ORIGIN, cfg.ADMISSION_WORKLOAD_TOKEN, cfg.RATE_LIMIT_KEY_SECRET].filter(Boolean).length;
   if (admissionConfigured !== 0 && admissionConfigured !== 3) {
     throw new Error("ADMISSION_API_ORIGIN, ADMISSION_WORKLOAD_TOKEN, and RATE_LIMIT_KEY_SECRET must be configured together");
+  }
+  const providerWorkloadConfigured = [cfg.CATALOG_WORKLOAD_TOKEN, cfg.PROVIDER_SECRET_WORKLOAD_TOKEN].filter(Boolean).length;
+  if (providerWorkloadConfigured !== 0 && providerWorkloadConfigured !== 2) {
+    throw new Error("CATALOG_WORKLOAD_TOKEN and PROVIDER_SECRET_WORKLOAD_TOKEN must be configured together");
+  }
+  if (cfg.CATALOG_WORKLOAD_TOKEN && cfg.PROVIDER_SECRET_WORKLOAD_TOKEN && cfg.CATALOG_WORKLOAD_TOKEN === cfg.PROVIDER_SECRET_WORKLOAD_TOKEN) {
+    throw new Error("CATALOG_WORKLOAD_TOKEN and PROVIDER_SECRET_WORKLOAD_TOKEN must be distinct.");
   }
   if (cfg.RAG_PROVIDER_MODE === "internal") {
     if (!cfg.ORCHESTRATOR_URL || !cfg.ORCHESTRATOR_TOKEN) {
@@ -120,6 +184,9 @@ export function validateProductionConfig(): void {
   }
   if ("RAG_SERVICE_URL" in process.env || "RAG_SERVICE_TOKEN" in process.env) {
     throw new Error("Legacy RAG_SERVICE bridge settings are not supported; use the internal Orchestrator path");
+  }
+  if (process.env.RAG_MODE) {
+    throw new Error(`Legacy RAG_MODE="${process.env.RAG_MODE}" is not supported; the local_policy path is quarantined (see server/src/rag/service.ts) — use the internal Orchestrator path (RAG_PROVIDER_MODE=internal)`);
   }
 }
 

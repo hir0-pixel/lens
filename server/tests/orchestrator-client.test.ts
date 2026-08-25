@@ -45,7 +45,10 @@ describe("OrchestratorClient (Track 1 ownership boundary)", () => {
       query: "What is the stipend?",
       subjectRef: "user-1",
       sessionRef: "session-1",
+      conversationRef: "conversation-1",
       deviceRef: "device-1",
+      sessionAssertion: "a".repeat(128),
+      memorySessionAssertion: "m".repeat(128),
       applicationId: "lens-employee-client",
       purposeRef: "assistant",
       retrievalClass: "enterprise-grounded",
@@ -86,7 +89,10 @@ describe("OrchestratorClient (Track 1 ownership boundary)", () => {
       query: "hello",
       subjectRef: "server-user-2",
       sessionRef: "server-session-2",
+      conversationRef: "conversation-2",
       deviceRef: "server-device-2",
+      sessionAssertion: "a".repeat(128),
+      memorySessionAssertion: "m".repeat(128),
       applicationId: "lens-employee-client",
       purposeRef: "assistant",
       retrievalClass: "enterprise-grounded",
@@ -101,22 +107,22 @@ describe("OrchestratorClient (Track 1 ownership boundary)", () => {
   });
 
   it("rejects a non-COMPLETED response", async () => {
-    const fetcher = (async (url: URL, init: RequestInit) =>
+    const fetcher = (async (_url: URL, _init: RequestInit) =>
       new Response(JSON.stringify({ status: "DENIED", requestId: "req-3" }), { status: 200 })) as typeof fetch;
     const client = new OrchestratorClient("http://127.0.0.1:3002", TOKEN, fetcher);
     await expect(client.ask({
-      requestId: "req-3", query: "q", subjectRef: "s", sessionRef: "s1", deviceRef: "d1",
+      requestId: "req-3", query: "q", subjectRef: "s", sessionRef: "s1", conversationRef: "c3", deviceRef: "d1", sessionAssertion: "a".repeat(128), memorySessionAssertion: "m".repeat(128),
       applicationId: "lens-employee-client", purposeRef: "assistant", retrievalClass: "enterprise-grounded",
       deadlineMs: 30_000, retryBudget: 0,
     })).rejects.toThrow(OrchestratorClientError);
   });
 
   it("rejects an oversized or citation-invalid response", async () => {
-    const fetcher = (async (url: URL, init: RequestInit) =>
+    const fetcher = (async (_url: URL, _init: RequestInit) =>
       new Response(JSON.stringify({ ...okBody(), output: "x".repeat(64_001) }), { status: 200 })) as typeof fetch;
     const client = new OrchestratorClient("http://127.0.0.1:3002", TOKEN, fetcher);
     await expect(client.ask({
-      requestId: "req-4", query: "q", subjectRef: "s", sessionRef: "s1", deviceRef: "d1",
+      requestId: "req-4", query: "q", subjectRef: "s", sessionRef: "s1", conversationRef: "c4", deviceRef: "d1", sessionAssertion: "a".repeat(128), memorySessionAssertion: "m".repeat(128),
       applicationId: "lens-employee-client", purposeRef: "assistant", retrievalClass: "enterprise-grounded",
       deadlineMs: 30_000, retryBudget: 0,
     })).rejects.toThrow(/INVALID_RESPONSE/);

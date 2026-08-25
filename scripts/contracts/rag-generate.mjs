@@ -77,6 +77,8 @@ export interface RetrievalRequest {
   retrieval_class: "enterprise-grounded";
   corpus_ref: string;
   mode: RetrievalMode;
+  profile_version: number;
+  profile_digest: \`sha256:\${string}\`;
   candidate_limit: number;
   deadline_at: number;
   cancellation: boolean;
@@ -105,12 +107,14 @@ export interface AuthorizationManifest {
   policy_revision: number;
   subject_security_revision: number;
   resource_security_revision_digest: \`sha256:\${string}\`;
+  profile_version: number;
+  profile_digest: \`sha256:\${string}\`;
   expires_at: number;
   sources: readonly RetrievedSource[];
 }
 
 export type RetrievalResult =
-  | { status: "context"; retrieval_id: string; request_id: string; turn_id: string; visibility_sequence: number; index_generation: string; context_digest: \`sha256:\${string}\`; manifest: AuthorizationManifest; sources: readonly RetrievedContext[] }
+  | { status: "context"; retrieval_id: string; request_id: string; turn_id: string; visibility_sequence: number; index_generation: string; context_digest: \`sha256:\${string}\`; profile_version: number; profile_digest: \`sha256:\${string}\`; manifest: AuthorizationManifest; sources: readonly RetrievedContext[] }
   | { status: "no_context" }
   | { status: "denied_policy" }
   | { status: "failed_downstream" };
@@ -170,6 +174,8 @@ class AuthorizationManifest:
     policy_revision: int
     subject_security_revision: int
     resource_security_revision_digest: str
+    profile_version: int
+    profile_digest: str
     expires_at: int
     sources: List[RetrievedSource]
 
@@ -189,6 +195,8 @@ class RetrievalRequest:
     retrieval_class: Literal["enterprise-grounded"]
     corpus_ref: str
     mode: RetrievalMode
+    profile_version: int
+    profile_digest: str
     candidate_limit: int
     deadline_at: int
     cancellation: bool
@@ -205,6 +213,8 @@ class RetrievalResult:
     visibility_sequence: Optional[int] = None
     index_generation: Optional[str] = None
     context_digest: Optional[str] = None
+    profile_version: Optional[int] = None
+    profile_digest: Optional[str] = None
     manifest: Optional[AuthorizationManifest] = None
     sources: List[RetrievedContext] = field(default_factory=list)
 

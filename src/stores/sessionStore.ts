@@ -13,6 +13,10 @@ export interface PlanStep {
 
 export interface Session {
   id: string;
+  /** Opaque server-issued conversation identity; never a local id or SSO session_ref. */
+  conversationRef?: string;
+  /** Cryptographically strong client metadata used only to make first-turn creation idempotent. */
+  conversationCreationKey: string;
   title: string;
   repoId: string | null;
   type: SessionType;
@@ -24,6 +28,8 @@ export interface Session {
   createdAt: number;
   lastActiveAt: number;
   pinned?: boolean;
+  /** True only when the user explicitly renamed the session (renameSession). Auto-derived titles are a prompt-content prefix and must never be persisted. */
+  titleIsCustom?: boolean;
 }
 
 export interface Repository {
@@ -101,6 +107,7 @@ interface SessionState {
   setSessionRepo: (sessionId: string, repoId: string | null) => void;
   setSessionMode: (sessionId: string, mode: AIMode) => void;
   setSessionModel: (sessionId: string, modelId: string) => void;
+  setConversationRef: (sessionId: string, conversationRef: string) => void;
   setDefaultModel: (modelId: string) => void;
   appendMessage: (sessionId: string, message: ChatMessage) => void;
   setMessages: (sessionId: string, messages: ChatMessage[]) => void;
@@ -151,6 +158,7 @@ export const useSessionStore = create<SessionState>()(
           repoId: opts.repoId ?? null,
           type: "agent-only",
           messages: [],
+          conversationCreationKey: crypto.randomUUID(),
           openFiles: [],
           plan: [],
           mode: "ask",
@@ -397,6 +405,15 @@ export const useSessionStore = create<SessionState>()(
 
       setDefaultModel: (modelId) => set({ defaultModelId: modelId }),
 
+      setConversationRef: (sessionId, conversationRef) => {
+        if (!conversationRef || conversationRef.length > 256) return;
+        set((s) => {
+          const sess = s.sessions[sessionId];
+          if (!sess) return s;
+          return { sessions: { ...s.sessions, [sessionId]: { ...sess, conversationRef, lastActiveAt: now() } } };
+        });
+      },
+
       appendMessage: (sessionId, message) => {
         set((s) => {
           const sess = s.sessions[sessionId];
@@ -531,7 +548,7 @@ export const useSessionStore = create<SessionState>()(
           return {
             sessions: {
               ...s.sessions,
-              [sessionId]: { ...sess, title },
+              [sessionId]: { ...sess, title, titleIsCustom: true },
             },
           };
         });
@@ -556,7 +573,21 @@ export const useSessionStore = create<SessionState>()(
     {
       name: "lens-session-v2",
       partialize: (s) => ({
-        sessions: s.sessions,
+        // Chat content (prompts, assistant output, citations) must never land
+        // in localStorage: strip `messages` from every persisted session.
+        // Durable, encrypted server-side conversation history (see
+        // orchestrator-service/src/durableConversationHistory.ts) is what
+        // grounds follow-ups across restarts now — the client only needs
+        // session metadata to rebuild the workspace shell, not the transcript.
+        // The auto-generated title is a 48-character prefix of the first
+        // user message (see appendMessage) — content, not metadata — so it
+        // is reset unless the user explicitly renamed the session.
+        sessions: Object.fromEntries(
+          Object.entries(s.sessions).map(([id, session]) => [
+            id,
+            { ...session, messages: [], title: session.titleIsCustom ? session.title : "New chat" },
+          ]),
+        ),
         repositories: s.repositories,
         activeRepositoryId: s.activeRepositoryId,
         recentProjects: s.recentProjects,

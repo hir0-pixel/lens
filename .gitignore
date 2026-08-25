@@ -36,3 +36,6 @@ docs/LENS_FRONTEND_SPEC.md
 11-two-engineer-module-plan.md
 refactr system design/
 PROJECT_HANDOFF.md
+
+# Local SQLite development state
+server/providers.sqlite

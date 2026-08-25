@@ -20,6 +20,9 @@ export interface IndexGenerationManifest {
   generationId: string;
   corpusRef: string;
   profile: IndexProfile;
+  /** Immutable CompanyRagProfile lineage under which this generation was built. */
+  ragProfileVersion: number;
+  ragProfileDigest: `sha256:${string}`;
   /** Immutable candidate references only: no protected chunk text, no embeddings. */
   candidateRefs: readonly {
     versionRef: string;
@@ -31,6 +34,11 @@ export interface IndexGenerationManifest {
   integrityDigest: `sha256:${string}`;
   state: "building" | "finalized" | "active" | "retired";
   activatedAt?: number;
+}
+
+export function assertRagProfileLineage(version: number, digest: `sha256:${string}`): void {
+  if (!Number.isSafeInteger(version) || version < 1) throw new Error("Invalid RAG profile version.");
+  if (!/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error("Invalid RAG profile digest.");
 }
 
 export function assertIndexProfile(value: IndexProfile): void {

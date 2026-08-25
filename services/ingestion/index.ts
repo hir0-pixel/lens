@@ -19,3 +19,9 @@ export {
   type InvalidationEvent,
   type VersionRecord,
 } from "./IngestionService";
+
+export { SqliteIngestionOwnerStore } from "./ingestionOwnerStore";
+export { PublicationIndexPortAdapter } from "./indexPortAdapter";
+export { ProviderEmbeddingPortAdapter } from "./embeddingPortAdapter";
+export { GovernanceAuthorityPortAdapter } from "./governancePortAdapter";
+export { createIngestionDeployment, type IngestionDeployment, type IngestionDeploymentOptions } from "./ProductionIngestionWiring";

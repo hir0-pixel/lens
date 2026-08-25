@@ -49,6 +49,7 @@ import type { SettingsSectionId } from "./shared/settings/defaults";
 import { AuthGate } from "./shared/bff-auth/AuthGate";
 import { AuthClientError, getBffAuthClient } from "./shared/bff-auth";
 import { useAuthStore } from "./shared/bff-auth/store";
+import { useModelCatalogStore } from "./stores/modelCatalogStore";
 
 const ProjectListView = lazy(
   () => import("./components/projects/ProjectListView"),
@@ -100,11 +101,17 @@ function AgentsApp() {
   const newChat = useSessionStore((s) => s.newChat);
   const multitask = useSessionStore((s) => s.multitask);
   const appendMessage = useSessionStore((s) => s.appendMessage);
+  const setConversationRef = useSessionStore((s) => s.setConversationRef);
   const setPlan = useSessionStore((s) => s.setPlan);
   const setSessionMode = useSessionStore((s) => s.setSessionMode);
   const createSession = useSessionStore((s) => s.createSession);
   const getModel = useSessionStore((s) => s.getModel);
   const closeWorkspace = useSessionStore((s) => s.closeWorkspace);
+  const catalogModels = useModelCatalogStore((s) => s.models);
+  const catalogStatus = useModelCatalogStore((s) => s.status);
+  const catalogError = useModelCatalogStore((s) => s.errorMessage);
+  const refreshCatalog = useModelCatalogStore((s) => s.refresh);
+  const authStatus = useAuthStore((s) => s.status);
 
   const session = currentSessionId ? sessions[currentSessionId] : null;
 
@@ -146,7 +153,13 @@ function AgentsApp() {
         }
       : projects[0]);
 
-  const model: Model = session ? getModel(session) : MODELS[0];
+  const model: Model = session
+    ? (catalogModels.find((entry) => entry.id === session.modelId) ?? catalogModels[0] ?? getModel(session))
+    : (catalogModels[0] ?? MODELS[0]);
+
+  useEffect(() => {
+    if (authStatus === "authenticated") void refreshCatalog();
+  }, [authStatus, refreshCatalog]);
 
   const openProjects = useCallback(() => setView("projects"), []);
 
@@ -316,7 +329,8 @@ function AgentsApp() {
       const controller = new AbortController();
       requestAbort.current = controller;
       try {
-        const answer = await bffClient.askRag(text, controller.signal);
+        const answer = await bffClient.askRag(text, { modelId: sess.modelId, conversationRef: sess.conversationRef, conversationCreationKey: sess.conversationCreationKey, signal: controller.signal });
+        setConversationRef(sess.id, answer.conversationRef);
         appendMessage(sess.id, {
           id: `a-${Date.now()}`,
           role: "assistant",
@@ -476,6 +490,9 @@ function AgentsApp() {
     <ErrorBoundary fallbackTitle="Workspace crashed">
       <EmptySessionView
         model={model}
+        models={catalogModels}
+        catalogStatus={catalogStatus}
+        catalogError={catalogError}
         messages={session?.messages ?? []}
         sending={sending}
         restoringId={restoringId}

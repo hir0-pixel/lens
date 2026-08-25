@@ -75,6 +75,8 @@ interface AgentChatComposerProps {
   models: Model[];
   activeModel: Model;
   onModelChange: (model: Model) => void;
+  catalogStatus?: "idle" | "loading" | "ready" | "empty" | "error";
+  catalogError?: string;
   attachments?: Attachment[];
   onRemoveAttachment?: (id: string) => void;
   onAttachFiles?: () => void;
@@ -97,6 +99,8 @@ export function AgentChatComposer({
   models,
   activeModel,
   onModelChange,
+  catalogStatus = "ready",
+  catalogError,
   attachments = [],
   onRemoveAttachment,
   onAttachFiles,
@@ -266,16 +270,31 @@ export function AgentChatComposer({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
+            {catalogStatus === "loading" && (
+              <div className="px-2 py-1.5 text-[12px] text-[var(--text-tertiary)]">Loading models…</div>
+            )}
+            {catalogStatus === "empty" && (
+              <div className="px-2 py-1.5 text-[12px] text-[var(--text-tertiary)]">No approved models</div>
+            )}
+            {catalogStatus === "error" && (
+              <div className="px-2 py-1.5 text-[12px] text-[var(--text-tertiary)]">{catalogError ?? "Models unavailable"}</div>
+            )}
             {models.map((m) => (
               <DropdownMenuItem
                 key={m.id}
-                onClick={() => onModelChange(m)}
+                disabled={m.available === false}
+                onClick={() => {
+                  if (m.available === false) return;
+                  onModelChange(m);
+                }}
                 className={cn(
                   "focus:bg-[var(--bg-hover)] focus:text-[var(--text-primary)]",
                   m.id === activeModel.id && "bg-[var(--bg-active)] text-[var(--text-primary)]",
+                  m.available === false && "opacity-50",
                 )}
               >
                 {m.label}
+                {m.available === false ? " (unavailable)" : ""}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

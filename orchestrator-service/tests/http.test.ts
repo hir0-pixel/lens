@@ -1,13 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
+import { generateKeyPairSync } from "node:crypto";
 import type { AddressInfo } from "node:net";
 import { createOrchestratorHttp, type OrchestratorChatRequest, type OrchestratorChatResponse, type OrchestratorHttp } from "../src/http";
+import { DelegatedSessionAssertionIssuer, DelegatedSessionAssertionVerifier } from "../../services/security/delegatedSessionAssertion";
+import { LENS_WORKSPACE_REF, LENS_REQUEST_CLASS, LENS_PURPOSE_REF } from "../../services/security/workspaceContext";
 
 const TOKEN = "w".repeat(40);
 const NOW = 1_700_000_000_000;
 const OUTPUT_DIGEST = `sha256:${"f".repeat(64)}` as const;
 const INPUT_TEXT = "What does the policy say?";
-const QUERY_DIGEST = `sha256:${createHash("sha256").update(INPUT_TEXT).digest("hex")}`;
+const QUERY_DIGEST = `sha256:${createHash("sha256").update(INPUT_TEXT).digest("hex")}` as `sha256:${string}`;
+const assertionKeys = generateKeyPairSync("ed25519");
+const memoryAssertionKeys = generateKeyPairSync("ed25519");
+const assertionIssuer = new DelegatedSessionAssertionIssuer(assertionKeys.privateKey, { now: () => NOW });
+const memoryAssertionIssuer = new DelegatedSessionAssertionIssuer(memoryAssertionKeys.privateKey, { now: () => NOW });
+const assertionVerifier = new DelegatedSessionAssertionVerifier(assertionKeys.publicKey, { now: () => NOW });
+const memoryAssertionVerifier = new DelegatedSessionAssertionVerifier(memoryAssertionKeys.publicKey, { now: () => NOW });
 
 function validBody(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -15,6 +24,7 @@ function validBody(overrides: Partial<Record<string, unknown>> = {}) {
     turn_id: "turn-1",
     subject_ref: "subject-1",
     session_ref: "session-1",
+    conversation_ref: "conversation-1",
     device_ref: "device-1",
     application_id: "lens-employee-client",
     purpose_ref: "assistant",
@@ -25,6 +35,19 @@ function validBody(overrides: Partial<Record<string, unknown>> = {}) {
     deadline_at: NOW + 30_000,
     retry_budget: 0,
     bulkhead: "interactive",
+    session_assertion: assertionIssuer.issue({
+      issuer: "bff",
+      audience: "orchestrator",
+      requestId: "req-1",
+      subjectRef: "subject-1",
+      sessionRef: "session-1",
+      deviceRef: "device-1",
+      conversationRef: "conversation-1",
+      queryDigest: QUERY_DIGEST,
+      workspaceRef: LENS_WORKSPACE_REF,
+      requestClass: LENS_REQUEST_CLASS, purposeRef: LENS_PURPOSE_REF,
+    }),
+    memory_session_assertion: memoryAssertionIssuer.issue({ issuer: "bff", audience: "memory", requestId: "req-1", subjectRef: "subject-1", sessionRef: "session-1", deviceRef: "device-1", conversationRef: "conversation-1", queryDigest: QUERY_DIGEST, workspaceRef: LENS_WORKSPACE_REF, requestClass: LENS_REQUEST_CLASS, purposeRef: LENS_PURPOSE_REF }),
     ...overrides,
   };
 }
@@ -43,7 +66,7 @@ describe("createOrchestratorHttp", () => {
       citations: [{ source: "policy.docx", section: "Section 2" }],
       outputDigest: OUTPUT_DIGEST,
     }));
-    http = createOrchestratorHttp({ workloadToken: TOKEN, handleChat, now: () => NOW });
+    http = createOrchestratorHttp({ workloadToken: TOKEN, handleChat, now: () => NOW, sessionAssertionVerifier: assertionVerifier, memoryAssertionVerifier });
     await http.listen(0, "127.0.0.1");
     const { port } = http.server.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -123,6 +146,57 @@ describe("createOrchestratorHttp", () => {
 
     const excessiveDeadline = await post("/v1/chat", validBody({ deadline_at: NOW + 65_001 }));
     expect(excessiveDeadline.status).toBe(400);
+  });
+
+  it("fails closed before handleChat for missing, tampered, and expired delegated assertions", async () => {
+    const missing = await post("/v1/chat", validBody({ session_assertion: undefined }));
+    expect(missing.status).toBe(403);
+
+    const tampered = await post("/v1/chat", validBody({ session_assertion: `${validBody().session_assertion}x` }));
+    expect(tampered.status).toBe(403);
+
+    const expiredIssuer = new DelegatedSessionAssertionIssuer(assertionKeys.privateKey, { now: () => NOW - 10_000, ttlMs: 5_000 });
+    const expired = await post("/v1/chat", validBody({ session_assertion: expiredIssuer.issue({
+      issuer: "bff", audience: "orchestrator", requestId: "req-1", subjectRef: "subject-1", sessionRef: "session-1", deviceRef: "device-1", conversationRef: "conversation-1", queryDigest: QUERY_DIGEST, workspaceRef: LENS_WORKSPACE_REF, requestClass: LENS_REQUEST_CLASS, purposeRef: LENS_PURPOSE_REF,
+    }) }));
+    expect(expired.status).toBe(403);
+    expect(handleChat).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the signed assertion is bound to a different workspace, request class, or purpose than this process serves — never trusted from the JSON body", async () => {
+    const wrongWorkspace = assertionIssuer.issue({
+      issuer: "bff", audience: "orchestrator", requestId: "req-1", subjectRef: "subject-1", sessionRef: "session-1", deviceRef: "device-1", conversationRef: "conversation-1", queryDigest: QUERY_DIGEST,
+      workspaceRef: "some-other-workspace", requestClass: LENS_REQUEST_CLASS, purposeRef: LENS_PURPOSE_REF,
+    });
+    const deniedWorkspace = await post("/v1/chat", validBody({ session_assertion: wrongWorkspace }));
+    expect(deniedWorkspace.status).toBe(403);
+    expect(handleChat).not.toHaveBeenCalled();
+
+    const wrongRequestClass = assertionIssuer.issue({
+      issuer: "bff", audience: "orchestrator", requestId: "req-1", subjectRef: "subject-1", sessionRef: "session-1", deviceRef: "device-1", conversationRef: "conversation-1", queryDigest: QUERY_DIGEST,
+      workspaceRef: LENS_WORKSPACE_REF, requestClass: "some-other-request-class", purposeRef: LENS_PURPOSE_REF,
+    });
+    const deniedRequestClass = await post("/v1/chat", validBody({ session_assertion: wrongRequestClass }));
+    expect(deniedRequestClass.status).toBe(403);
+    expect(handleChat).not.toHaveBeenCalled();
+
+    const wrongPurpose = assertionIssuer.issue({
+      issuer: "bff", audience: "orchestrator", requestId: "req-1", subjectRef: "subject-1", sessionRef: "session-1", deviceRef: "device-1", conversationRef: "conversation-1", queryDigest: QUERY_DIGEST,
+      workspaceRef: LENS_WORKSPACE_REF, requestClass: LENS_REQUEST_CLASS, purposeRef: "some-other-purpose",
+    });
+    const deniedPurpose = await post("/v1/chat", validBody({ session_assertion: wrongPurpose }));
+    expect(deniedPurpose.status).toBe(403);
+    expect(handleChat).not.toHaveBeenCalled();
+  });
+
+  it("verifies the Memory audience assertion against the same request before dispatch", async () => {
+    const wrongAudience = assertionIssuer.issue({ issuer: "bff", audience: "orchestrator", requestId: "req-1", subjectRef: "subject-1", sessionRef: "session-1", deviceRef: "device-1", conversationRef: "conversation-1", queryDigest: QUERY_DIGEST, workspaceRef: LENS_WORKSPACE_REF, requestClass: LENS_REQUEST_CLASS, purposeRef: LENS_PURPOSE_REF });
+    const mismatched = await post("/v1/chat", validBody({ memory_session_assertion: wrongAudience }));
+    expect(mismatched.status).toBe(403);
+    const wrongSubject = memoryAssertionIssuer.issue({ issuer: "bff", audience: "memory", requestId: "req-1", subjectRef: "attacker", sessionRef: "session-1", deviceRef: "device-1", conversationRef: "conversation-1", queryDigest: QUERY_DIGEST, workspaceRef: LENS_WORKSPACE_REF, requestClass: LENS_REQUEST_CLASS, purposeRef: LENS_PURPOSE_REF });
+    const denied = await post("/v1/chat", validBody({ memory_session_assertion: wrongSubject }));
+    expect(denied.status).toBe(403);
+    expect(handleChat).not.toHaveBeenCalled();
   });
 
   it("rejects oversized header envelopes", async () => {
@@ -209,16 +283,20 @@ describe("createOrchestratorHttp", () => {
       turnId: "turn-1",
       subjectRef: "subject-1",
       sessionRef: "session-1",
+      conversationRef: "conversation-1",
       deviceRef: "device-1",
       applicationId: "lens-employee-client",
       purposeRef: "assistant",
       retrievalClass: "enterprise-grounded",
+      workspaceRef: LENS_WORKSPACE_REF,
       capability: "grounded-assistant",
       inputText: "What does the policy say?",
       queryDigest: QUERY_DIGEST,
       deadlineAt: NOW + 30_000,
       retryBudget: 0,
       bulkhead: "interactive",
+      delegatedSessionAssertion: expect.any(String),
+      memorySessionAssertion: expect.any(String),
     });
     expect(handleChat.mock.calls[0]?.[1].aborted).toBe(false);
   });

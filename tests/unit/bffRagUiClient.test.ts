@@ -23,6 +23,7 @@ describe("bff RAG UI client", () => {
           JSON.stringify({
             output: "Use the employee handbook.",
             citations: [{ source: "Employee Handbook", section: "4.2" }],
+            conversationRef: "c1.opaque-reference",
           }),
           { status: 200 },
         ),
@@ -32,6 +33,7 @@ describe("bff RAG UI client", () => {
     await expect(client.askRag("Where is the vacation policy?")).resolves.toEqual({
       output: "Use the employee handbook.",
       citations: [{ source: "Employee Handbook", section: "4.2" }],
+      conversationRef: "c1.opaque-reference",
     });
 
     expect(fetcher).toHaveBeenNthCalledWith(
@@ -80,7 +82,7 @@ describe("bff RAG UI client", () => {
       );
 
     const client = createAuthClient({ baseUrl: "", fetcher });
-    const pending = client.askRag("Cancel me", controller.signal);
+    const pending = client.askRag("Cancel me", { signal: controller.signal });
     await Promise.resolve();
     controller.abort();
 

@@ -11,6 +11,7 @@ export interface Model {
   id: string;
   label: string;
   provider: ModelProvider;
+  available?: boolean;
 }
 
 export type ToolCallStatus = "running" | "done" | "error";

@@ -1,6 +1,8 @@
 import {
+  GROUNDING_ROUTES,
   OrchestratorError,
   type ChatRequest,
+  type ContextManifest,
   type OrchestratorDependencies,
   type OrchestratorFailureCode,
   type OrchestratorResult,
@@ -8,6 +10,8 @@ import {
   type SafeTurnStatus,
   type TurnIntent,
 } from "./types";
+
+const NO_CONTEXT_DIGEST: `sha256:${string}` = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
 export interface OrchestratorOptions {
   now?: () => number;
@@ -46,21 +50,36 @@ export class Orchestrator {
       this.update(request.requestId, "TURN_INTENT_COMMITTED", turn.turnId);
       this.assertActive(request, cancellation);
 
-      const context = await this.dependencies.resolveContext(request, turn, cancellation);
-      if (request.requireGroundedContext && context.noContext) {
+      const workflowReservationRef = await this.dependencies.reserveWorkflowBudget(request, turn, cancellation);
+      const run = await this.dependencies.beginAgentRun(request, turn, workflowReservationRef, cancellation);
+      this.update(request.requestId, "AGENT_RUN_ADMITTED", turn.turnId);
+
+      const route = await this.dependencies.classifyRoute(request, turn, run, workflowReservationRef, cancellation);
+      this.update(request.requestId, "ROUTE_CLASSIFIED", turn.turnId);
+      this.assertActive(request, cancellation);
+
+      const needsGroundedContext = GROUNDING_ROUTES.has(route.route);
+      let context: ContextManifest;
+      if (needsGroundedContext) {
+        context = await this.dependencies.resolveContext(request, turn, route, cancellation);
+      } else {
+        // Ungrounded routes (acknowledgement, general conversation, clarification,
+        // tool action) never touch Retrieval; there is nothing to authorize or fence.
+        context = { digest: NO_CONTEXT_DIGEST, noContext: true };
+      }
+      if (needsGroundedContext && context.noContext) {
         throw new OrchestratorError("FORBIDDEN", "Grounded context is unavailable.");
       }
-      await this.dependencies.authorizeContextUse(request, context, cancellation);
+      if (needsGroundedContext) {
+        await this.dependencies.authorizeContextUse(request, context, cancellation);
+      }
       this.update(request.requestId, "CONTEXT_RESOLVED", turn.turnId);
 
-      const budgetRef = await this.dependencies.reserveBudget(request, context, cancellation);
-      const run = await this.dependencies.beginAgentRun(request, budgetRef, cancellation);
-      this.update(request.requestId, "AGENT_RUN_ADMITTED", turn.turnId);
       await this.dependencies.admitAudit("generation", request, turn, cancellation);
       this.update(request.requestId, "OUTPUT_AUDIT_ADMITTED", turn.turnId);
 
       this.update(request.requestId, "GENERATING", turn.turnId);
-      const output = await this.collectOutput(request, context, run, budgetRef, cancellation);
+      const output = await this.collectOutput(request, context, run, workflowReservationRef, route, cancellation);
       this.assertActive(request, cancellation);
       const runCloseReceipt = await this.dependencies.closeAgentRun(run, cancellation);
       this.update(request.requestId, "AGENT_RUN_CLOSED", turn.turnId);
@@ -86,11 +105,12 @@ export class Orchestrator {
     request: ChatRequest,
     context: Parameters<OrchestratorDependencies["generate"]>[0]["context"],
     run: Parameters<OrchestratorDependencies["generate"]>[0]["run"],
-    budgetRef: string,
+    workflowReservationRef: string,
+    route: Parameters<OrchestratorDependencies["generate"]>[0]["route"],
     signal: AbortSignal,
   ): Promise<string> {
     let output = "";
-    for await (const chunk of this.dependencies.generate({ request, context, run, budgetRef }, signal)) {
+    for await (const chunk of this.dependencies.generate({ request, context, run, workflowReservationRef, route }, signal)) {
       this.assertActive(request, signal);
       output += chunk;
       if (output.length > this.maxOutputBytes) {

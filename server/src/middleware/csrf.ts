@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { getConfig } from "../config";
 import { timingSafeCompare } from "../utils/crypto";
 
-export interface CsrfError extends Error {}
+export type CsrfError = Error;
 
 export function csrfProtection(options: {
   getSessionCsrf: (cookieValue: string | undefined) => string | undefined;

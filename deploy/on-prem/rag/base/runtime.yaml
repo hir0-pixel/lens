@@ -411,6 +411,14 @@ spec:
               value: https://model-gateway.platform.internal/
             - name: LENS_MODEL_ARTIFACT_DIGEST
               value: sha256:1111111111111111111111111111111111111111111111111111111111111111
+            - name: LENS_ORCHESTRATOR_AUTHORITY_PROFILE
+              value: production
+            - name: LENS_MODEL_USE_AUTHORITY_URL
+              value: https://authority.rag.platform.internal/
+            - name: LENS_COST_AUTHORITY_URL
+              value: https://cost-authority.rag.platform.internal/
+            - name: LENS_AGENT_RUN_AUTHORITY_URL
+              value: https://agent-run-authority.rag.platform.internal/
             - name: WORKLOAD_IDENTITY
               value: spiffe://lens.platform.internal/ns/lens-rag/sa/orchestrator-workload
             - name: WORKLOAD_IDENTITY_TOKEN_FILE
@@ -436,6 +444,46 @@ spec:
                 secretKeyRef:
                   name: lens-orchestrator-runtime
                   key: LENS_MODEL_RUNTIME_WORKLOAD_TOKEN
+            - name: LENS_COST_AUTHORITY_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-internal-tokens
+                  key: LENS_COST_AUTHORITY_WORKLOAD_TOKEN
+            - name: LENS_AGENT_RUN_AUTHORITY_WORKLOAD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lens-internal-tokens
+                  key: LENS_AGENT_RUN_AUTHORITY_WORKLOAD_TOKEN
+            - name: LENS_MODEL_USE_RECEIPT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lens-authority-keys
+                  key: MODEL_USE_RECEIPT_PUBLIC_KEY
+            - name: LENS_COST_RECEIPT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lens-authority-keys
+                  key: COST_RECEIPT_PUBLIC_KEY
+            - name: LENS_AGENT_RUN_RECEIPT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lens-authority-keys
+                  key: AGENT_RUN_RECEIPT_PUBLIC_KEY
+            - name: LENS_SCHEDULER_LEASE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lens-authority-keys
+                  key: SCHEDULER_LEASE_PUBLIC_KEY
+            - name: LENS_USAGE_RECEIPT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lens-authority-keys
+                  key: USAGE_RECEIPT_PUBLIC_KEY
+            - name: LENS_COMPANY_RAG_PROFILE_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: lens-company-rag-profile
+                  key: COMPANY_RAG_PROFILE_JSON
           resources:
             requests:
               cpu: 500m

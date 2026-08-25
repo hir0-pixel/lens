@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const appendMessage = vi.hoisted(() => vi.fn());
+const setConversationRef = vi.hoisted(() => vi.fn());
 const askRag = vi.hoisted(() => vi.fn());
 const clearAuth = vi.hoisted(() => vi.fn());
 const toastError = vi.hoisted(() => vi.fn());
@@ -27,6 +28,7 @@ const sessionStoreState = {
   newChat: vi.fn(),
   multitask: vi.fn(),
   appendMessage,
+  setConversationRef,
   setPlan: vi.fn(),
   setSessionMode: vi.fn(),
   createSession: vi.fn(() => session),
@@ -250,6 +252,7 @@ describe("bff RAG UI App wiring", () => {
     askRag.mockResolvedValueOnce({
       output: "Use the handbook section.",
       citations: [{ source: "Employee Handbook", section: "4.2" }],
+      conversationRef: "c1.opaque-reference",
     });
 
     const { default: App } = await import("../../src/App");
@@ -260,7 +263,7 @@ describe("bff RAG UI App wiring", () => {
     await waitFor(() => {
       expect(askRag).toHaveBeenCalledWith(
         "Where is the vacation policy?",
-        expect.any(AbortSignal),
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
     });
 

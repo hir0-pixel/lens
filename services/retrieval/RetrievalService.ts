@@ -136,6 +136,8 @@ export interface PublicationPort {
     indexGeneration: string;
     visibilitySequence: number;
     sourceRevisionDigest: `sha256:${string}`;
+    ragProfileVersion: number;
+    ragProfileDigest: `sha256:${string}`;
   }>;
 }
 
@@ -200,6 +202,9 @@ export class RetrievalService {
     const publication = await this.withBoundaries("DEPENDENCY_UNAVAILABLE", true, () =>
       this.publication.activeGeneration({ corpusRef: request.corpus_ref, deadlineAt: request.deadline_at, signal }),
     );
+    if (publication.ragProfileVersion !== request.profile_version || publication.ragProfileDigest !== request.profile_digest) {
+      throw new RetrievalServiceError("STALE_AUTHORITY", false, "The active index generation does not match the request's RAG profile lineage.");
+    }
 
     let operation: Awaited<ReturnType<RetrievalPdpPort["authorizeOperation"]>>;
     try {
@@ -295,17 +300,13 @@ export class RetrievalService {
     }
     assertActive(request.deadline_at, this.now(), signal);
 
+    const allowedByChunkKey = new Map(allowed.map((candidate) => [this.chunkKey(candidate), candidate]));
     const chunkKeys = new Set(chunks.map((chunk) => this.chunkKey(chunk)));
     if (
       chunks.length === 0 ||
       chunks.length > allowed.length ||
       chunkKeys.size !== chunks.length ||
-      chunks.some((chunk) => !allowed.some((candidate) =>
-        candidate.resourceRef === chunk.resourceRef &&
-        candidate.versionRef === chunk.versionRef &&
-        candidate.chunkRef === chunk.chunkRef &&
-        candidate.contentHash === chunk.contentHash,
-      ))
+      chunks.some((chunk) => !allowedByChunkKey.has(this.chunkKey(chunk)))
     ) {
       return { status: "no_context" };
     }
@@ -315,17 +316,20 @@ export class RetrievalService {
     }
 
     // Rerank only over allowed content, deterministically by original rank.
+    // First match wins per (resourceRef, chunkRef), matching the prior find()-based lookup.
+    const rankByCandidateKey = new Map<string, number>();
+    for (const candidate of allowed) {
+      const key = `${candidate.resourceRef}|${candidate.chunkRef}`;
+      if (!rankByCandidateKey.has(key)) rankByCandidateKey.set(key, candidate.rank);
+    }
+    const rankOf = (chunk: { resourceRef: string; chunkRef: string }): number =>
+      rankByCandidateKey.get(`${chunk.resourceRef}|${chunk.chunkRef}`) ?? Number.MAX_SAFE_INTEGER;
     const ordered = chunks.slice().sort((a, b) =>
-      this.rank(allowed, a) - this.rank(allowed, b) || this.chunkKey(a).localeCompare(this.chunkKey(b)),
+      rankOf(a) - rankOf(b) || this.chunkKey(a).localeCompare(this.chunkKey(b)),
     );
 
     const sources: RetrievedContext[] = ordered.map((chunk) => {
-      const candidate = allowed.find((item) =>
-        item.resourceRef === chunk.resourceRef &&
-        item.versionRef === chunk.versionRef &&
-        item.chunkRef === chunk.chunkRef &&
-        item.contentHash === chunk.contentHash,
-      );
+      const candidate = allowedByChunkKey.get(this.chunkKey(chunk));
       return {
         document_version_ref: chunk.versionRef,
         chunk_ref: chunk.chunkRef,
@@ -353,6 +357,9 @@ export class RetrievalService {
       policy_revision: decision.policyRevision,
       subject_security_revision: decision.subjectSecurityRevision,
       resource_security_revision_digest: decision.resourceSecurityRevisionDigest,
+      // Deliberate opaque pass-through: only the orchestrator resolves and validates the profile.
+      profile_version: request.profile_version,
+      profile_digest: request.profile_digest,
       expires_at: request.deadline_at,
       sources: manifestSources,
     };
@@ -389,6 +396,8 @@ export class RetrievalService {
       visibility_sequence: publication.visibilitySequence,
       index_generation: publication.indexGeneration,
       context_digest: manifest.digest,
+      profile_version: request.profile_version,
+      profile_digest: request.profile_digest,
       manifest,
       sources,
     };
@@ -420,10 +429,6 @@ export class RetrievalService {
     return [...merged.values()]
       .sort((a, b) => a.rank - b.rank || a.lane.localeCompare(b.lane) || this.candidateKey(a).localeCompare(this.candidateKey(b)))
       .slice(0, this.profile.maxCandidates);
-  }
-
-  private rank(candidates: readonly RetrievalCandidate[], chunk: { resourceRef: string; chunkRef: string }): number {
-    return candidates.find((candidate) => candidate.resourceRef === chunk.resourceRef && candidate.chunkRef === chunk.chunkRef)?.rank ?? Number.MAX_SAFE_INTEGER;
   }
 
   private candidateKey(candidate: Pick<RetrievalCandidate, "resourceRef" | "versionRef" | "chunkRef" | "contentHash">): string {

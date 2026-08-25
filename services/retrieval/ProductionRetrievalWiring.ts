@@ -1,13 +1,19 @@
-import { PolicyDecisionPoint, type FactReaders, type PdpAuditPort } from "../pdp/PolicyDecisionPoint";
+import { PolicyDecisionPoint, type FactReaders, type PdpAuditPort, type SubjectFacts } from "../pdp/PolicyDecisionPoint";
 import { GovernanceAuthority, type ResourceSecurityFacts } from "../governance/GovernanceAuthority";
 import { AuditLedger } from "../audit/AuditLedger";
 import { RetrievalService, type RetrievalCandidate, type RetrievalPdpPort, type RetrievalSearchResult } from "./RetrievalService";
-import { PublicationAuthority, type IndexProfile } from "./PublicationAuthority";
+import { PublicationAuthority, PublicationAuthorityRegistry, type IndexProfile } from "./PublicationAuthority";
+import { PublicationStore } from "./publicationStore";
 import { SovereignContentStore } from "./SovereignContentStore";
+import { LexicalSearchIndex } from "./LexicalSearchIndex";
+import { VectorSearchIndex } from "./VectorSearchIndex";
+import type { ModelProviderAdapter } from "../model-provider/ProviderAdapter";
 
 export interface RetrievalWiringOptions {
   now?: () => number;
   partitionCount?: number;
+  persistencePath?: string;
+  subject?: (subjectRef: string) => SubjectFacts;
 }
 
 export interface ContentDocument {
@@ -50,7 +56,7 @@ export function createRetrievalWiring(options: RetrievalWiringOptions = {}) {
 
   // One committed snapshot reader over the governance security facts.
   const factReaders: FactReaders = {
-    subject: () => ({ revision: 1, active: true, groups: [] }),
+    subject: options.subject ?? (() => ({ revision: 1, active: true, groups: [] })),
     device: () => ({ revision: 1, compliant: true }),
     resources: (refs: readonly string[]) =>
       refs.map((ref) => {
@@ -89,7 +95,8 @@ export function createRetrievalWiring(options: RetrievalWiringOptions = {}) {
   const auditLedger = new AuditLedger({
     retrieval: ["retrieval.retrieve"],
     pdp: ["pdp.decision"],
-  }, () => new Date(), options.partitionCount ?? 64);
+    ingestion: ["ingestion.job.submitted", "ingestion.job.withdrawn"],
+  }, () => new Date(), options.partitionCount ?? 64, undefined, undefined, options.persistencePath);
 
   return {
     pdp,
@@ -145,24 +152,39 @@ export interface RetrievalDeployment {
   setAuditHealth: (state: { quorumAvailable?: boolean; witnessHealthy?: boolean }) => void;
   /** Track 3: the deployer's write-path handle to the independent publication authority. */
   publicationAuthority: PublicationAuthority;
+  publicationAuthorities: ReadonlyMap<string, PublicationAuthority>;
   contentStore: SovereignContentStore;
+  searchIndex: LexicalSearchIndex;
+  vectorIndex: VectorSearchIndex;
 }
 
 export interface RetrievalDeploymentOptions {
-  index: {
+  index?: {
     search(input: { mode: "lexical" | "semantic" | "graph" | "hybrid" | "structured" | "citation_refresh"; queryDigest: string; queryText: string; corpusRef: string; laneLimit: number; deadlineAt: number; signal?: AbortSignal }): readonly SearchIndexEntry[];
   };
+  provider?: ModelProviderAdapter;
+  embeddingModel?: string;
   contentStore?: {
     fetch(input: { fence: string; versionRefs: readonly string[]; resources: readonly { resourceRef: string; versionRef: string; chunkRef: string; contentHash: string }[] }): readonly ContentDocument[];
   };
-  publication?: PublicationManifestState;
   publicationProfile?: IndexProfile;
+  ragProfileVersion?: number;
+  ragProfileDigest?: `sha256:${string}`;
+  /** Additional explicitly configured corpora, each with its own immutable lineage. */
+  publicationProfiles?: Readonly<Record<string, { profile?: IndexProfile; ragProfileVersion: number; ragProfileDigest: `sha256:${string}` }>>;
+  /** Optional SQLite database shared by the per-corpus publication authorities. */
+  publicationStorePath?: string;
+  persistencePath?: string;
   now?: () => number;
+  subject?: (subjectRef: string) => SubjectFacts;
 }
 
 export function createRetrievalDeployment(options: RetrievalDeploymentOptions): RetrievalDeployment {
-  const wiring = createRetrievalWiring({ now: options.now });
+  const wiring = createRetrievalWiring({ now: options.now, persistencePath: options.persistencePath, subject: options.subject });
   const now = options.now ?? (() => Date.now());
+  const searchIndex = new LexicalSearchIndex();
+  const vectorIndex = new VectorSearchIndex();
+  const indexPort = options.index ?? { search: (input: { queryText: string; corpusRef: string; laneLimit: number }) => searchIndex.search(input) };
   const publicationProfile: IndexProfile = options.publicationProfile ?? {
     embeddingModelDigest: `sha256:${"a".repeat(64)}`,
     tokenizerDigest: `sha256:${"b".repeat(64)}`,
@@ -172,37 +194,50 @@ export function createRetrievalDeployment(options: RetrievalDeploymentOptions): 
     schemaVersion: "rag-v1",
   };
 
-  // Track 3: the independent publication authority owns the active generation.
-  const authority = new PublicationAuthority("enterprise-docs", now);
+  // Track 3: each explicitly configured corpus owns an independent publication authority.
   const defaultContentStore = new SovereignContentStore();
-
-  // If a caller supplies a static publication state, seed a matching generation.
-  const seededProfile = publicationProfile;
-  authority.beginGeneration(1, "index:enterprise-docs:gen1", seededProfile);
-  const seedEntries = options.index.search({
-    mode: "hybrid",
-    queryDigest: "seed",
-    queryText: "seed",
-    corpusRef: "enterprise-docs",
-    laneLimit: 1_000,
-    deadlineAt: now() + 10_000,
-  });
-  if (seedEntries.length > 0) {
-    for (const entry of seedEntries) {
-      try {
-        authority.addCandidate(1, "index:enterprise-docs:gen1", {
-          versionRef: entry.versionRef,
-          chunkRef: entry.chunkRef,
-          contentHash: entry.contentHash,
-          classificationRef: entry.classificationRef,
-        });
-      } catch {
-        // Duplicate chunk refs in the seed search are coalesced; ignore.
+  const publicationStore = options.publicationStorePath ? new PublicationStore(options.publicationStorePath) : undefined;
+  const authorityByCorpus = new Map<string, PublicationAuthority>();
+  const configuredProfiles = new Map<string, { profile: IndexProfile; ragProfileVersion: number; ragProfileDigest: `sha256:${string}` }>([
+    ["enterprise-docs", {
+      profile: publicationProfile,
+      ragProfileVersion: options.ragProfileVersion ?? 1,
+      ragProfileDigest: options.ragProfileDigest ?? `sha256:${"c".repeat(64)}`,
+    }],
+    ...Object.entries(options.publicationProfiles ?? {}).map(([corpusRef, config]) => [corpusRef, {
+      profile: config.profile ?? publicationProfile,
+      ragProfileVersion: config.ragProfileVersion,
+      ragProfileDigest: config.ragProfileDigest,
+    }] as const),
+  ]);
+  for (const [corpusRef, config] of configuredProfiles) {
+    const persisted = publicationStore?.load(corpusRef);
+    const authority = new PublicationAuthority(corpusRef, now, publicationStore);
+    // A durable authority owns its prior active or in-progress generation after restart.
+    if (!persisted || persisted.generations.length === 0) {
+      const generationId = `index:${corpusRef}:gen1`;
+      authority.beginGeneration(1, generationId, config.profile, config.ragProfileVersion, config.ragProfileDigest);
+      const seedEntries = indexPort.search({
+        mode: "lexical", queryDigest: "seed", queryText: "seed", corpusRef, laneLimit: 1_000, deadlineAt: now() + 10_000,
+      });
+      if (seedEntries.length > 0) {
+        for (const entry of seedEntries) {
+          try {
+            authority.addCandidate(1, generationId, {
+              versionRef: entry.versionRef, chunkRef: entry.chunkRef, contentHash: entry.contentHash, classificationRef: entry.classificationRef,
+            });
+          } catch {
+            // Duplicate chunk refs in the seed search are coalesced; ignore.
+          }
+        }
+        authority.finalize(1, generationId);
+        authority.publish(1, generationId);
       }
     }
-    authority.finalize(1, "index:enterprise-docs:gen1");
-    authority.publish(1, "index:enterprise-docs:gen1");
+    authorityByCorpus.set(corpusRef, authority);
   }
+  const authority = authorityByCorpus.get("enterprise-docs")!;
+  const authorityRegistry = new PublicationAuthorityRegistry(authorityByCorpus);
 
   const pdpPort: RetrievalPdpPort = {
     authorizeOperation: (input) => {
@@ -261,45 +296,53 @@ export function createRetrievalDeployment(options: RetrievalDeploymentOptions): 
   const service = new RetrievalService(
     pdpPort,
     {
-      search: (input) => {
-        const entries = options.index.search(input);
-        const ranked = new Map<string, RetrievalCandidate>();
-        for (const entry of entries) {
-          const scores = [
-            entry.lexicalScore,
-            entry.vectorScore,
-            entry.graphScore,
-            entry.metadataScore,
-          ].filter((value) => Number.isFinite(value));
-          const lane: RetrievalCandidate["lane"] = input.mode === "hybrid"
-            ? "lexical"
-            : input.mode === "semantic"
-              ? "vector"
-              : input.mode === "graph"
-                ? "graph"
-                : input.mode === "structured"
-                  ? "metadata"
-                  : "lexical";
-          const rank = scores.length === 0 ? Number.MAX_SAFE_INTEGER : Math.min(...scores);
-          ranked.set(`${entry.resourceRef}|${entry.versionRef}|${entry.chunkRef}`, {
-            resourceRef: entry.resourceRef,
-            versionRef: entry.versionRef,
-            chunkRef: entry.chunkRef,
-            contentHash: entry.contentHash,
-            lane,
-            rank,
-            classificationRef: entry.classificationRef,
-          });
+      search: async (input) => {
+        const lexicalEntries = () => options.index?.search(input) ?? searchIndex.search(input);
+        const toCandidates = (entries: readonly SearchIndexEntry[], lane: RetrievalCandidate["lane"], score: (entry: SearchIndexEntry) => number): RetrievalCandidate[] => entries.map((entry) => ({
+          resourceRef: entry.resourceRef,
+          versionRef: entry.versionRef,
+          chunkRef: entry.chunkRef,
+          contentHash: entry.contentHash,
+          lane,
+          rank: score(entry),
+          classificationRef: entry.classificationRef,
+        }));
+        const vectorEntries = async () => {
+          if (!options.provider || !options.embeddingModel || !options.provider.embed || !vectorIndex.hasEntries(input.corpusRef)) {
+            throw new Error("Vector search backend is not configured for this corpus.");
+          }
+          const queryVector = await options.provider.embed({ model: options.embeddingModel, text: input.queryText }, input.signal);
+          return vectorIndex.search({ corpusRef: input.corpusRef, queryVector, laneLimit: input.laneLimit });
+        };
+        let candidates: RetrievalCandidate[];
+        if (input.mode === "lexical") {
+          candidates = toCandidates(lexicalEntries(), "lexical", (entry) => entry.lexicalScore);
+        } else if (input.mode === "semantic") {
+          candidates = toCandidates(await vectorEntries(), "vector", (entry) => entry.vectorScore);
+        } else if (input.mode === "hybrid") {
+          candidates = [
+            ...toCandidates(lexicalEntries(), "lexical", (entry) => entry.lexicalScore),
+            ...toCandidates(await vectorEntries(), "vector", (entry) => entry.vectorScore),
+          ];
+        } else {
+          const entries = indexPort.search(input);
+          const lane: RetrievalCandidate["lane"] = input.mode === "graph" ? "graph" : input.mode === "structured" ? "metadata" : "lexical";
+          const ranked = new Map<string, RetrievalCandidate>();
+          for (const entry of entries) {
+            const scores = [entry.lexicalScore, entry.vectorScore, entry.graphScore, entry.metadataScore].filter((value) => Number.isFinite(value));
+            ranked.set(`${entry.resourceRef}|${entry.versionRef}|${entry.chunkRef}`, {
+              resourceRef: entry.resourceRef,
+              versionRef: entry.versionRef,
+              chunkRef: entry.chunkRef,
+              contentHash: entry.contentHash,
+              lane,
+              rank: scores.length === 0 ? Number.MAX_SAFE_INTEGER : Math.min(...scores),
+              classificationRef: entry.classificationRef,
+            });
+          }
+          candidates = [...ranked.values()].sort((a, b) => a.rank - b.rank).slice(0, input.laneLimit);
         }
-        const candidates = [...ranked.values()]
-          .sort((a, b) => a.rank - b.rank)
-          .slice(0, input.laneLimit);
-        return {
-          indexGeneration: input.indexGeneration,
-          visibilitySequence: input.visibilitySequence,
-          sourceRevisionDigest: input.sourceRevisionDigest,
-          candidates,
-        } satisfies RetrievalSearchResult;
+        return { indexGeneration: input.indexGeneration, visibilitySequence: input.visibilitySequence, sourceRevisionDigest: input.sourceRevisionDigest, candidates } satisfies RetrievalSearchResult;
       },
     },
     {
@@ -320,7 +363,7 @@ export function createRetrievalDeployment(options: RetrievalDeploymentOptions): 
               })),
             });
         return documents.map((document) => ({
-          resourceRef: document.versionRef,
+          resourceRef: input.resources.find((resource) => resource.versionRef === document.versionRef && resource.chunkRef === document.chunkRef)?.resourceRef ?? document.versionRef,
           versionRef: document.versionRef,
           chunkRef: document.chunkRef,
           contentHash: document.contentHash,
@@ -345,23 +388,17 @@ export function createRetrievalDeployment(options: RetrievalDeploymentOptions): 
     },
     {
       activeGeneration: (input) => {
-        const fallback = options.publication;
         try {
-          const active = authority.activeGeneration({ corpusRef: input.corpusRef, deadlineAt: input.deadlineAt, signal: input.signal });
+          const active = authorityRegistry.activeGeneration({ corpusRef: input.corpusRef, deadlineAt: input.deadlineAt, signal: input.signal });
           return {
-              indexGeneration: active.indexGeneration,
-              visibilitySequence: active.visibilitySequence,
-              sourceRevisionDigest: active.sourceRevisionDigest,
-            };
-        } catch {
-          if (fallback) {
-            return {
-              indexGeneration: fallback.activeGeneration,
-              visibilitySequence: fallback.visibilitySequence,
-              sourceRevisionDigest: fallback.sourceRevisionDigest,
-            };
-          }
-          throw new Error("No active publication generation is available.");
+            indexGeneration: active.indexGeneration,
+            visibilitySequence: active.visibilitySequence,
+            sourceRevisionDigest: active.sourceRevisionDigest,
+            ragProfileVersion: active.ragProfileVersion,
+            ragProfileDigest: active.ragProfileDigest,
+          };
+        } catch (error) {
+          throw new Error(`No active publication generation is available: ${error instanceof Error ? error.message : String(error)}`);
         }
       },
     },
@@ -376,7 +413,10 @@ export function createRetrievalDeployment(options: RetrievalDeploymentOptions): 
     activatePolicy: wiring.activation.activatePolicy,
     setAuditHealth: wiring.activation.health,
     publicationAuthority: authority,
+    publicationAuthorities: authorityByCorpus,
     contentStore: defaultContentStore,
+    searchIndex,
+    vectorIndex,
   };
 }
 

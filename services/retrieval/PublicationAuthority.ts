@@ -1,4 +1,5 @@
-import { computeCandidateRefsDigest, type IndexGenerationManifest, type IndexProfile, assertIndexProfile } from "./indexGenerationManifest";
+import { computeCandidateRefsDigest, type IndexGenerationManifest, type IndexProfile, assertIndexProfile, assertRagProfileLineage } from "./indexGenerationManifest";
+import { PublicationStore, type PublicationPersistedState } from "./publicationStore";
 
 export type { IndexProfile };
 
@@ -26,6 +27,8 @@ export interface ActivePublication {
   sourceRevisionDigest: `sha256:${string}`;
   searchableVersionRefs: readonly string[];
   profile: IndexProfile;
+  ragProfileVersion: number;
+  ragProfileDigest: `sha256:${string}`;
   activatedAt: number;
 }
 
@@ -40,35 +43,81 @@ export interface PublicationAuthorityPort {
     indexGeneration: string;
     visibilitySequence: number;
     sourceRevisionDigest: `sha256:${string}`;
+    ragProfileVersion: number;
+    ragProfileDigest: `sha256:${string}`;
   };
 }
 
 export class PublicationAuthority implements PublicationAuthorityPort {
-  private readonly generations = new Map<string, IndexGenerationManifest>();
-  private readonly searchable = new Map<string, string[]>();
+  private generations = new Map<string, IndexGenerationManifest>();
+  private searchable = new Map<string, string[]>();
   private activeGenerationId: string | undefined;
   private retiredOrder: string[] = [];
-  private readonly withdrawnVersions = new Set<string>();
+  private withdrawnVersions = new Set<string>();
   private sequence = 0;
   private writer = 0;
 
   constructor(
     private readonly corpusRef: string,
     private readonly now: () => number = () => Date.now(),
-  ) {}
+    private readonly store?: PublicationStore,
+  ) {
+    if (store) this.apply(store.load(corpusRef));
+  }
 
-  private readonly assertWriter = (writerToken: number): void => {
+  private current(): PublicationPersistedState {
+    return {
+      generations: [...this.generations.values()],
+      searchable: new Map(this.searchable),
+      activeGenerationId: this.activeGenerationId,
+      retiredOrder: [...this.retiredOrder],
+      withdrawnVersions: [...this.withdrawnVersions],
+      sequence: this.sequence,
+      writer: this.writer,
+    };
+  }
+
+  private apply(state: PublicationPersistedState): void {
+    this.generations = new Map(state.generations.map((generation) => [generation.generationId, generation]));
+    this.searchable = new Map([...state.searchable].map(([generationId, versionRefs]) => [generationId, [...versionRefs]]));
+    this.activeGenerationId = state.activeGenerationId;
+    this.retiredOrder = [...state.retiredOrder];
+    this.withdrawnVersions = new Set(state.withdrawnVersions);
+    this.sequence = state.sequence;
+    this.writer = state.writer;
+  }
+
+  /** Persist first so a failed durable write cannot leave memory ahead of disk. */
+  private commit(state: PublicationPersistedState): void {
+    this.store?.replace(this.corpusRef, state);
+    this.apply(state);
+  }
+
+  private withChanges(changes: Partial<PublicationPersistedState>): PublicationPersistedState {
+    return { ...this.current(), ...changes };
+  }
+
+  private assertWriter(writerToken: number): void {
     if (this.writer === 0) {
-      this.writer = writerToken;
+      this.commit(this.withChanges({ writer: writerToken }));
     }
     if (writerToken !== this.writer) throw new PublicationError("STALE_AUTHORITY", "Another writer owns publication.");
-  };
+  }
 
-  beginGeneration(writerToken: number, generationId: string, profile: IndexProfile): void {
+  beginGeneration(
+    writerToken: number,
+    generationId: string,
+    profile: IndexProfile,
+    ragProfileVersion: number,
+    ragProfileDigest: `sha256:${string}`,
+  ): void {
     assertIndexProfile(profile);
+    assertRagProfileLineage(ragProfileVersion, ragProfileDigest);
     this.assertWriter(writerToken);
     if (!generationId || this.generations.has(generationId)) throw new PublicationError("CONFLICT", "The generation identifier is not available.");
-    this.generations.set(generationId, { generationId, corpusRef: this.corpusRef, profile, candidateRefs: [], integrityDigest: ZERO_DIGEST, state: "building" });
+    const generations = new Map(this.generations);
+    generations.set(generationId, { generationId, corpusRef: this.corpusRef, profile, ragProfileVersion, ragProfileDigest, candidateRefs: [], integrityDigest: ZERO_DIGEST, state: "building" });
+    this.commit(this.withChanges({ generations: [...generations.values()] }));
   }
 
   addCandidate(writerToken: number, generationId: string, candidateRef: IndexGenerationManifest["candidateRefs"][number]): void {
@@ -81,7 +130,9 @@ export class PublicationAuthority implements PublicationAuthorityPort {
     }
     const next = { ...generation, candidateRefs: [...generation.candidateRefs, candidateRef] };
     next.integrityDigest = computeCandidateRefsDigest(next.candidateRefs);
-    this.generations.set(generationId, next);
+    const generations = new Map(this.generations);
+    generations.set(generationId, next);
+    this.commit(this.withChanges({ generations: [...generations.values()] }));
   }
 
   finalize(writerToken: number, generationId: string): IndexGenerationManifest {
@@ -92,7 +143,9 @@ export class PublicationAuthority implements PublicationAuthorityPort {
     const integrity = computeCandidateRefsDigest(generation.candidateRefs);
     if (integrity !== generation.integrityDigest) throw new PublicationError("STALE_AUTHORITY", "The generation integrity digest is inconsistent.");
     const finalized: IndexGenerationManifest = { ...generation, integrityDigest: integrity, state: "finalized" };
-    this.generations.set(generationId, finalized);
+    const generations = new Map(this.generations);
+    generations.set(generationId, finalized);
+    this.commit(this.withChanges({ generations: [...generations.values()] }));
     return finalized;
   }
 
@@ -102,25 +155,28 @@ export class PublicationAuthority implements PublicationAuthorityPort {
     const generation = this.generations.get(generationId);
     if (!generation) throw new PublicationError("NOT_FOUND", "The generation does not exist.");
     if (generation.state !== "finalized") {
-      // Re-publishing an already-active generation is a no-op with its snapshot.
       if (generation.state === "active" && generation.generationId === this.activeGenerationId) return this.snapshot(generationId);
       throw new PublicationError("CONFLICT", "Only an inactive, finalized generation can be published.");
     }
     const previous = this.activeGenerationId;
     const activated: IndexGenerationManifest = { ...generation, state: "active", activatedAt: this.now() };
-    this.generations.set(generationId, activated);
+    const generations = new Map(this.generations);
+    generations.set(generationId, activated);
+    let retiredOrder = [...this.retiredOrder];
     if (previous && previous !== generationId) {
-      const old = this.generations.get(previous);
+      const old = generations.get(previous);
       if (old && old.state === "active") {
-        this.generations.set(previous, { ...old, state: "retired" });
-        this.retiredOrder = [...this.retiredOrder, previous];
+        generations.set(previous, { ...old, state: "retired" });
+        retiredOrder = [...retiredOrder, previous];
       }
     }
-    this.activeGenerationId = generationId;
-    this.sequence += 1;
     const versionRefs = [...new Set(activated.candidateRefs.map((ref) => ref.versionRef))]
       .filter((versionRef) => !this.withdrawnVersions.has(versionRef));
-    this.searchable.set(generationId, versionRefs);
+    const searchable = new Map(this.searchable);
+    searchable.set(generationId, versionRefs);
+    this.commit(this.withChanges({
+      generations: [...generations.values()], searchable, activeGenerationId: generationId, retiredOrder, sequence: this.sequence + 1,
+    }));
     return this.snapshot(generationId);
   }
 
@@ -130,17 +186,18 @@ export class PublicationAuthority implements PublicationAuthorityPort {
     const target = this.retiredOrder[this.retiredOrder.length - 1];
     if (!target) throw new PublicationError("NOT_FOUND", "No retired generation is available to restore.");
     const current = this.activeGenerationId;
-    if (current) {
-      const active = this.generations.get(current);
-      if (active) this.generations.set(current, { ...active, state: "retired" });
-    }
     const restored = this.generations.get(target);
     if (!restored) throw new PublicationError("NOT_FOUND", "The rollback target is unavailable.");
-    this.generations.set(target, { ...restored, state: "active", activatedAt: this.now() });
-    this.retiredOrder = this.retiredOrder.filter((id) => id !== target);
-    this.retiredOrder = [...this.retiredOrder, ...(current ? [current] : [])];
-    this.activeGenerationId = target;
-    this.sequence += 1;
+    const generations = new Map(this.generations);
+    if (current) {
+      const active = generations.get(current);
+      if (active) generations.set(current, { ...active, state: "retired" });
+    }
+    generations.set(target, { ...restored, state: "active", activatedAt: this.now() });
+    const retiredOrder = [...this.retiredOrder.filter((id) => id !== target), ...(current ? [current] : [])];
+    this.commit(this.withChanges({
+      generations: [...generations.values()], activeGenerationId: target, retiredOrder, sequence: this.sequence + 1,
+    }));
     return this.snapshot(target);
   }
 
@@ -158,6 +215,8 @@ export class PublicationAuthority implements PublicationAuthorityPort {
       sourceRevisionDigest: generation.integrityDigest,
       searchableVersionRefs,
       profile: generation.profile,
+      ragProfileVersion: generation.ragProfileVersion,
+      ragProfileDigest: generation.ragProfileDigest,
       activatedAt: generation.activatedAt ?? this.now(),
     };
   }
@@ -175,6 +234,13 @@ export class PublicationAuthority implements PublicationAuthorityPort {
     return this.snapshot();
   }
 
+  /** The full candidate list of the currently active generation, or [] if none is active. */
+  activeCandidateRefs(): readonly IndexGenerationManifest["candidateRefs"][number][] {
+    if (!this.activeGenerationId) return [];
+    const active = this.generations.get(this.activeGenerationId);
+    return active?.candidateRefs ?? [];
+  }
+
   /** A version is searchable only if the active publication lists it. */
   isSearchable(versionRef: string): boolean {
     const active = this.activeGenerationId;
@@ -184,9 +250,20 @@ export class PublicationAuthority implements PublicationAuthorityPort {
 
   removeVersion(writerToken: number, versionRef: string): void {
     if (writerToken !== this.writer) throw new PublicationError("STALE_AUTHORITY", "Another writer owns publication.");
-    this.withdrawnVersions.add(versionRef);
-    for (const [generationId, current] of this.searchable) {
-      this.searchable.set(generationId, current.filter((ref) => ref !== versionRef));
-    }
+    const withdrawnVersions = new Set(this.withdrawnVersions);
+    withdrawnVersions.add(versionRef);
+    const searchable = new Map([...this.searchable].map(([generationId, refs]) => [generationId, refs.filter((ref) => ref !== versionRef)]));
+    this.commit(this.withChanges({ withdrawnVersions: [...withdrawnVersions], searchable }));
+  }
+}
+
+/** Routes lookups only to explicitly configured corpus authorities. */
+export class PublicationAuthorityRegistry implements PublicationAuthorityPort {
+  constructor(private readonly authorities: ReadonlyMap<string, PublicationAuthority>) {}
+
+  activeGeneration(input: { corpusRef: string; deadlineAt: number; signal?: AbortSignal }): ActivePublication {
+    const authority = this.authorities.get(input.corpusRef);
+    if (!authority) throw new PublicationError("INVALID_ARGUMENT", "No publication authority is configured for this corpus.");
+    return authority.activeGeneration(input);
   }
 }

@@ -4,11 +4,11 @@ from typing import List, Literal, Optional
 
 RAG_CONTRACT_VERSION: str = "1.0.0"
 SCHEMA_DIGESTS = {
-    "authorization-manifest.v1.schema.json": "3ce2592a9542616cb4fccc3fb421ac5b9ce4ae5b6d2355fa7fe12132ffed02d8",
+    "authorization-manifest.v1.schema.json": "292ba2c25871afe624d3ae9463bfa0ad351515c97045a330de13e44c410b346f",
     "error.v1.schema.json": "be45bdc004ed47d4361c389169bbbba7d43faf21e655989634176133b8e7bec1",
     "request.v1.schema.json": "1fdfd8d2f1ded75d79fac0b8847c213fd48495b9f9da0505b60bb4faa812c64a",
-    "retrieval-request.v1.schema.json": "da285d32ab68fa442f0cee5555dd2712c425a6cc49e5c354e2bf27722252b80a",
-    "retrieval-result.v1.schema.json": "c0b4387cd8a38ed973ab7efa2dda77bc338b988d2025eec2d3b51895b7353fe2",
+    "retrieval-request.v1.schema.json": "12b7564cda93e7499ee33d75bcdefd2d31ffb5964e5ca1f1d2cf52325dda80e2",
+    "retrieval-result.v1.schema.json": "c12586d2345c8dca11b8ebdee78d556cf1ab0af3ca9449873116fc388ea69595",
     "retrieved-context.v1.schema.json": "3862455bf881c958d2239f892887c70a1d7f6793b8377d5d130fe85ceb1be037",
     "retrieved-source.v1.schema.json": "bd31df7ec7c655e1d916fe87c3f58d25c71b401bb9149dcfc7b7da3b31b2cf02",
   }
@@ -47,6 +47,8 @@ class AuthorizationManifest:
     policy_revision: int
     subject_security_revision: int
     resource_security_revision_digest: str
+    profile_version: int
+    profile_digest: str
     expires_at: int
     sources: List[RetrievedSource]
 
@@ -66,6 +68,8 @@ class RetrievalRequest:
     retrieval_class: Literal["enterprise-grounded"]
     corpus_ref: str
     mode: RetrievalMode
+    profile_version: int
+    profile_digest: str
     candidate_limit: int
     deadline_at: int
     cancellation: bool
@@ -82,6 +86,8 @@ class RetrievalResult:
     visibility_sequence: Optional[int] = None
     index_generation: Optional[str] = None
     context_digest: Optional[str] = None
+    profile_version: Optional[int] = None
+    profile_digest: Optional[str] = None
     manifest: Optional[AuthorizationManifest] = None
     sources: List[RetrievedContext] = field(default_factory=list)
 

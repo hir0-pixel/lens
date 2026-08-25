@@ -1,8 +1,12 @@
 # Enterprise-RAG development bridge
 
-This folder is a development-only RAG service for the synthetic documents in
-`documents/`. Lens talks to it through the authenticated BFF; the desktop UI
-does not receive the Gemini API key and does not call Gemini.
+QUARANTINED — not part of the active RAG path. `server/src/index.ts` wires
+`/api/rag/ask` to the internal Orchestrator (`server/src/rag/orchestratorClient.ts`)
+only; nothing in `server/src` references this folder. This is a standalone,
+development-only Python RAG demonstration for the synthetic documents in
+`documents/`, kept for reference/experimentation and not deployed or reachable
+from the desktop client. The desktop UI does not receive the Gemini API key
+and does not call Gemini through this or any other path.
 
 ## Preconditions
 

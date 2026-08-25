@@ -160,6 +160,8 @@ export class AuthorityHttpClient implements
       context_digest: input.contextDigest,
       manifest_expires_at: input.manifestExpiresAt,
       boundary: input.boundary,
+      resource_refs: input.resourceRefs,
+      index_generation: input.indexGeneration,
       ...(input.toolCallRef ? { tool_call_ref: input.toolCallRef } : {}),
     }, signal, Math.min(input.manifestExpiresAt, localDeadline(this.timeoutMs)), input.requestId));
 
@@ -189,6 +191,24 @@ export class AuthorityHttpClient implements
       request_id: input.requestId,
       turn_id: input.turnId,
       input_digest: input.inputDigest,
+      rag_profile_version: input.ragProfileVersion,
+      rag_profile_digest: input.ragProfileDigest,
+      ...(input.routeOverride ? {
+        route_override: {
+          attempted_route: input.routeOverride.attemptedRoute,
+          attempted_reason_code: input.routeOverride.attemptedReasonCode,
+          attempted_confidence_bucket: input.routeOverride.attemptedConfidenceBucket,
+          ...(input.routeOverride.attemptedProfileSelector !== undefined ? { attempted_profile_selector: input.routeOverride.attemptedProfileSelector } : {}),
+          effective_route: input.routeOverride.effectiveRoute,
+          ...(input.routeOverride.effectiveProfileSelector !== undefined ? { effective_profile_selector: input.routeOverride.effectiveProfileSelector } : {}),
+          grounding_required: input.routeOverride.groundingRequired,
+          route_policy_revision: input.routeOverride.routePolicyRevision,
+          route_policy_digest: input.routeOverride.routePolicyDigest,
+          allowed_profile_set_digest: input.routeOverride.allowedProfileSetDigest,
+          enforcement_override: input.routeOverride.enforcementOverride,
+          override_reason: input.routeOverride.overrideReason,
+        },
+      } : {}),
     }, signal, localDeadline(this.timeoutMs), input.requestId));
 
     if (
@@ -196,9 +216,27 @@ export class AuthorityHttpClient implements
       response.request_id !== input.requestId ||
       response.turn_id !== input.turnId ||
       response.input_digest !== input.inputDigest ||
+      response.rag_profile_version !== input.ragProfileVersion ||
+      response.rag_profile_digest !== input.ragProfileDigest ||
       !assertDigest(response.receipt_digest)
     ) {
       throw new OrchestratorError("DEPENDENCY_UNAVAILABLE", "Audit authority returned an invalid admission receipt.");
+    }
+    // The echoed route_override (if any) must match what was sent — Authority
+    // is expected to persist and return it verbatim, not silently drop it.
+    if (input.routeOverride) {
+      const echoed = response.route_override as Record<string, unknown> | undefined;
+      if (
+        !echoed ||
+        echoed.attempted_route !== input.routeOverride.attemptedRoute ||
+        echoed.effective_route !== input.routeOverride.effectiveRoute ||
+        echoed.route_policy_revision !== input.routeOverride.routePolicyRevision ||
+        echoed.route_policy_digest !== input.routeOverride.routePolicyDigest ||
+        echoed.enforcement_override !== input.routeOverride.enforcementOverride ||
+        echoed.override_reason !== input.routeOverride.overrideReason
+      ) {
+        throw new OrchestratorError("DEPENDENCY_UNAVAILABLE", "Audit authority did not echo the route_override provenance it was given.");
+      }
     }
     return { receiptDigest: response.receipt_digest };
   }
@@ -321,21 +359,42 @@ export class AuthorityHttpClient implements
     const response = assertJsonRecord(await this.post("/v1/disclosures/reservations", {
       request_id: input.requestId,
       subject_ref: input.subjectRef,
+      device_ref: input.deviceRef,
+      application_ref: input.applicationRef,
+      purpose_ref: input.purposeRef,
       output_ref: input.outputRef,
       output_digest: input.outputDigest,
       classification_ref: input.classificationRef,
+      source_classifications: input.sourceClassifications,
+      resource_set_digest: input.resourceSetDigest,
+      lineage_digest: input.lineageDigest,
+      units: input.units,
+      ceiling: input.ceiling,
+      terminal_receipt: {
+        run_ref: input.terminalReceipt.runRef,
+        final_counter_digest: input.terminalReceipt.finalCounterDigest,
+        terminal: input.terminalReceipt.terminal,
+        pending_work: input.terminalReceipt.pendingWork,
+      },
+      expires_at: input.expiresAt,
     }, signal, localDeadline(this.timeoutMs), input.requestId));
 
     if (
       response.request_id !== input.requestId ||
       response.output_ref !== input.outputRef ||
       response.output_digest !== input.outputDigest ||
-      response.classification_ref !== input.classificationRef ||
+      // The returned classification is the live exposure ledger's own
+      // determination (the strongest of the source classifications), which
+      // can legitimately be stronger than the single classification_ref we
+      // sent — that is the live-policy check actually doing something, not
+      // an error. Only its type/presence is validated here.
+      typeof response.classification_ref !== "string" ||
+      response.classification_ref.length === 0 ||
       !assertString(response.reservation_ref)
     ) {
       throw new OrchestratorError("DEPENDENCY_UNAVAILABLE", "Disclosure authority returned an invalid reservation.");
     }
-    return { reservationRef: response.reservation_ref, classificationRef: input.classificationRef };
+    return { reservationRef: response.reservation_ref, classificationRef: response.classification_ref };
   }
 
   async commit(input: Parameters<DisclosureReservationPort["commit"]>[0], signal: AbortSignal): Promise<void> {

@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
+import { generateKeyPairSync } from "node:crypto";
 import { createPolicyCorpus } from "../src/rag/policyCorpus";
 import { createPolicyRetriever } from "../src/rag/retrieval";
 import { createGovernedPolicyAuthorizer, createLocalPolicyAuthorizer } from "../src/rag/authorizer";
@@ -162,6 +163,16 @@ describe("local policy RAG", () => {
       OIDC_REDIRECT_URI: "https://lens.example.com/auth/callback",
       GEMINI_API_KEY: "configured",
       RAG_MODE: "local_policy",
+      ADMISSION_API_ORIGIN: "https://admission.example.com",
+      ADMISSION_WORKLOAD_TOKEN: "w".repeat(32),
+      RATE_LIMIT_KEY_SECRET: "r".repeat(32),
+      BFF_ASSERTION_PRIVATE_KEY: generateKeyPairSync("ed25519").privateKey.export({ format: "pem", type: "pkcs8" }).toString(),
+      MEMORY_ASSERTION_PRIVATE_KEY: generateKeyPairSync("ed25519").privateKey.export({ format: "pem", type: "pkcs8" }).toString(),
+      CONVERSATION_REFERENCE_SECRET: "v".repeat(48),
+      PROVIDER_REGISTRY_PATH: "./providers.sqlite",
+      PUBLICATION_STORE_PATH: "./publication.sqlite",
+      INGESTION_STORE_PATH_PREFIX: "./ingestion",
+      AUDIT_LEDGER_STORE_PATH: "./audit.sqlite",
     };
     __resetConfig();
     try {

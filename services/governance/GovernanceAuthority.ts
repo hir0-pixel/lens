@@ -150,9 +150,12 @@ export class GovernanceAuthority {
     return { ...facts };
   }
 
-  mutateSecurity(documentVersionRef: string, mutation: SecurityMutation, fence: PrivilegedChangeFence): ResourceSecurityFacts {
+  mutateSecurity(documentVersionRef: string, mutation: SecurityMutation, fence: PrivilegedChangeFence, expectedRevision?: number): ResourceSecurityFacts {
     this.validateFence(fence);
     const current = this.requireResource(documentVersionRef);
+    if (expectedRevision !== undefined && current.resourceSecurityRevision !== expectedRevision) {
+      throw new GovernanceError("STALE_AUTHORITY", "The resource security revision changed.");
+    }
     if (mutation.aclDigest) ensureDigest(mutation.aclDigest);
     if (mutation.classification && classificationRank[mutation.classification] < classificationRank[current.classification]) {
       throw new GovernanceError("FORBIDDEN", "Classification cannot be lowered by this operation.");

@@ -67,7 +67,6 @@ function TerminalSessionComponent({
 
     let disposed = false;
     let unlisten: UnlistenFn | undefined;
-    let resizeObserver: ResizeObserver | undefined;
 
     const resizePty = () => {
       if (containerRef.current?.offsetParent === null) return;
@@ -159,7 +158,7 @@ function TerminalSessionComponent({
     termRef.current = term;
     void start();
 
-    resizeObserver = new ResizeObserver(resizePty);
+    const resizeObserver = new ResizeObserver(resizePty);
     resizeObserver.observe(containerRef.current);
     window.addEventListener("resize", resizePty);
     requestAnimationFrame(resizePty);

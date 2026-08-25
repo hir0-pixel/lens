@@ -9,9 +9,12 @@ import {
 import { createAuthService } from "../src/auth/authService";
 import { createSessionManager } from "../src/auth/sessionManager";
 import { createApp } from "../src";
+import { generateKeyPairSync } from "node:crypto";
 
 const SECRET = "s".repeat(48);
 const CLIENT_SECRET = "c".repeat(32);
+const ORCH_ASSERTION_PRIVATE = generateKeyPairSync("ed25519").privateKey.export({ format: "pem", type: "pkcs8" }).toString();
+const MEMORY_ASSERTION_PRIVATE = generateKeyPairSync("ed25519").privateKey.export({ format: "pem", type: "pkcs8" }).toString();
 const ORIGINAL_ENV = { ...process.env };
 let signingKeys: Awaited<ReturnType<typeof generateKeyPair>>;
 let publicJwk: Record<string, unknown>;
@@ -30,6 +33,13 @@ function baseEnv(overrides: Record<string, string> = {}) {
     ADMISSION_API_ORIGIN: "http://127.0.0.1:9444",
     ADMISSION_WORKLOAD_TOKEN: "a".repeat(40),
     RATE_LIMIT_KEY_SECRET: "k".repeat(40),
+    BFF_ASSERTION_PRIVATE_KEY: ORCH_ASSERTION_PRIVATE,
+    MEMORY_ASSERTION_PRIVATE_KEY: MEMORY_ASSERTION_PRIVATE,
+    CONVERSATION_REFERENCE_SECRET: "v".repeat(48),
+    PROVIDER_REGISTRY_PATH: "./providers.sqlite",
+    PUBLICATION_STORE_PATH: "./publication.sqlite",
+    INGESTION_STORE_PATH_PREFIX: "./ingestion",
+    AUDIT_LEDGER_STORE_PATH: "./audit.sqlite",
     ...overrides,
   };
 }
@@ -261,21 +271,55 @@ describe("Lens BFF authentication", () => {
     const csrfCookie = cookies.find((cookie: string) => cookie.startsWith("lens_csrf="))?.split(";")[0] ?? "";
     const csrf = decodeURIComponent(csrfCookie.split("=").slice(1).join("="));
 
+    const creationKey = Buffer.alloc(32, 9).toString("base64url");
     const response = await request(app)
       .post("/api/rag/ask")
       .set("Cookie", [sessionCookie, csrfCookie])
       .set("x-lens-csrf", csrf)
-      .send({ query: "What is the remote-work stipend?" });
+      .send({ query: "What is the remote-work stipend?", conversationCreationKey: creationKey });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       output: "The remote-work stipend is $1,500. [Source 1]",
       citations: [{ source: "remote_work_policy.docx", section: "Section 2: Equipment and Expenses" }],
+      conversationRef: expect.any(String),
     });
     expect(ragHandler).toHaveBeenCalledWith(
       expect.objectContaining({ subject: "user-1", query: "What is the remote-work stipend?" }),
       expect.any(AbortSignal),
     );
+    expect(ragHandler.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ conversationRef: expect.any(String), sessionAssertion: expect.any(String), memorySessionAssertion: expect.any(String) }));
+
+    const firstConversationRef = response.body.conversationRef as string;
+    const continuation = await request(app)
+      .post("/api/rag/ask")
+      .set("Cookie", [sessionCookie, csrfCookie])
+      .set("x-lens-csrf", csrf)
+      .send({ query: "What about equipment?", conversationRef: firstConversationRef });
+    expect(continuation.status).toBe(200);
+    expect(continuation.body.conversationRef).toBe(firstConversationRef);
+
+    const separateChat = await request(app)
+      .post("/api/rag/ask")
+      .set("Cookie", [sessionCookie, csrfCookie])
+      .set("x-lens-csrf", csrf)
+      .send({ query: "Start another chat" });
+    expect(separateChat.status).toBe(200);
+    expect(separateChat.body.conversationRef).not.toBe(firstConversationRef);
+
+    const retried = await request(app)
+      .post("/api/rag/ask")
+      .set("Cookie", [sessionCookie, csrfCookie])
+      .set("x-lens-csrf", csrf)
+      .send({ query: "Retry first send", conversationCreationKey: creationKey });
+    expect(retried.status).toBe(200);
+    expect(retried.body.conversationRef).toBe(firstConversationRef);
+
+    const concurrent = await Promise.all([
+      request(app).post("/api/rag/ask").set("Cookie", [sessionCookie, csrfCookie]).set("x-lens-csrf", csrf).send({ query: "Concurrent A", conversationCreationKey: creationKey }),
+      request(app).post("/api/rag/ask").set("Cookie", [sessionCookie, csrfCookie]).set("x-lens-csrf", csrf).send({ query: "Concurrent B", conversationCreationKey: creationKey }),
+    ]);
+    expect(concurrent.map((result) => result.body.conversationRef)).toEqual([firstConversationRef, firstConversationRef]);
   });
 
   it("POST /auth/logout clears the application session and no longer authenticates", async () => {
@@ -320,6 +364,18 @@ describe("Lens BFF authentication", () => {
       RAG_PROVIDER_MODE: "gemini-test",
     });
     expect(() => validateProductionConfig()).toThrow(/Invalid environment configuration|invalid enum/i);
+  });
+
+  it("rejects reusing the delegated assertion key as the conversation-reference key", () => {
+    makeEnv({
+      NODE_ENV: "production",
+      APP_ORIGIN: "https://lens.example.com",
+      OIDC_REDIRECT_URI: "https://lens.example.com/auth/callback",
+      BFF_ASSERTION_PRIVATE_KEY: "z".repeat(48),
+      MEMORY_ASSERTION_PRIVATE_KEY: "y".repeat(48),
+      CONVERSATION_REFERENCE_SECRET: "z".repeat(48),
+    });
+    expect(() => validateProductionConfig()).toThrow(/distinct/i);
   });
 
   it("parses OIDC_REQUIRE_HTTPS_ISSUER=false as false (regression: z.coerce.boolean coerces 'false' to true)", () => {

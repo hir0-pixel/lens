@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Check, Loader2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,9 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { SettingsSectionHeader } from "../SettingControls";
 import { PROVIDER_COLORS } from "@/shared/design-system";
+import { useAuthStore } from "@/shared/bff-auth/store";
+import { getBffAuthClient } from "@/shared/bff-auth";
+import { useModelCatalogStore } from "@/stores/modelCatalogStore";
 
 const KIND_COLOR = PROVIDER_COLORS;
 
@@ -92,6 +96,40 @@ export function ProvidersSettingsPage() {
   const providers = useProviderStore(useShallow((state) =>
     [...state.providers].sort((a, b) => a.priority - b.priority),
   ));
+  const administrator = useAuthStore((state) => state.session?.administrator === true);
+  const refreshCatalog = useModelCatalogStore((state) => state.refresh);
+  const [baseUrl, setBaseUrl] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [allowlist, setAllowlist] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string>();
+
+  async function submitOnboard() {
+    const client = getBffAuthClient();
+    if (!client) return;
+    setBusy(true);
+    setMessage(undefined);
+    try {
+      const result = await client.onboardProvider({
+        baseUrl,
+        apiKey,
+        tlsWorkloadRef: "workload:runtime-adapter",
+        allowedModels: allowlist.split(",").map((value) => value.trim()).filter(Boolean),
+        capabilities: ["generate", "stream"],
+        timeoutMs: 120_000,
+        maxConcurrency: 8,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      setApiKey("");
+      setMessage(`Provider ${result.id} is ${result.status}.`);
+      await refreshCatalog();
+    } catch {
+      setApiKey("");
+      setMessage("Onboarding failed. The key was not stored in the browser.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div>
@@ -104,6 +142,21 @@ export function ProvidersSettingsPage() {
           <ProviderCard key={provider.id} provider={provider} />
         ))}
       </div>
+      {administrator && (
+        <Card className="mt-4 gap-0 rounded-lg bg-white/[0.02] p-4 ring-white/10">
+          <p className="text-[13px] font-medium text-zinc-100">Register an internal model gateway</p>
+          <p className="mt-1 text-[11px] text-zinc-500">The API key is sent once over the authenticated BFF and is never written to browser storage.</p>
+          <div className="mt-3 space-y-2">
+            <Input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://models.company.internal/v1" className="h-9 border-white/10 bg-surface-2 text-[13px]" />
+            <Input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Provider API key" className="h-9 border-white/10 bg-surface-2 text-[13px]" />
+            <Input value={allowlist} onChange={(event) => setAllowlist(event.target.value)} placeholder="allowed model ids, comma-separated" className="h-9 border-white/10 bg-surface-2 text-[13px]" />
+            <Button size="sm" disabled={busy || !baseUrl || !apiKey || !allowlist} onClick={() => void submitOnboard()}>
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Register provider"}
+            </Button>
+            {message && <p className="text-[11px] text-zinc-500">{message}</p>}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

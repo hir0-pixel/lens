@@ -1,4 +1,4 @@
-import type { RuntimePort, SchedulerPort } from "../../services/model-gateway/ModelGateway";
+import type { RuntimePort, RuntimeReceipt, SchedulerPort, SchedulerReservation } from "../../services/model-gateway/ModelGateway";
 
 type FetchPort = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -23,6 +23,40 @@ function isInternalHost(hostname: string): boolean {
     return parts[0] === 10 || parts[0] === 192 && parts[1] === 168 || parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31;
   }
   return host.startsWith("fc") || host.startsWith("fd");
+}
+
+async function readNdjsonGeneration(response: Response): Promise<{ output: string; receipt: Record<string, unknown> }> {
+  if (!response.body) throw new Error("DEPENDENCY_UNAVAILABLE");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let output = "";
+  let receipt: Record<string, unknown> | undefined;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    if (Buffer.byteLength(buffer, "utf8") > MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw new Error("DEPENDENCY_UNAVAILABLE");
+    }
+    let newline = buffer.indexOf("\n");
+    while (newline >= 0) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (line) {
+        const event = JSON.parse(line) as { delta?: string; done?: boolean; receipt?: Record<string, unknown> };
+        if (typeof event.delta === "string") {
+          output += event.delta;
+          if (Buffer.byteLength(output, "utf8") > 64 * 1024) throw new Error("DEPENDENCY_UNAVAILABLE");
+        }
+        if (event.done && event.receipt) receipt = event.receipt;
+      }
+      newline = buffer.indexOf("\n");
+    }
+  }
+  if (!receipt) throw new Error("DEPENDENCY_UNAVAILABLE");
+  return { output, receipt };
 }
 
 async function readBoundedJson(response: Response): Promise<unknown> {
@@ -72,11 +106,28 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
     if (workloadToken.length < 32) throw new Error("MODEL_RUNTIME_WORKLOAD_TOKEN must contain at least 32 characters.");
   }
 
-  async reserve(input: { reservationId: string; requestDigest: string; endpointRef: string; expiresAt: number }): Promise<{ reservationId: string; requestDigest: string; endpointRef: string; fence: number; expiresAt: number }> {
+  async reserve(input: {
+    reservationId: string;
+    requestId: string;
+    turnId: string;
+    stepId: string;
+    requestDigest: string;
+    modelRef: string;
+    artifactDigest: `sha256:${string}`;
+    endpointRef: string;
+    endpointGeneration: string;
+    expiresAt: number;
+  }): Promise<SchedulerReservation> {
     const payload = await this.post("/v1/scheduler/reservations", {
       reservation_id: input.reservationId,
+      request_id: input.requestId,
+      turn_id: input.turnId,
+      step_id: input.stepId,
       request_digest: input.requestDigest,
+      model_ref: input.modelRef,
+      artifact_digest: input.artifactDigest,
       endpoint_ref: input.endpointRef,
+      endpoint_generation: input.endpointGeneration,
       expires_at: input.expiresAt,
     }, requestSignal(undefined, input.expiresAt));
     const record = payload as Record<string, unknown>;
@@ -87,6 +138,8 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
       typeof record.fence !== "number" ||
       !Number.isSafeInteger(record.fence) ||
       record.fence < 1 ||
+      typeof record.lease_token !== "string" ||
+      record.lease_token.length < 16 ||
       typeof record.expires_at !== "number" ||
       !Number.isSafeInteger(record.expires_at) ||
       record.expires_at > input.expiresAt
@@ -97,8 +150,10 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
       reservationId: input.reservationId,
       requestDigest: input.requestDigest,
       endpointRef: input.endpointRef,
+      endpointGeneration: typeof record.endpoint_generation === "string" ? record.endpoint_generation : input.endpointGeneration,
       fence: record.fence,
       expiresAt: record.expires_at,
+      leaseToken: record.lease_token,
     };
   }
 
@@ -117,11 +172,24 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
     }, AbortSignal.timeout(5_000));
   }
 
-  async execute(input: { reservationId: string; fence: number; endpointRef: string; scopeId: string; deadlineAt: number; chunks: readonly string[] }, signal: AbortSignal): Promise<{ output: string; receipt: { usageEventId: string; generatedTokens: number; terminal: "completed" | "cancelled" } }> {
+  async execute(input: {
+    reservationId: string;
+    fence: number;
+    endpointRef: string;
+    scopeId: string;
+    deadlineAt: number;
+    chunks: readonly string[];
+    leaseToken?: string;
+    requestDigest?: string;
+    endpointGeneration?: string;
+  }, signal: AbortSignal): Promise<{ output: string; receipt: RuntimeReceipt }> {
     const payload = await this.post("/v1/inference/generate", {
       reservation_id: input.reservationId,
       fence: input.fence,
       endpoint_ref: input.endpointRef,
+      endpoint_generation: input.endpointGeneration,
+      request_digest: input.requestDigest,
+      lease_token: input.leaseToken,
       scope_id: input.scopeId,
       deadline_at: input.deadlineAt,
       chunks: input.chunks,
@@ -135,21 +203,38 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
       receipt.reservation_id !== input.reservationId ||
       receipt.fence !== input.fence ||
       receipt.scope_id !== input.scopeId ||
+      typeof receipt.schema_version !== "number" ||
+      typeof receipt.request_id !== "string" ||
+      typeof receipt.turn_id !== "string" ||
+      typeof receipt.step_id !== "string" ||
+      typeof receipt.artifact_digest !== "string" ||
+      typeof receipt.endpoint_generation !== "string" ||
       typeof receipt.usage_event_id !== "string" ||
       receipt.usage_event_id.length > 256 ||
-      typeof receipt.generated_tokens !== "number" ||
-      !Number.isSafeInteger(receipt.generated_tokens) ||
-      receipt.generated_tokens < 0 ||
-      (receipt.terminal !== "completed" && receipt.terminal !== "cancelled")
+      typeof receipt.measured_units !== "number" ||
+      !Number.isSafeInteger(receipt.measured_units) ||
+      receipt.measured_units < 0 ||
+      typeof receipt.usage_signature !== "string" ||
+      receipt.usage_signature.length < 16 ||
+      (receipt.terminal !== "completed" && receipt.terminal !== "cancelled" && receipt.terminal !== "failed")
     ) {
       throw new Error("DEPENDENCY_UNAVAILABLE");
     }
     return {
       output: record.output,
       receipt: {
+        schemaVersion: receipt.schema_version,
+        reservationId: receipt.reservation_id,
+        requestId: receipt.request_id,
+        turnId: receipt.turn_id,
+        stepId: receipt.step_id,
+        fence: receipt.fence,
+        artifactDigest: receipt.artifact_digest,
+        endpointGeneration: receipt.endpoint_generation,
         usageEventId: receipt.usage_event_id,
-        generatedTokens: receipt.generated_tokens,
+        measuredUnits: receipt.measured_units,
         terminal: receipt.terminal,
+        usageSignature: receipt.usage_signature,
       },
     };
   }
@@ -160,7 +245,7 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          accept: "application/json",
+          accept: "application/x-ndjson, application/json",
           "x-lens-model-workload-token": this.workloadToken,
         },
         body: JSON.stringify(body),
@@ -168,6 +253,8 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
       });
       if (response.status === 429) throw new Error("OVERLOADED");
       if (!response.ok) throw new Error("DEPENDENCY_UNAVAILABLE");
+      const contentType = response.headers.get("content-type") ?? "";
+      if (contentType.includes("ndjson")) return await readNdjsonGeneration(response);
       return await readBoundedJson(response);
     } catch (error) {
       if (signal.aborted) throw new Error("CANCELLED");

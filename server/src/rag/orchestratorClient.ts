@@ -5,6 +5,7 @@ const MAX_CITATIONS = 20;
 const MAX_QUERY_CHARS = 12_000;
 const DEFAULT_DEADLINE_MS = 60_000;
 const MAX_RESPONSE_BYTES = 128 * 1024;
+const MODEL_REF_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 
 export interface RagCitation {
   source: string;
@@ -16,7 +17,12 @@ export interface RagAnswer {
   citations: readonly RagCitation[];
 }
 
-export class OrchestratorClientError extends Error {}
+export class OrchestratorClientError extends Error {
+  constructor(readonly code: string) {
+    super(code);
+    this.name = "OrchestratorClientError";
+  }
+}
 
 export type OrchestratorStatusCode =
   | "COMPLETED"
@@ -110,16 +116,27 @@ export class OrchestratorClient {
       subjectRef: string;
       sessionRef: string;
       deviceRef: string;
+      conversationRef: string;
+      sessionAssertion: string;
+      memorySessionAssertion: string;
       applicationId: string;
       purposeRef: string;
       retrievalClass: string;
       deadlineMs: number;
       retryBudget: 0 | 1;
+      /** Symbolic model alias selected by the authenticated user in the UI; never an endpoint. */
+      modelRef?: string;
     },
     signal?: AbortSignal,
   ): Promise<RagAnswer> {
     if (input.query.length === 0 || input.query.length > MAX_QUERY_CHARS) {
       throw new OrchestratorClientError("INVALID_QUERY");
+    }
+    if (input.modelRef !== undefined && !MODEL_REF_PATTERN.test(input.modelRef)) {
+      throw new OrchestratorClientError("INVALID_MODEL_REF");
+    }
+    if (input.conversationRef.length === 0 || input.conversationRef.length > 256 || input.sessionAssertion.length === 0 || input.sessionAssertion.length > 2_048 || input.memorySessionAssertion.length === 0 || input.memorySessionAssertion.length > 2_048) {
+      throw new OrchestratorClientError("INVALID_SECURITY_BINDING");
     }
 
     const url = new URL("/v1/chat", this.endpoint);
@@ -130,6 +147,9 @@ export class OrchestratorClient {
       subject_ref: input.subjectRef,
       session_ref: input.sessionRef,
       device_ref: input.deviceRef,
+      conversation_ref: input.conversationRef,
+      session_assertion: input.sessionAssertion,
+      memory_session_assertion: input.memorySessionAssertion,
       application_id: input.applicationId,
       purpose_ref: input.purposeRef,
       retrieval_class: input.retrievalClass,
@@ -140,6 +160,7 @@ export class OrchestratorClient {
       retry_budget: input.retryBudget,
       bulkhead: "interactive",
       capability: "grounded-assistant",
+      ...(input.modelRef ? { model_ref: input.modelRef } : {}),
     };
 
     let response: Response;
@@ -160,6 +181,11 @@ export class OrchestratorClient {
       throw new OrchestratorClientError("ORCHESTRATOR_UNAVAILABLE");
     }
 
+    if (response.status === 403) {
+      const denied = await readBoundedJson(response);
+      const error = (denied as { error?: unknown }).error;
+      throw new OrchestratorClientError(typeof error === "string" ? error : "FORBIDDEN");
+    }
     if (!response.ok) {
       throw new OrchestratorClientError("ORCHESTRATOR_UNAVAILABLE");
     }
@@ -169,6 +195,11 @@ export class OrchestratorClient {
       throw new OrchestratorClientError("ORCHESTRATOR_INVALID_RESPONSE");
     }
 
+    const status = (payload as { status?: unknown }).status;
+    if (status === "DENIED") {
+      const error = (payload as { error?: unknown }).error;
+      throw new OrchestratorClientError(typeof error === "string" ? error : "FORBIDDEN");
+    }
     const result = this.validateResponse(payload, input.requestId);
     return {
       output: result.output,

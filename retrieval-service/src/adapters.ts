@@ -30,12 +30,17 @@ export interface DependencyClientOptions {
   maxResponseBytes?: number;
 }
 
+export interface DependencyHealthPort {
+  check(timeoutMs?: number): Promise<boolean>;
+}
+
 export interface RetrievalDependencyClients {
   pdp: RetrievalPdpPort;
   index: RetrievalIndexPort;
   content: AuthorizedContentPort;
   audit: RetrievalAuditPort;
   publication: PublicationPort;
+  health: DependencyHealthPort;
 }
 
 export interface RetrievalDependencyClientConfig {
@@ -162,6 +167,19 @@ class JsonDependencyClient {
     }
     if (!response.ok) throw new RetrievalDependencyClientError("UNAVAILABLE", "Dependency returned non-success.");
     return readBoundedJson(response, this.maxResponseBytes);
+  }
+
+  async livez(timeoutMs: number): Promise<boolean> {
+    try {
+      const response = await this.fetcher(joinEndpoint(this.baseUrl, "/livez"), {
+        method: "GET",
+        redirect: "error",
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 }
 
@@ -358,11 +376,23 @@ function createPublicationPort(client: JsonDependencyClient): PublicationPort {
 }
 
 export function createRetrievalDependencyClients(config: RetrievalDependencyClientConfig): RetrievalDependencyClients {
+  const pdpClient = new JsonDependencyClient("PDP", config.pdp);
+  const indexClient = new JsonDependencyClient("INDEX", config.index);
+  const contentClient = new JsonDependencyClient("CONTENT", config.content);
+  const auditClient = new JsonDependencyClient("AUDIT", config.audit);
+  const publicationClient = new JsonDependencyClient("PUBLICATION", config.publication);
+  const dependencyClients = [pdpClient, indexClient, contentClient, auditClient, publicationClient];
   return {
-    pdp: createPdpPort(new JsonDependencyClient("PDP", config.pdp)),
-    index: createIndexPort(new JsonDependencyClient("INDEX", config.index)),
-    content: createContentPort(new JsonDependencyClient("CONTENT", config.content)),
-    audit: createAuditPort(new JsonDependencyClient("AUDIT", config.audit)),
-    publication: createPublicationPort(new JsonDependencyClient("PUBLICATION", config.publication)),
+    pdp: createPdpPort(pdpClient),
+    index: createIndexPort(indexClient),
+    content: createContentPort(contentClient),
+    audit: createAuditPort(auditClient),
+    publication: createPublicationPort(publicationClient),
+    health: {
+      async check(timeoutMs = 2_000): Promise<boolean> {
+        const results = await Promise.all(dependencyClients.map((client) => client.livez(timeoutMs)));
+        return results.every((ok) => ok);
+      },
+    },
   };
 }

@@ -1,4 +1,13 @@
-import { InferenceError, type RuntimeReceipt } from "./InferenceAdapter";
+import { InferenceError } from "./InferenceAdapter";
+
+export interface OllamaRuntimeReceipt {
+  usageEventId: string;
+  reservationId: string;
+  fence: number;
+  generatedTokens: number;
+  terminal: "completed" | "cancelled";
+  scopeId: string;
+}
 
 type FetchPort = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -27,7 +36,7 @@ export class OllamaInferenceAdapter {
     if (!this.model) throw new InferenceError("DEPENDENCY_UNAVAILABLE");
   }
 
-  async execute(input: { reservationId: string; fence: number; scopeId: string; chunks: readonly string[] }, signal: AbortSignal): Promise<{ output: string; receipt: RuntimeReceipt }> {
+  async execute(input: { reservationId: string; fence: number; scopeId: string; chunks: readonly string[] }, signal: AbortSignal): Promise<{ output: string; receipt: OllamaRuntimeReceipt }> {
     if (!input.reservationId || !input.scopeId || input.fence < 1) throw new InferenceError("STALE_FENCE");
     if (signal.aborted) throw new InferenceError("CANCELLED");
 

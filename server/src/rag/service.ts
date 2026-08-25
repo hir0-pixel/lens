@@ -6,6 +6,12 @@ import type { PolicyRetriever, RetrievedPolicyChunk } from "./retrieval";
 import { RagDeadlineError } from "./retrieval";
 import { classifyPolicyIntent } from "./intent";
 
+/**
+ * QUARANTINED — not the active RAG path. See localRagClient.ts for the full
+ * note: `server/src/index.ts` wires `/api/rag/ask` to `OrchestratorClient`
+ * only. This local Gemini-backed policy RAG service exists for its own unit
+ * tests and is never constructed by `createApp()`.
+ */
 export const POLICY_ABSTENTION = "The approved policy documents do not contain enough information to answer that question.";
 
 export interface PolicyRagResult {

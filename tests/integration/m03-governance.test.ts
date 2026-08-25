@@ -60,6 +60,14 @@ describe("M03 Governance authority", () => {
     expectErrorCode(() => pdp.readCurrentDocumentFacts(["docver-1"], { "docver-1": 2 }), "STALE_AUTHORITY");
   });
 
+  it("fences security mutations when an expected revision is supplied and preserves unfenced compatibility", () => {
+    const governance = authority();
+    governance.registerVersion({ documentVersionRef: "docver-1", classification: "internal", aclDigest: digest("e") });
+    expect(governance.mutateSecurity("docver-1", { processing: "indexed" }, fence, 1).resourceSecurityRevision).toBe(2);
+    expectErrorCode(() => governance.mutateSecurity("docver-1", { integrity: "valid" }, fence, 1), "STALE_AUTHORITY");
+    expect(governance.mutateSecurity("docver-1", { integrity: "valid" }, fence).resourceSecurityRevision).toBe(3);
+  });
+
   it("keeps preservation separate from access and rejects self-approved governance changes", () => {
     const governance = authority();
     governance.registerVersion({ documentVersionRef: "docver-1", classification: "internal", aclDigest: digest("e") });

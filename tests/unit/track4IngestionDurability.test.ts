@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { simpleHash } from "../../services/retrieval/indexGenerationManifest";
 import {
   DEFAULT_INGESTION_BOUNDS,
   InMemoryIngestionOwnerStore,
@@ -13,7 +14,7 @@ import {
   type InvalidationEvent,
 } from "../../services/ingestion";
 
-const digest = (char: string): `sha256:${string}` => `sha256:${char.repeat(64)}`;
+const digest = (value: string): `sha256:${string}` => `sha256:${simpleHash(value)}`;
 
 const bounds = (overrides: Partial<IngestionBounds> = {}): IngestionBounds => ({
   ...DEFAULT_INGESTION_BOUNDS,
@@ -30,10 +31,12 @@ const request = (overrides: Partial<IngestionRequest> = {}): IngestionRequest =>
   profileRef: "enterprise-rag-v1",
   contentDigest: digest("a"),
   contentBytes: 128,
+  classificationRef: "internal",
+  aclDigest: digest("e"),
   parse: {
     status: "accepted",
     renditionDigest: digest("b"),
-    chunks: [{ chunkRef: "chunk-1", contentDigest: digest("c"), citationAnchor: "p1" }],
+    chunks: [{ chunkRef: "chunk-1", contentDigest: digest("chunk text"), text: "chunk text", citationAnchor: "p1" }],
   },
   ...overrides,
 });
@@ -42,6 +45,9 @@ class FakeGovernance implements GovernancePort {
   registrations = 0;
   activations = 0;
   withdrawals = 0;
+  staleOnce = false;
+  currentRevision = 11;
+  withdrawalRevisions: number[] = [];
 
   async registerVersion(): Promise<{ resourceSecurityRevision: number }> {
     this.registrations += 1;
@@ -53,8 +59,18 @@ class FakeGovernance implements GovernancePort {
     return { resourceSecurityRevision: 11 };
   }
 
-  async withdrawVersion(): Promise<void> {
+  async withdrawVersion(input: { expectedResourceSecurityRevision: number }): Promise<void> {
+    this.withdrawalRevisions.push(input.expectedResourceSecurityRevision);
+    if (this.staleOnce) {
+      this.staleOnce = false;
+      throw new IngestionError("STALE_AUTHORITY", "Changed.");
+    }
+    if (input.expectedResourceSecurityRevision !== this.currentRevision) throw new IngestionError("STALE_AUTHORITY", "Changed.");
     this.withdrawals += 1;
+  }
+
+  async getCurrentResourceSecurityRevision(): Promise<number> {
+    return this.currentRevision;
   }
 }
 
@@ -76,7 +92,7 @@ class FakeIndex implements IndexPort {
   removals = 0;
   verified = true;
 
-  async writeGeneration(): Promise<void> {
+  async writeGeneration(_input: Parameters<IndexPort["writeGeneration"]>[0]): Promise<void> {
     this.writes += 1;
   }
 
@@ -195,6 +211,21 @@ describe("Track 4 durable bounded ingestion", () => {
     expect(governance.withdrawals).toBe(1);
     expect(index.removals).toBe(1);
     expect(backbone.published.map((event) => event.type)).toEqual(["document.indexed", "document.removed"]);
+  });
+
+  it("refreshes a stale deletion revision before retrying withdrawal", async () => {
+    const governance = new FakeGovernance();
+    governance.currentRevision = 12;
+    governance.staleOnce = true;
+    const { ingestion, index } = service({ governance });
+
+    await ingestion.ingest(request());
+    await ingestion.withdraw("policy-handbook@2026-08-21");
+
+    expect(governance.withdrawalRevisions).toEqual([11, 12]);
+    expect(governance.withdrawals).toBe(1);
+    expect(index.removals).toBe(1);
+    expect((await ingestion.version("policy-handbook@2026-08-21"))?.state).toBe("WITHDRAWN");
   });
 
   it("never publishes or activates a generation that fails verification", async () => {

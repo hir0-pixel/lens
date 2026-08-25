@@ -83,45 +83,46 @@ describe("bff-auth frontend client", () => {
     expect(openExternal).toHaveBeenCalledWith("/auth/login");
   });
 
-  it("generate routes through the authenticated endpoint and surfaces auth-required", async () => {
+  it("generate checks for a live authenticated session before calling the legacy endpoint", async () => {
     const fetcher = vi
-      .fn().mockResolvedValueOnce(new Response(JSON.stringify({ output: "hello from backend" }), { status: 200 }));
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: true, subject: "user-1" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ output: "hello from backend" }), { status: 200 }));
     const client = createAuthClient({ baseUrl: "", fetcher });
     await expect(client.generate("hi")).resolves.toBe("hello from backend");
-    expect(fetcher).toHaveBeenCalledWith(
+    expect(fetcher).toHaveBeenNthCalledWith(1, "/api/session", expect.objectContaining({ credentials: "include" }));
+    expect(fetcher).toHaveBeenNthCalledWith(
+      2,
       "/api/generate",
       expect.objectContaining({ credentials: "include" }),
     );
   });
 
-  it("beginLogin navigates directly inside a desktop webview without probing", async () => {
-    const assign = vi.fn();
-    Object.defineProperty(window, "location", { value: { assign } });
-    const fetcher = vi.fn();
-    const client = createAuthClient({ baseUrl: "", fetcher, directLoginNavigation: true });
-    await client.beginLogin();
-    expect(fetcher).not.toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith("/auth/login");
-  });
+  // No "direct navigation without probing" mode exists on the sovereign client
+  // beyond the Tauri `openExternal` opener (covered by "beginLogin uses the
+  // system-browser opener when supplied (Tauri)" above) — every other path
+  // probes the BFF's own /auth/login before navigating.
 
-  it("loads the authenticated Gemini catalog and forwards the selected model", async () => {
+  it("never exposes a public-provider (Gemini) model catalog or a client-selectable model to the sovereign generate endpoint", async () => {
+    // The sovereign profile forbids a client-supplied provider/model reaching a
+    // public model catalog: no such method exists on the client, and the
+    // legacy /api/generate call never carries a model parameter.
+    expect((createAuthClient({ baseUrl: "" }) as unknown as Record<string, unknown>).getGeminiModels).toBeUndefined();
+
     document.cookie = "lens_csrf=csrf-token";
     const fetcher = vi
       .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: true, subject: "user-1" }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ models: [{ id: "gemini-2.5-flash", name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash" }] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ output: "selected model response", model: "gemini-2.5-flash" }), { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ output: "response" }), { status: 200 }));
     const client = createAuthClient({ baseUrl: "", fetcher });
-    await expect(client.getGeminiModels()).resolves.toHaveLength(1);
-    await expect(client.generate("hi", "gemini-2.5-flash")).resolves.toBe("selected model response");
-    expect(fetcher.mock.calls[2][1]).toEqual(expect.objectContaining({
-      body: JSON.stringify({ prompt: "hi", modelId: "gemini-2.5-flash" }),
-      headers: expect.objectContaining({ "x-lens-csrf": "csrf-token" }),
-    }));
+    await expect(client.generate("hi")).resolves.toBe("response");
+    expect(fetcher.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({ body: JSON.stringify({ prompt: "hi" }) }),
+    );
   });
 
   it("generate rejects when the backend session is not authenticated", async () => {
-    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "UNAUTHENTICATED" }), { status: 401 }));
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ authenticated: false }), { status: 200 }));
     const client = createAuthClient({ baseUrl: "", fetcher });
     await expect(client.generate("hi")).rejects.toThrow("AUTH_REQUIRED");
   });

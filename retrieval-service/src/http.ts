@@ -237,6 +237,8 @@ function parseRetrievalRequest(payload: unknown): RetrievalRequest {
     "retrieval_class",
     "corpus_ref",
     "mode",
+    "profile_version",
+    "profile_digest",
     "candidate_limit",
     "deadline_at",
     "cancellation",
@@ -250,6 +252,8 @@ function parseRetrievalRequest(payload: unknown): RetrievalRequest {
   if (record.caller_workload_ref !== "ai-orchestrator") throw new Error("INVALID_REQUEST");
   if (record.application_id !== "lens-employee-client") throw new Error("INVALID_REQUEST");
   if (typeof record.query_digest !== "string" || !/^sha256:[a-f0-9]{64}$/.test(record.query_digest)) throw new Error("INVALID_REQUEST");
+  if (typeof record.profile_version !== "number" || !Number.isSafeInteger(record.profile_version) || record.profile_version < 1) throw new Error("INVALID_REQUEST");
+  if (typeof record.profile_digest !== "string" || !/^sha256:[a-f0-9]{64}$/.test(record.profile_digest)) throw new Error("INVALID_REQUEST");
   if (
     typeof record.query_text !== "string" ||
     unicodeCharLength(record.query_text) < 1 ||
@@ -277,6 +281,8 @@ function parseRetrievalRequest(payload: unknown): RetrievalRequest {
     retrieval_class: "enterprise-grounded",
     corpus_ref: String(record.corpus_ref),
     mode: mode as RetrievalRequest["mode"],
+    profile_version: record.profile_version as number,
+    profile_digest: record.profile_digest as `sha256:${string}`,
     candidate_limit: record.candidate_limit as number,
     deadline_at: record.deadline_at as number,
     cancellation: Boolean(record.cancellation),

@@ -16,6 +16,8 @@ const request: RetrievalRequest = {
   retrieval_class: "enterprise-grounded",
   corpus_ref: "corpus-1",
   mode: "hybrid",
+  profile_version: 7,
+  profile_digest: `sha256:${"p".replace("p", "a").repeat(64)}`,
   candidate_limit: 100,
   deadline_at: Date.now() + 60_000,
   cancellation: false,
@@ -79,6 +81,8 @@ function buildPorts(overrides: Partial<TestPorts> = {}): TestPorts {
         indexGeneration: "index:gen1",
         visibilitySequence: 1,
         sourceRevisionDigest: "sha256:source-1",
+        ragProfileVersion: request.profile_version,
+        ragProfileDigest: request.profile_digest,
       }),
     },
   };
@@ -96,6 +100,24 @@ describe("RetrievalService pipeline", () => {
     expect(result.manifest.sources).toHaveLength(2);
     expect(result.sources[0]).toMatchObject({ document_version_ref: "version-a", content_digest: "sha256:chunk-a" });
     expect(result.context_digest).toMatch(/^sha256:/);
+    expect(result).toMatchObject({ profile_version: request.profile_version, profile_digest: request.profile_digest });
+    expect(result.manifest).toMatchObject({ profile_version: request.profile_version, profile_digest: request.profile_digest });
+  });
+
+  it("fails closed before search when the active index lineage differs from the request", async () => {
+    const search = vi.fn(buildPorts().indexes.search);
+    for (const publication of [
+      { ragProfileVersion: request.profile_version + 1, ragProfileDigest: request.profile_digest },
+      { ragProfileVersion: request.profile_version, ragProfileDigest: `sha256:${"b".repeat(64)}` },
+    ]) {
+      const ports = buildPorts({
+        indexes: { search },
+        publication: { activeGeneration: () => ({ indexGeneration: "index:gen1", visibilitySequence: 1, sourceRevisionDigest: "sha256:source-1", ...publication }) },
+      });
+      const service = new RetrievalService(...Object.values(ports) as [RetrievalPdpPort, RetrievalIndexPort, AuthorizedContentPort, RetrievalAuditPort, PublicationPort, () => number]);
+      await expect(service.retrieve(request)).rejects.toMatchObject({ code: "STALE_AUTHORITY" });
+    }
+    expect(search).not.toHaveBeenCalled();
   });
 
   it("returns denied_policy when the operation PDP denies", async () => {
@@ -254,7 +276,7 @@ describe("RetrievalService pipeline", () => {
     const basePorts = buildPorts();
     const sourceRevisionPorts = buildPorts({
       publication: {
-        activeGeneration: () => ({ indexGeneration: "index:gen1", visibilitySequence: 1, sourceRevisionDigest: "sha256:source-2" }),
+        activeGeneration: () => ({ indexGeneration: "index:gen1", visibilitySequence: 1, sourceRevisionDigest: "sha256:source-2", ragProfileVersion: request.profile_version, ragProfileDigest: request.profile_digest }),
       },
       indexes: {
         search: (input) => ({
@@ -310,6 +332,98 @@ describe("RetrievalService pipeline", () => {
     });
     const service = new RetrievalService(...Object.values(ports) as [RetrievalPdpPort, RetrievalIndexPort, AuthorizedContentPort, RetrievalAuditPort, PublicationPort, () => number], () => 10, { maxContextBytes: 79 });
     await expect(service.retrieve(request)).rejects.toMatchObject({ code: "OVERLOADED", retryable: true });
+  });
+
+  it.each([100, 500, 1000])("ranks and matches allowed candidates correctly at an envelope of %i", async (size) => {
+    const versionRefs = Array.from({ length: size }, (_, i) => `version-${i}`);
+    const candidates = versionRefs.map((versionRef, i) => candidate(versionRef, `chunk-${i}`, size - i));
+    const chunks = versionRefs.map((versionRef, i) => ({
+      resourceRef: `resource:${versionRef}`,
+      versionRef,
+      chunkRef: `chunk-${i}`,
+      contentHash: `sha256:chunk-${i}`,
+      text: "",
+      citationAnchor: `doc-${i}`,
+    }));
+    const ports = buildPorts({
+      pdp: {
+        ...buildPorts().pdp,
+        authorizeBatch: () => ({
+          allowedRefs: versionRefs,
+          decisionRef: "decision:batch",
+          fence: "signed:fence-1",
+          revisionDigest: "revisions",
+          policyRevision: 1,
+          subjectSecurityRevision: 1,
+          resourceSecurityRevisionDigest: "sha256:resources",
+        }),
+      },
+      indexes: {
+        search: (input) => ({
+          indexGeneration: input.indexGeneration,
+          visibilitySequence: input.visibilitySequence,
+          sourceRevisionDigest: input.sourceRevisionDigest,
+          candidates,
+        }),
+      },
+      content: { fetch: () => chunks },
+    });
+    const service = new RetrievalService(...Object.values(ports) as [RetrievalPdpPort, RetrievalIndexPort, AuthorizedContentPort, RetrievalAuditPort, PublicationPort, () => number], () => 10);
+    const result = await service.retrieve({ ...request, candidate_limit: size });
+    expect(result.status).toBe("context");
+    if (result.status !== "context") return;
+    expect(result.sources).toHaveLength(size);
+    const expectedOrder = versionRefs.slice().reverse();
+    expect(result.sources.map((source) => source.document_version_ref)).toEqual(expectedOrder);
+  });
+
+  it("keeps the lowest-rank candidate when two allowed candidates share resourceRef and chunkRef but differ by versionRef", async () => {
+    // fuse() dedups on resourceRef|versionRef|chunkRef, so two candidates for
+    // the same (resourceRef, chunkRef) but different versionRef both survive
+    // into `allowed`. The rank lookup keys on resourceRef|chunkRef only (to
+    // match the legacy find()-based rank()), so it must resolve such
+    // collisions the same way find() did: first match in rank-ascending
+    // order, i.e. the lowest rank - not whichever happens to be inserted last.
+    const sharedLow: RetrievalCandidate = { resourceRef: "resource:shared", versionRef: "version-b", chunkRef: "chunk-x", contentHash: "sha256:chunk-x-b", lane: "lexical", rank: 1, classificationRef: "internal" };
+    const sharedHigh: RetrievalCandidate = { resourceRef: "resource:shared", versionRef: "version-a", chunkRef: "chunk-x", contentHash: "sha256:chunk-x-a", lane: "lexical", rank: 5, classificationRef: "internal" };
+    const other: RetrievalCandidate = { resourceRef: "resource:other", versionRef: "version-c", chunkRef: "chunk-y", contentHash: "sha256:chunk-y", lane: "lexical", rank: 3, classificationRef: "internal" };
+    const ports = buildPorts({
+      pdp: {
+        ...buildPorts().pdp,
+        authorizeBatch: () => ({
+          allowedRefs: ["version-a", "version-b", "version-c"],
+          decisionRef: "decision:batch",
+          fence: "signed:fence-1",
+          revisionDigest: "revisions",
+          policyRevision: 1,
+          subjectSecurityRevision: 1,
+          resourceSecurityRevisionDigest: "sha256:resources",
+        }),
+      },
+      indexes: {
+        search: (input) => ({
+          indexGeneration: input.indexGeneration,
+          visibilitySequence: input.visibilitySequence,
+          sourceRevisionDigest: input.sourceRevisionDigest,
+          candidates: [sharedHigh, sharedLow, other],
+        }),
+      },
+      content: {
+        fetch: () => [
+          { resourceRef: "resource:shared", versionRef: "version-b", chunkRef: "chunk-x", contentHash: "sha256:chunk-x-b", text: "shared-low", citationAnchor: "doc-shared-b" },
+          { resourceRef: "resource:shared", versionRef: "version-a", chunkRef: "chunk-x", contentHash: "sha256:chunk-x-a", text: "shared-high", citationAnchor: "doc-shared-a" },
+          { resourceRef: "resource:other", versionRef: "version-c", chunkRef: "chunk-y", contentHash: "sha256:chunk-y", text: "other", citationAnchor: "doc-other" },
+        ],
+      },
+    });
+    const service = new RetrievalService(...Object.values(ports) as [RetrievalPdpPort, RetrievalIndexPort, AuthorizedContentPort, RetrievalAuditPort, PublicationPort, () => number], () => 10);
+    const result = await service.retrieve(request);
+    expect(result.status).toBe("context");
+    if (result.status !== "context") return;
+    // The two candidates sharing (resourceRef, chunkRef) both resolve to the
+    // lowest rank (1), sorting them ahead of "other" (rank 3); if the last
+    // inserted candidate (rank 5) won instead, "other" would sort first.
+    expect(result.sources.map((source) => source.document_version_ref)).toEqual(["version-a", "version-b", "version-c"]);
   });
 
   it("does not fetch protected content before batch authorization allows", async () => {

@@ -6,6 +6,13 @@ export interface AuthSessionInfo {
   picture?: string;
   preferredUsername?: string;
   expiresAt?: number;
+  administrator?: boolean;
+}
+
+export interface EmployeeModel {
+  modelRef: string;
+  label: string;
+  available: boolean;
 }
 
 export type AuthClientErrorCode =
@@ -36,6 +43,7 @@ export class AuthClientError extends Error {
 export interface RagAnswer {
   output: string;
   citations: readonly { source: string; section: string }[];
+  conversationRef: string;
 }
 
 export interface AuthClientOptions {
@@ -43,6 +51,8 @@ export interface AuthClientOptions {
   sessionEndpoint?: string;
   generateEndpoint?: string;
   ragEndpoint?: string;
+  modelsEndpoint?: string;
+  adminProvidersEndpoint?: string;
   loginPath?: string;
   logoutPath?: string;
   csrfCookieName?: string;
@@ -105,6 +115,8 @@ export function createAuthClient(options: AuthClientOptions) {
   const sessionEndpoint = options.sessionEndpoint ?? "/api/session";
   const generateEndpoint = options.generateEndpoint ?? "/api/generate";
   const ragEndpoint = options.ragEndpoint ?? "/api/rag/ask";
+  const modelsEndpoint = options.modelsEndpoint ?? "/api/models";
+  const adminProvidersEndpoint = options.adminProvidersEndpoint ?? "/api/admin/providers";
   const loginPath = options.loginPath ?? "/auth/login";
   const logoutPath = options.logoutPath ?? "/auth/logout";
   const csrfCookieName = options.csrfCookieName ?? "lens_csrf";
@@ -221,34 +233,88 @@ export function createAuthClient(options: AuthClientOptions) {
     return (payload as { output: string }).output;
   }
 
-  async function askRag(query: string, signal?: AbortSignal): Promise<RagAnswer> {
+  async function askRag(query: string, options?: { modelId?: string; conversationRef?: string; conversationCreationKey?: string; signal?: AbortSignal }): Promise<RagAnswer> {
+    const signal = options?.signal;
+    const modelId = options?.modelId;
     const session = await getSession(signal);
     if (!session.authenticated) throw new AuthClientError("AUTH_REQUIRED");
     const response = await fetcher(`${baseUrl}${ragEndpoint}`, {
       method: "POST",
       credentials: "include",
       headers: { "content-type": "application/json", accept: "application/json", ...csrfHeaders() },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, ...(modelId ? { modelId } : {}), ...(options?.conversationRef ? { conversationRef: options.conversationRef } : {}), ...(options?.conversationCreationKey ? { conversationCreationKey: options.conversationCreationKey } : {}) }),
       signal,
     });
     const payload = await readJsonPayload(response);
     if (!response.ok) {
       throw classifyEndpointError(response, payload, "RAG_UNAVAILABLE");
     }
-    if (!payload || typeof payload !== "object" || typeof (payload as { output?: unknown }).output !== "string" || !Array.isArray((payload as { citations?: unknown }).citations)) {
+    if (!payload || typeof payload !== "object" || typeof (payload as { output?: unknown }).output !== "string" || !Array.isArray((payload as { citations?: unknown }).citations) || typeof (payload as { conversationRef?: unknown }).conversationRef !== "string") {
       throw new AuthClientError("RAG_UNAVAILABLE", response.status);
     }
-    const result = payload as { output: string; citations: unknown[] };
+    const result = payload as { output: string; citations: unknown[]; conversationRef: string };
     if (result.citations.some((citation) => !citation || typeof citation !== "object" || typeof (citation as { source?: unknown }).source !== "string" || typeof (citation as { section?: unknown }).section !== "string")) {
       throw new AuthClientError("RAG_UNAVAILABLE", response.status);
     }
     return {
       output: result.output,
+      conversationRef: result.conversationRef,
       citations: result.citations.map((citation) => ({
         source: (citation as { source: string }).source,
         section: (citation as { section: string }).section,
       })),
     };
+  }
+
+  async function listModels(signal?: AbortSignal): Promise<readonly EmployeeModel[]> {
+    const session = await getSession(signal);
+    if (!session.authenticated) throw new AuthClientError("AUTH_REQUIRED");
+    const response = await fetcher(`${baseUrl}${modelsEndpoint}`, {
+      method: "GET",
+      credentials: "include",
+      headers: { accept: "application/json" },
+      signal,
+    });
+    const payload = await readJsonPayload(response);
+    if (!response.ok) throw classifyEndpointError(response, payload, "DEPENDENCY_UNAVAILABLE");
+    const models = payload && typeof payload === "object" ? (payload as { models?: unknown }).models : undefined;
+    if (!Array.isArray(models)) throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
+    return models.filter((row): row is EmployeeModel => {
+      if (!row || typeof row !== "object") return false;
+      const model = row as EmployeeModel;
+      return typeof model.modelRef === "string" && typeof model.label === "string" && typeof model.available === "boolean";
+    });
+  }
+
+  async function onboardProvider(input: {
+    adapterType?: "openai-compatible";
+    baseUrl: string;
+    apiKey: string;
+    tlsWorkloadRef: string;
+    allowedModels: string[];
+    capabilities: Array<"generate" | "embed" | "stream">;
+    timeoutMs: number;
+    maxConcurrency: number;
+    idempotencyKey: string;
+  }): Promise<{ id: string; status: string }> {
+    const session = await getSession();
+    if (!session.authenticated) throw new AuthClientError("AUTH_REQUIRED");
+    const response = await fetcher(`${baseUrl}${adminProvidersEndpoint}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json", accept: "application/json", ...csrfHeaders() },
+      body: JSON.stringify({ ...input, adapterType: input.adapterType ?? "openai-compatible" }),
+    });
+    const payload = await readJsonPayload(response);
+    if (!response.ok) throw classifyEndpointError(response, payload, "DEPENDENCY_UNAVAILABLE");
+    if (!payload || typeof payload !== "object" || typeof (payload as { id?: unknown }).id !== "string") {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
+    }
+    const body = payload as Record<string, unknown>;
+    if ("apiKey" in body || "secretRef" in body || "baseUrl" in body) {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
+    }
+    return { id: String(body.id), status: String(body.status ?? "") };
   }
 
   return {
@@ -257,6 +323,8 @@ export function createAuthClient(options: AuthClientOptions) {
     logout,
     generate,
     askRag,
+    listModels,
+    onboardProvider,
   };
 }
 

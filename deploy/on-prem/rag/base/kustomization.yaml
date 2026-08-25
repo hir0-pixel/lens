@@ -5,6 +5,7 @@ namespace: lens-rag
 resources:
   - namespace.yaml
   - runtime.yaml
+  - authorities.yaml
   - networking.yaml
   - autoscaling.yaml
   - dr.yaml
