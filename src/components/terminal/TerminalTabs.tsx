@@ -76,7 +76,7 @@ export function TerminalTabs() {
                   className={cn(
                     "h-1.5 w-1.5 shrink-0 rounded-full",
                     session.status === "running"
-                      ? "bg-[#3fb950]"
+                      ? "bg-[#0070f3]"
                       : "bg-[var(--cursor-fg-muted)]",
                   )}
                 />
@@ -95,7 +95,7 @@ export function TerminalTabs() {
                 </span>
               </button>
             </ContextMenuTrigger>
-            <ContextMenuContent className="rounded-none border-[var(--cursor-border)] bg-[var(--cursor-menu-bg,#1f1f1f)] type-caption">
+            <ContextMenuContent className="rounded-none border-[var(--cursor-border)] bg-[var(--cursor-menu-bg,#171717)] type-caption">
               <ContextMenuItem
                 onClick={() => {
                   const next = window.prompt("Rename terminal", session.title);

@@ -236,7 +236,7 @@ export default function AppShell({
               <button
                 type="button"
                 aria-label="Close tools"
-                className="absolute inset-0 z-[30] bg-[hsl(0_0%_0%/0.45)]"
+                className="absolute inset-0 z-[30] bg-[#171717]/45"
                 onClick={closeTools}
               />
               <aside className="absolute inset-y-0 right-0 z-[35] flex w-[min(100%,480px)] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-lg)]">

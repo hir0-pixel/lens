@@ -72,8 +72,8 @@ export function Sidebar() {
     lang: "typescript",
     content: `const GOALS = [
   { label: "Emergency Fund", current: 48, total: 10_000, color: "var(--accent-primary)" },
-  { label: "Trip to Japan", current: 72, total: 6_000, color: "#34D399" },
-  { label: "New Laptop", current: 35, total: 2_500, color: "#60A5FA" },
+  { label: "Trip to Japan", current: 72, total: 6_000, color: "#50e3c2" },
+  { label: "New Laptop", current: 35, total: 2_500, color: "#0070f3" },
 ];
 
 export function SavingsGoals() {

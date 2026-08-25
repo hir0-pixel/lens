@@ -58,7 +58,7 @@ export default function TerminalPanel({
 
   return (
     <div
-      className="relative flex shrink-0 flex-col border-t border-white/[0.08] bg-[#0d0d0d]"
+      className="relative flex shrink-0 flex-col border-t border-white/[0.08] bg-[#171717]"
       style={{ height }}
     >
       <div
@@ -84,14 +84,14 @@ export default function TerminalPanel({
           }
         }}
       />
-      <div className="flex h-[34px] shrink-0 items-center gap-1 border-b border-white/[0.08] bg-[#181818] px-2">
+      <div className="flex h-[34px] shrink-0 items-center gap-1 border-b border-white/[0.08] bg-[#171717] px-2">
         <span className="px-2 py-1 type-caption font-semibold text-white">
           {title}
         </span>
-        <span className="px-2 py-1 type-caption text-[#666]">{subtitle}</span>
-        <span className="flex items-center gap-1.5 rounded bg-[#2a2a2a] px-2.5 py-1 type-caption font-medium text-white">
+        <span className="px-2 py-1 type-caption text-[#4d4d4d]">{subtitle}</span>
+        <span className="flex items-center gap-1.5 rounded bg-[#171717] px-2.5 py-1 type-caption font-medium text-white">
           {name ?? "shell"}
-          <span className="type-code text-[#888]" title={cwd}>
+          <span className="type-code text-[#888888]" title={cwd}>
             {projectName ?? ""}
           </span>
         </span>
@@ -99,7 +99,7 @@ export default function TerminalPanel({
           <button
             type="button"
             onClick={onNew}
-            className="flex h-6 w-6 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-white"
+            className="flex h-6 w-6 items-center justify-center rounded text-[#4d4d4d] hover:bg-white/[0.06] hover:text-white"
             title="New terminal"
             aria-label="New terminal"
           >
@@ -108,7 +108,7 @@ export default function TerminalPanel({
           <button
             type="button"
             onClick={close}
-            className="flex h-6 w-6 items-center justify-center rounded text-[#666] hover:bg-white/[0.06] hover:text-white"
+            className="flex h-6 w-6 items-center justify-center rounded text-[#4d4d4d] hover:bg-white/[0.06] hover:text-white"
             title="Close panel"
             aria-label="Close panel"
           >

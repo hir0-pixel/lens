@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   ChatMessage,
   Model,
   Project,
@@ -178,7 +178,7 @@ export const INITIAL_PROJECTS: Project[] = [
     branch: "main",
     deployStatus: "idle",
     updatedAt: "last week",
-    color: "#F472B6",
+    color: "#ff0080",
   },
   {
     id: "p5",
@@ -188,7 +188,7 @@ export const INITIAL_PROJECTS: Project[] = [
     branch: "main",
     deployStatus: "idle",
     updatedAt: "2 min ago",
-    color: "#A78BFA",
+    color: "#7928ca",
   },
   {
     id: "p6",
@@ -198,7 +198,7 @@ export const INITIAL_PROJECTS: Project[] = [
     branch: "main",
     deployStatus: "idle",
     updatedAt: "last week",
-    color: "#FBBF24",
+    color: "#f5a623",
   },
   {
     id: "p7",
@@ -208,7 +208,7 @@ export const INITIAL_PROJECTS: Project[] = [
     branch: "main",
     deployStatus: "idle",
     updatedAt: "last week",
-    color: "#818CF8",
+    color: "#0070f3",
   },
 ];
 

@@ -104,7 +104,7 @@ export function GitToolsCard() {
   }
 
   return (
-    <div className="w-[280px] overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[0_8px_28px_rgba(0,0,0,0.35)]">
+    <div className="w-[280px] overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-float-pop">
       <div className="flex h-8 items-center px-3">
         <span className="type-caption text-[var(--text-tertiary)]">Git tools</span>
         <div className="ml-auto flex items-center gap-0.5">
@@ -231,7 +231,7 @@ export function GitToolsCard() {
               className="h-3.5 w-3.5 border-white/30"
             />
             Include unstaged changes
-            <span className="ml-auto type-caption text-[#7a7a7a]">
+            <span className="ml-auto type-caption text-[#888888]">
               {fileCount} files
             </span>
           </label>
@@ -244,7 +244,7 @@ export function GitToolsCard() {
             >
               <GitCommitHorizontal className="h-3.5 w-3.5" strokeWidth={1.6} />
               Commit
-              <span className="ml-auto type-caption text-[#7a7a7a]">Ctrl+↵</span>
+              <span className="ml-auto type-caption text-[#888888]">Ctrl+↵</span>
             </button>
             <button
               type="button"
