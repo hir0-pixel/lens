@@ -252,7 +252,13 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
         signal,
       });
       if (response.status === 429) throw new Error("OVERLOADED");
-      if (!response.ok) throw new Error("DEPENDENCY_UNAVAILABLE");
+      if (!response.ok) {
+        if (process.env.NODE_ENV === "development") {
+          const detail = await response.text().catch(() => "");
+          console.error(`[internal-inference] ${path} ${response.status} ${detail.slice(0, 500)}`);
+        }
+        throw new Error("DEPENDENCY_UNAVAILABLE");
+      }
       const contentType = response.headers.get("content-type") ?? "";
       if (contentType.includes("ndjson")) return await readNdjsonGeneration(response);
       return await readBoundedJson(response);

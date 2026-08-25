@@ -1,5 +1,5 @@
 import {
-  assertInternalOrigin,
+  assertInternalServiceUrl,
   assertWorkloadToken,
   readBoundedJson,
   type FetchPort,
@@ -109,18 +109,18 @@ function parseProviderRuntimeConfig(body: Record<string, unknown>, modelRef: str
  * this call — only non-secret config. The origin must be an approved internal endpoint.
  */
 export class HttpProviderRuntimeConfigResolver implements ProviderRuntimeConfigResolver {
-  private readonly origin: URL;
+  private readonly base: URL;
   constructor(
     configUrl: string,
     private readonly token: string,
     private readonly fetcher: FetchPort = fetch,
   ) {
-    this.origin = assertInternalOrigin(configUrl, "LENS_PROVIDER_RUNTIME_CONFIG_URL");
+    this.base = assertInternalServiceUrl(configUrl, "LENS_PROVIDER_RUNTIME_CONFIG_URL");
     assertWorkloadToken(token, "LENS_PROVIDER_RUNTIME_CONFIG_TOKEN");
   }
 
   async resolve(modelRef: string, capability: string): Promise<ProviderRuntimeConfig> {
-    const url = new URL(this.origin.toString());
+    const url = new URL(this.base.toString());
     url.searchParams.set("model_ref", modelRef);
     url.searchParams.set("capability", capability);
     const response = await this.fetcher(url, {
@@ -142,19 +142,19 @@ export class HttpProviderRuntimeConfigResolver implements ProviderRuntimeConfigR
  * immediately before the adapter call; the sidecar never logs or persists it.
  */
 export class HttpProviderSecretResolver implements ProviderSecretResolver {
-  private readonly origin: URL;
+  private readonly base: URL;
   constructor(
     secretUrl: string,
     private readonly token: string,
     private readonly fetcher: FetchPort = fetch,
   ) {
-    this.origin = assertInternalOrigin(secretUrl, "LENS_PROVIDER_SECRET_URL");
+    this.base = assertInternalServiceUrl(secretUrl, "LENS_PROVIDER_SECRET_URL");
     assertWorkloadToken(token, "LENS_PROVIDER_SECRET_TOKEN");
   }
 
   async resolve(secretRef: string): Promise<string> {
-    const url = new URL(this.origin.toString());
-    url.searchParams.set("secret_ref", secretRef);
+    const prefix = this.base.pathname.endsWith("/") ? this.base.pathname.slice(0, -1) : this.base.pathname;
+    const url = new URL(`${prefix}/${encodeURIComponent(secretRef)}`, this.base);
     const response = await this.fetcher(url, {
       headers: { accept: "application/json", "x-lens-workload-token": this.token },
       redirect: "error",
@@ -244,6 +244,8 @@ export async function* runProviderGeneration(input: {
   deadlineAt: number;
   signal: AbortSignal;
   fetcher?: FetchPort;
+  /** Sovereign production requires internal gateway hosts; development/test permit reviewed external HTTPS egress (e.g. Google OpenAI-compat). */
+  adapterProfile?: "sovereign" | "development";
   /** Expected provider catalog identity bound at lease accept; mismatch fails closed as STALE_FENCE. */
   expectedCatalog?: ProviderIdentityBinding;
 }): AsyncGenerator<string> {
@@ -267,7 +269,7 @@ export async function* runProviderGeneration(input: {
       expectedCapabilities: cfg.allowedCapabilities,
       timeoutMs: cfg.timeoutMs,
       maxConcurrency: cfg.maxConcurrency,
-      profile: "sovereign",
+      profile: input.adapterProfile ?? "sovereign",
     };
     const adapter = createModelProviderAdapter(adapterConfig, input.fetcher ?? fetch, input.secretStore);
     try {
@@ -287,6 +289,11 @@ export async function* runProviderGeneration(input: {
         yield next.value;
       }
     } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        const code = err && typeof err === "object" && "code" in err ? String((err as { code: unknown }).code) : "";
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`[provider-generation] code=${code || "n/a"} message=${message}`);
+      }
       // A client disconnect must be observed as a cancellation, not a provider failure.
       if (input.signal.aborted) throw new Error("CANCELLED");
       // The adapter communicates normalized outcomes as plain objects ({ code }). Map them to

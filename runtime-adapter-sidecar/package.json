@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "lens-desktop": "file:..",
     "pg": "^8.16.3"
   },
   "devDependencies": {

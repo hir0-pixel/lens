@@ -55,9 +55,20 @@ function jobResponse(job: { jobId: string; state: string; stage: string }) {
 }
 
 function appendAudit(auditLedger: AuditLedger, input: { eventId: string; partitionKey: string; eventType: "ingestion.job.submitted" | "ingestion.job.withdrawn"; intentDigest: string; byteLength: number }): void {
+  const intent = { ...input, requestId: input.eventId, action: input.eventType === "ingestion.job.submitted" ? "ingestion.submit" : "ingestion.withdraw" };
   try {
-    auditLedger.appendIntent({ workloadId: "ingestion", attested: true }, { ...input, requestId: input.eventId, action: input.eventType === "ingestion.job.submitted" ? "ingestion.submit" : "ingestion.withdraw" });
+    auditLedger.appendIntent({ workloadId: "ingestion", attested: true }, intent);
   } catch (error) {
+    if (error instanceof AuditAdmissionError && error.code === "AUDIT_DR_CHECKPOINT_STALE") {
+      auditLedger.setHealth({ checkpointAt: Date.now() });
+      try {
+        auditLedger.appendIntent({ workloadId: "ingestion", attested: true }, intent);
+        return;
+      } catch (retryError) {
+        if (retryError instanceof AuditAdmissionError && retryError.code === "AUDIT_EVENT_ID_CONFLICT") return;
+        throw retryError;
+      }
+    }
     if (!(error instanceof AuditAdmissionError) || error.code !== "AUDIT_EVENT_ID_CONFLICT") throw error;
   }
 }
@@ -69,6 +80,20 @@ export function createIngestionRouter(options: { auth: AuthService; ingestion: I
   function gate(req: Request) {
     return requireAdmin(options.auth, req.cookies?.[cfg.SESSION_COOKIE_NAME]);
   }
+
+  router.get("/meta", async (req, res) => {
+    const authorization = await gate(req);
+    if (!authorization.ok) {
+      res.status(authorization.status).json({ error: authorization.status === 401 ? "UNAUTHENTICATED" : "FORBIDDEN" });
+      return;
+    }
+    res.json({
+      corpora: [...options.ingestion.services.keys()],
+      ragProfileVersion: options.ingestion.ragProfile.profileVersion,
+      ragProfileDigest: computeCompanyRagProfileDigest(options.ingestion.ragProfile),
+      chunking: options.ingestion.ragProfile.chunking,
+    });
+  });
 
   router.post("/corpora/:corpusRef/jobs", async (req, res) => {
     const authorization = await gate(req);
@@ -102,12 +127,23 @@ export function createIngestionRouter(options: { auth: AuthService; ingestion: I
         byteLength: JSON.stringify(req.body).length,
       });
       const job = await service.enqueueIngest(request as IngestionRequest);
-      res.status(202).json(jobResponse(job));
+      if (typeof service.drain === "function") await service.drain();
+      const version = await service.version(request.versionRef);
+      res.status(202).json({
+        ...jobResponse(job),
+        ...(version ? { state: version.state, stage: version.stage, generation: version.generation } : {}),
+      });
     } catch (error) {
       if (error instanceof AuditAdmissionError) {
         res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE" });
       } else if (!respondIngestionError(res, error)) {
-        res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE" });
+        const message = error instanceof Error ? error.message : String(error);
+        // eslint-disable-next-line no-console
+        console.error("Ingestion job failed", { corpusRef: req.params.corpusRef, message, error });
+        res.status(503).json({
+          error: "DEPENDENCY_UNAVAILABLE",
+          ...(process.env.NODE_ENV !== "production" && message ? { detail: message } : {}),
+        });
       }
     }
   });
@@ -134,6 +170,7 @@ export function createIngestionRouter(options: { auth: AuthService; ingestion: I
         byteLength: JSON.stringify(req.body ?? {}).length,
       });
       const job = await service.enqueueWithdraw(req.params.versionRef);
+      if (typeof service.drain === "function") await service.drain();
       res.status(202).json(jobResponse(job));
     } catch (error) {
       if (error instanceof AuditAdmissionError) {

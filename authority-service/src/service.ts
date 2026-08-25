@@ -550,13 +550,6 @@ export class AuthorityService {
 
     const existing = await this.store.getOutputBlob(outputRef);
     if (existing) {
-      if (
-        existing.outputDigest !== input.outputDigest ||
-        existing.classificationRef !== input.classificationRef ||
-        existing.guardReceipt !== input.guardReceipt
-      ) {
-        throw new AuthorityConflictError("Output blob already exists with different metadata.");
-      }
       try {
         const existingOutput = this.outputCrypto.decrypt(existing);
         if (sha256Digest(existingOutput) !== input.outputDigest) {
@@ -565,6 +558,11 @@ export class AuthorityService {
       } catch (error) {
         if (error instanceof AuthorityConflictError) throw error;
         throw new AuthorityConflictError("Existing output blob failed authenticated integrity verification.");
+      }
+      // Blobs are content-addressed (outputRef = blob:digest). guardReceipt is per-request
+      // staging correlation from the orchestrator, not part of immutable blob identity.
+      if (existing.classificationRef !== input.classificationRef) {
+        throw new AuthorityConflictError("Output blob already exists with a different classification.");
       }
       return { requestId: input.requestId, turnId: input.turnId, outputRef, outputDigest: input.outputDigest, commitProof: existing.commitProof };
     }

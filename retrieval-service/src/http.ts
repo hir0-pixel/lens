@@ -183,6 +183,11 @@ export function createRetrievalHttp(options: RetrievalHttpOptions): RetrievalHtt
         } else if (error instanceof RetrievalServiceError && error.code === "UNAUTHENTICATED") {
           respond(res, 401, { error: "UNAUTHENTICATED" });
         } else {
+          if (process.env.NODE_ENV !== "production") {
+            const detail = error instanceof Error ? error.message : String(error);
+            // eslint-disable-next-line no-console
+            console.error("[retrieval] dependency failure", detail);
+          }
           respond(res, 503, { error: "DEPENDENCY_UNAVAILABLE", retryable: true });
         }
       })

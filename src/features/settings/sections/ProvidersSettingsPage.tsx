@@ -1,10 +1,11 @@
-﻿import { useState } from "react";
-import { Check, Loader2, Star } from "lucide-react";
+﻿import { useEffect, useState } from "react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useProviderStore, type AiProviderConfig } from "@/stores/providerStore";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,8 @@ import { PROVIDER_COLORS } from "@/shared/design-system";
 import { useAuthStore } from "@/shared/bff-auth/store";
 import { getBffAuthClient } from "@/shared/bff-auth";
 import { useModelCatalogStore } from "@/stores/modelCatalogStore";
+import { chunkDocumentText, sha256Digest, slugDocumentRef } from "../ingestionPaste";
+import type { IngestionMeta } from "@/shared/bff-auth/client";
 
 const KIND_COLOR = PROVIDER_COLORS;
 
@@ -97,6 +100,8 @@ export function ProvidersSettingsPage() {
     [...state.providers].sort((a, b) => a.priority - b.priority),
   ));
   const administrator = useAuthStore((state) => state.session?.administrator === true);
+  const subject = useAuthStore((state) => state.session?.subject);
+  const adminSubjectsConfigured = useAuthStore((state) => state.session?.adminSubjectsConfigured === true);
   const refreshCatalog = useModelCatalogStore((state) => state.refresh);
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -105,6 +110,10 @@ export function ProvidersSettingsPage() {
   const [providerIdHint, setProviderIdHint] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>();
+
+  useEffect(() => {
+    void useAuthStore.getState().check();
+  }, []);
 
   async function submitOnboard() {
     const client = getBffAuthClient();
@@ -124,11 +133,32 @@ export function ProvidersSettingsPage() {
         idempotencyKey: crypto.randomUUID(),
       });
       setApiKey("");
-      setMessage(`Provider ${result.id} is ${result.status}${providerIdHint ? ` (note: ${providerIdHint})` : ""}.`);
+      setMessage(
+        result.status === "unhealthy"
+          ? `Provider ${result.id} is unhealthy: no allowlisted model id was in the provider catalog. Use ids the catalog actually returns (for Google, try gemini-2.5-flash or gemini-*). Gemini 2.0 Flash is shut down.`
+          : `Provider ${result.id} is ${result.status}${providerIdHint ? ` (note: ${providerIdHint})` : ""}.`,
+      );
       await refreshCatalog();
-    } catch {
+    } catch (error) {
       setApiKey("");
-      setMessage("Onboarding failed. The key was not stored in the browser.");
+      const record = error && typeof error === "object" ? error as { detail?: unknown; status?: unknown; code?: unknown; name?: unknown } : {};
+      const detail = typeof record.detail === "string" ? record.detail : typeof record.code === "string" ? record.code : undefined;
+      const status = typeof record.status === "number" ? record.status : undefined;
+      const hint =
+        detail === "INVALID_ARGUMENT"
+          ? " The BFF rejected the URL or payload (sovereign profile blocks public Google/OpenAI hosts)."
+          : detail === "INVALID_KEY"
+            ? " The provider rejected the key."
+            : detail === "PROVIDER_UNAVAILABLE"
+              ? " The BFF could not reach the provider catalog (check base URL, network, or key)."
+              : detail === "FORBIDDEN" || detail === "UNAUTHENTICATED" || detail === "CSRF_REJECTED" || detail === "AUTH_REQUIRED"
+                ? " Sign in again as an administrator and retry."
+                : detail
+                  ? ` ${detail}.`
+                  : status
+                    ? ` HTTP ${status}.`
+                    : "";
+      setMessage(`Onboarding failed.${hint} The key was not stored in the browser.`);
     } finally {
       setBusy(false);
     }
@@ -140,6 +170,14 @@ export function ProvidersSettingsPage() {
         title="Providers"
         description="Review the provider surface exposed by this sovereign deployment."
       />
+      <p className="mb-3 type-caption text-[var(--text-tertiary)]">
+        Signed in as {subject ?? "(no subject)"}.
+        {administrator
+          ? " Administrator: yes."
+          : adminSubjectsConfigured
+            ? " Administrator: no — this subject is not in ADMIN_SUBJECTS."
+            : " Administrator: no — this BFF did not load ADMIN_SUBJECTS."}
+      </p>
       <div className="space-y-3">
         {providers.map((provider) => (
           <ProviderCard key={provider.id} provider={provider} />
@@ -148,7 +186,7 @@ export function ProvidersSettingsPage() {
       {administrator && (
         <Card className="mt-4 gap-0 rounded-lg bg-surface-0/40 p-4 ring-[var(--border-default)]">
           <p className="type-caption font-medium text-[var(--text-primary)]">Register an internal model gateway</p>
-          <p className="mt-1 type-caption text-[var(--text-tertiary)]">The API key is sent once over the authenticated BFF and is never written to browser storage. The server assigns the provider id.</p>
+          <p className="mt-1 type-caption text-[var(--text-tertiary)]">Always use openai-compatible. Change only the base URL and key — development demo and later internal gateway use the same adapter.</p>
           <div className="mt-3 space-y-2">
             <div>
               <Label htmlFor="provider-adapter" className="mb-1 block type-caption font-normal text-[var(--text-tertiary)]">Adapter type</Label>
@@ -177,112 +215,198 @@ export function ProvidersSettingsPage() {
           </div>
         </Card>
       )}
+      {administrator && <CorpusPasteCard />}
     </div>
   );
 }
 
+function CorpusPasteCard() {
+  const [meta, setMeta] = useState<IngestionMeta | null>(null);
+  const [metaError, setMetaError] = useState<string>();
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [corpusRef, setCorpusRef] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string>();
+
+  useEffect(() => {
+    const client = getBffAuthClient();
+    if (!client) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const next = await client.getIngestionMeta();
+        if (cancelled) return;
+        setMeta(next);
+        setCorpusRef(next.corpora[0] ?? "");
+        setMetaError(undefined);
+      } catch (error) {
+        if (cancelled) return;
+        const detail = error && typeof error === "object" && "detail" in error && typeof (error as { detail?: unknown }).detail === "string"
+          ? (error as { detail: string }).detail
+          : undefined;
+        setMeta(null);
+        setMetaError(
+          detail === "FORBIDDEN" || detail === "UNAUTHENTICATED"
+            ? "Administrator session required for ingestion."
+            : "Ingestion is not enabled on this BFF (merge bff-rag.env with INGESTION_ENABLED=true and restart).",
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function publishDocument() {
+    const client = getBffAuthClient();
+    if (!client || !meta || !corpusRef || !body.trim()) return;
+    setBusy(true);
+    setMessage(undefined);
+    try {
+      const documentRef = slugDocumentRef(title || "pasted-document");
+      const version = `v${Date.now()}`;
+      const versionRef = `${documentRef}@${version}`;
+      const chunks = chunkDocumentText(body, { ...meta.chunking, documentRef });
+      if (chunks.length === 0) {
+        setMessage("Document text is empty after chunking.");
+        return;
+      }
+      const prepared = await Promise.all(
+        chunks.map(async (chunk) => ({
+          ...chunk,
+          contentDigest: await sha256Digest(chunk.text),
+        })),
+      );
+      const contentDigest = await sha256Digest(body);
+      const renditionDigest = await sha256Digest(`rendition:${versionRef}`);
+      const aclDigest = await sha256Digest(`acl:${documentRef}`);
+      const result = await client.submitIngestionJob(corpusRef, {
+        sourceId: "admin-paste",
+        documentRef,
+        version,
+        versionRef,
+        contentDigest,
+        aclDigest,
+        classificationRef: "internal",
+        parse: {
+          status: "accepted",
+          renditionDigest,
+          chunks: prepared,
+        },
+        ragProfileVersion: meta.ragProfileVersion,
+        ragProfileDigest: meta.ragProfileDigest,
+      });
+      setMessage(
+        result.state === "COMMITTED" || result.state === "PUBLISHED"
+          ? `Published ${documentRef} (${prepared.length} chunk${prepared.length === 1 ? "" : "s"}). Ask about it in chat.`
+          : `Ingestion job ${result.jobId}: ${result.state}/${result.stage}.`,
+      );
+      setBody("");
+    } catch (error) {
+      const detail = error && typeof error === "object" && "detail" in error && typeof (error as { detail?: unknown }).detail === "string"
+        ? (error as { detail: string }).detail
+        : undefined;
+      setMessage(
+        detail === "STALE_AUTHORITY"
+          ? "RAG profile changed — refresh this page and retry."
+          : detail
+            ? `Ingest failed: ${detail}.`
+            : "Ingest failed. Confirm INGESTION_ENABLED and that you are signed in as an admin.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="mt-4 gap-0 rounded-lg bg-surface-0/40 p-4 ring-[var(--border-default)]">
+      <p className="type-caption font-medium text-[var(--text-primary)]">Paste company documents</p>
+      <p className="mt-1 type-caption text-[var(--text-tertiary)]">
+        Publishes into the company RAG corpus via the admin ingestion API. Ask mode then answers from published chunks.
+      </p>
+      {metaError ? (
+        <p className="mt-3 type-caption text-[var(--text-tertiary)]">{metaError}</p>
+      ) : !meta ? (
+        <p className="mt-3 type-caption text-[var(--text-tertiary)]">Loading ingestion profile…</p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          <div>
+            <Label htmlFor="ingest-corpus" className="mb-1 block type-caption font-normal text-[var(--text-tertiary)]">Corpus</Label>
+            <select
+              id="ingest-corpus"
+              aria-label="Corpus"
+              value={corpusRef}
+              onChange={(event) => setCorpusRef(event.target.value)}
+              className="h-9 w-full rounded-md border border-[var(--border-default)] bg-surface-2 px-2 type-caption text-[var(--text-primary)]"
+            >
+              {meta.corpora.map((corpus) => (
+                <option key={corpus} value={corpus}>{corpus}</option>
+              ))}
+            </select>
+          </div>
+          <Input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Document title (optional)"
+            className="h-9 border-[var(--border-default)] bg-surface-2 type-caption"
+          />
+          <Textarea
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            placeholder="Paste policy, manual, or notes here…"
+            className="min-h-36 border-[var(--border-default)] bg-surface-2 type-caption"
+          />
+          <Button size="sm" disabled={busy || !body.trim() || !corpusRef} onClick={() => void publishDocument()}>
+            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Publish to corpus"}
+          </Button>
+          {message && <p className="type-caption text-[var(--text-tertiary)]">{message}</p>}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function ModelsSettingsPage() {
-  const models = useProviderStore((state) => state.models);
-  const recentModelIds = useProviderStore((state) => state.recentModelIds);
-  const toggleFavoriteModel = useProviderStore((state) => state.toggleFavoriteModel);
-  const providers = useProviderStore((state) => state.providers);
-  const query = "";
+  const models = useModelCatalogStore((state) => state.models);
+  const status = useModelCatalogStore((state) => state.status);
+  const errorMessage = useModelCatalogStore((state) => state.errorMessage);
+  const refresh = useModelCatalogStore((state) => state.refresh);
 
-  const filtered = models.filter((model) => {
-    if (!query.trim()) return true;
-    const lowered = query.toLowerCase();
-    return model.label.toLowerCase().includes(lowered) || model.id.toLowerCase().includes(lowered);
-  });
-
-  const byProvider = providers
-    .map((provider) => ({
-      provider,
-      models: filtered.filter((model) => model.providerId === provider.id),
-    }))
-    .filter((group) => group.models.length > 0);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   return (
     <div>
       <SettingsSectionHeader
         title="Models"
-        description="Browse the model surface exposed by this sovereign deployment."
+        description="Approved models from the live BFF catalog after provider register."
       />
-      <Input
-        value={query}
-        readOnly
-        placeholder="Search is locked to deployment-provided models"
-        className="mb-4 h-9 border-[var(--border-default)] bg-surface-2 type-caption"
-      />
-
-      {recentModelIds.length > 0 && (
-        <div className="mb-4">
-          <h3 className="mb-2 type-caption-uppercase text-[var(--text-tertiary)]">
-            Recent
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            {recentModelIds.map((id) => {
-              const model = models.find((entry) => entry.id === id);
-              if (!model) return null;
-              return (
-                <Badge key={id} variant="secondary" className="h-6 font-normal">
-                  {model.label}
-                </Badge>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {byProvider.map(({ provider, models: groupedModels }) => (
-          <div key={provider.id}>
-            <h3 className="mb-2 type-caption-uppercase text-[var(--text-tertiary)]">
-              {provider.name}
-            </h3>
-            <div className="overflow-hidden divide-y divide-white/5 rounded-lg border border-[var(--border-default)]">
-              {groupedModels.map((model) => (
-                <div
-                  key={model.id}
-                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-[var(--bg-hover)]"
-                >
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => toggleFavoriteModel(model.id)}
-                    className="text-[var(--text-tertiary)] hover:bg-transparent hover:text-accent"
-                    aria-label={model.favorite ? "Unfavorite" : "Favorite"}
-                  >
-                    <Star
-                      className={cn(
-                        "h-3.5 w-3.5",
-                        model.favorite && "fill-accent text-accent",
-                      )}
-                    />
-                  </Button>
-                  <div className="min-w-0 flex-1">
-                    <div className="type-caption text-[var(--text-primary)]">{model.label}</div>
-                    <div className="type-code text-[var(--text-tertiary)]">{model.id}</div>
-                  </div>
-                  <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
-                    {(model.contextWindow / 1000).toFixed(0)}K
-                  </span>
-                  {model.vision && (
-                    <Badge variant="secondary" className="h-5 text-[9px]">
-                      Vision
-                    </Badge>
-                  )}
-                  {model.reasoning && (
-                    <Badge variant="secondary" className="h-5 text-[9px] text-accent">
-                      Reasoning
-                    </Badge>
-                  )}
-                </div>
-              ))}
+      {status === "loading" || status === "idle" ? (
+        <p className="type-caption text-[var(--text-tertiary)]">Loading approved models…</p>
+      ) : null}
+      {status === "error" ? (
+        <p className="type-caption text-[var(--text-tertiary)]">{errorMessage ?? "Could not load approved models."}</p>
+      ) : null}
+      {status === "empty" ? (
+        <p className="type-caption text-[var(--text-tertiary)]">No approved models. Register a provider, then return here.</p>
+      ) : null}
+      {status === "ready" ? (
+        <div className="overflow-hidden divide-y divide-white/5 rounded-lg border border-[var(--border-default)]">
+          {models.map((model) => (
+            <div key={model.id} className="flex items-center gap-3 px-3 py-2.5">
+              <div className="min-w-0 flex-1">
+                <div className="type-caption text-[var(--text-primary)]">{model.label}</div>
+                <div className="type-code text-[var(--text-tertiary)]">{model.id}</div>
+              </div>
+              <Badge variant="secondary" className="h-5 font-normal">
+                {model.available === false ? "Unavailable" : "Available"}
+              </Badge>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

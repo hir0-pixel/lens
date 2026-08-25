@@ -338,6 +338,7 @@ export async function main(
           chunks,
           deadlineAt: executeInput.deadlineAt,
           signal: runSignal.signal,
+          adapterProfile: profile === "production" ? "sovereign" : "development",
           expectedCatalog: providerIdentityBinding.get(reservationId),
         });
       } else if (local) {
@@ -367,6 +368,10 @@ export async function main(
       await persistMeasured("completed");
       res.end();
     } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        const detail = error instanceof Error ? error.message : String(error);
+        console.error(`[runtime-generate] ${detail}`);
+      }
       const message = error instanceof Error ? error.message : "";
       if (message === "CANCELLED") {
         await persistMeasured("cancelled").catch(() => undefined);
@@ -640,5 +645,8 @@ export async function main(
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  void main().catch(() => { process.exitCode = 1; });
+  void main().catch((error) => {
+    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    process.exitCode = 1;
+  });
 }

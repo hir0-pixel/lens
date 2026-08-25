@@ -1,16 +1,28 @@
 import { fileURLToPath } from "node:url";
 import { resolve, dirname } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { z } from "zod";
 
 // Load the server's own .env (and fall back to the monorepo root .env) before
 // any configuration is read. dotenv ignores files it cannot find.
-import { config as loadEnv } from "dotenv";
+import { config as loadEnv, parse as parseEnv } from "dotenv";
 const here = fileURLToPath(import.meta.url);
 const serverEnv = resolve(dirname(here), "../../.env");
+const cwdEnv = resolve(process.cwd(), ".env");
 const rootEnv = resolve(dirname(here), "../../../.env");
-if (existsSync(serverEnv)) loadEnv({ path: serverEnv });
-else if (existsSync(rootEnv)) loadEnv({ path: rootEnv });
+const envPath = [rootEnv, cwdEnv, serverEnv].filter((path) => existsSync(path)).at(-1);
+if (envPath) {
+  loadEnv({ path: envPath });
+  const fromFile = parseEnv(readFileSync(envPath));
+  // dotenv will not replace an empty parent ADMIN_SUBJECTS. Fill from the file if still unset.
+  if (!process.env.ADMIN_SUBJECTS?.trim() && fromFile.ADMIN_SUBJECTS?.trim()) {
+    process.env.ADMIN_SUBJECTS = fromFile.ADMIN_SUBJECTS.trim();
+  }
+  // Dev shells often inherit PORT from rag-stack services (e.g. runtime on 8793). Prefer server/.env.
+  if (process.env.NODE_ENV !== "production" && fromFile.PORT?.trim()) {
+    process.env.PORT = fromFile.PORT.trim();
+  }
+}
 
 // z.coerce.boolean() coerces the string "false" to true (any non-empty string is
 // truthy), which silently re-enables fail-closed checks. Parse booleans explicitly.
@@ -79,6 +91,8 @@ const envSchema = z.object({
   PROVIDER_SECRET_WORKLOAD_TOKEN: z.string().min(32).optional(),
   COMPANY_RAG_PROFILE_JSON: z.string().optional(),
   INGESTION_ENABLED: boolFromEnv(false),
+  /** Development/test only: deterministic local embeddings for ingestion (same pattern as e2e harness). Forbidden in production. */
+  INGESTION_USE_LOCAL_EMBEDDINGS: boolFromEnv(false),
   INGESTION_PROVIDER_ADAPTER: z.enum(["openai-compatible", "gemini-dev"]).optional(),
   INGESTION_PROVIDER_BASE_URL: z.string().url().optional(),
   INGESTION_PROVIDER_SECRET_REF: z.string().optional(),
@@ -88,6 +102,9 @@ const envSchema = z.object({
   INGESTION_PROVIDER_TIMEOUT_MS: z.coerce.number().default(30_000),
   INGESTION_PROVIDER_MAX_CONCURRENCY: z.coerce.number().default(4),
   INGESTION_STORE_PATH_PREFIX: z.string().optional(),
+  /** When INGESTION_ENABLED, expose the same in-process retrieval deployment on this loopback port for Orchestrator. */
+  RETRIEVAL_HTTP_PORT: z.coerce.number().optional(),
+  RETRIEVAL_WORKLOAD_TOKEN: z.string().min(32).optional(),
   AUDIT_LEDGER_STORE_PATH: z.string().optional(),
 });
 
@@ -102,7 +119,12 @@ export function getConfig(): EnvConfig {
       const errors = parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join("\n");
       throw new Error(`Invalid environment configuration:\n${errors}`);
     }
-    config = parsed.data;
+    const data = parsed.data;
+    if (!data.ADMIN_SUBJECTS?.trim() && data.NODE_ENV !== "production") {
+      // dev-idp may issue sub=devuser (preferred_username) or dev-user-1 depending on version/restart
+      data.ADMIN_SUBJECTS = "dev-user-1,devuser";
+    }
+    config = data;
   }
   return config;
 }
@@ -182,6 +204,16 @@ export function validateProductionConfig(): void {
     if (!cfg.ORCHESTRATOR_URL || !cfg.ORCHESTRATOR_TOKEN) {
       throw new Error("The internal RAG path requires ORCHESTRATOR_URL and ORCHESTRATOR_TOKEN");
     }
+  }
+  if (cfg.INGESTION_USE_LOCAL_EMBEDDINGS && cfg.NODE_ENV === "production") {
+    throw new Error("INGESTION_USE_LOCAL_EMBEDDINGS is development/test-only");
+  }
+  const retrievalHttpConfigured = [cfg.RETRIEVAL_HTTP_PORT, cfg.RETRIEVAL_WORKLOAD_TOKEN].filter(Boolean).length;
+  if (retrievalHttpConfigured !== 0 && retrievalHttpConfigured !== 2) {
+    throw new Error("RETRIEVAL_HTTP_PORT and RETRIEVAL_WORKLOAD_TOKEN must be configured together");
+  }
+  if (cfg.RETRIEVAL_HTTP_PORT && !cfg.INGESTION_ENABLED) {
+    throw new Error("RETRIEVAL_HTTP_PORT requires INGESTION_ENABLED so Orchestrator retrieves from the same in-process corpus");
   }
   if ("RAG_SERVICE_URL" in process.env || "RAG_SERVICE_TOKEN" in process.env) {
     throw new Error("Legacy RAG_SERVICE bridge settings are not supported; use the internal Orchestrator path");

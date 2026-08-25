@@ -94,6 +94,10 @@ export class Orchestrator {
       const status = this.update(request.requestId, "COMPLETED", turn.turnId);
       return { status, output, outputDigest: staged.outputDigest };
     } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`[orchestrator workflow] ${request.requestId}: ${message}`);
+      }
       const code = this.toFailureCode(error, cancellation);
       if (turn) await this.dependencies.failTurn?.(turn, code);
       const state: OrchestratorState = code === "FORBIDDEN" ? "DENIED" : code === "CANCELLED" ? "CANCELLED" : "FAILED";

@@ -42,6 +42,22 @@ export function assertInternalOrigin(value: string, name: string): URL {
   throw new InternalHttpConfigError(`${name} must use HTTPS with an internal host or loopback HTTP.`);
 }
 
+/** Loopback/internal base URL for a specific internal route (path allowed; query/hash/credentials forbidden). */
+export function assertInternalServiceUrl(value: string, name: string): URL {
+  let endpoint: URL;
+  try {
+    endpoint = new URL(value);
+  } catch {
+    throw new InternalHttpConfigError(`${name} must be a valid internal service URL.`);
+  }
+  if (endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
+    throw new InternalHttpConfigError(`${name} must not include credentials, query, or fragment.`);
+  }
+  if (endpoint.protocol === "https:" && isInternalHost(endpoint.hostname)) return endpoint;
+  if (endpoint.protocol === "http:" && isLoopbackHost(endpoint.hostname)) return endpoint;
+  throw new InternalHttpConfigError(`${name} must use HTTPS with an internal host or loopback HTTP.`);
+}
+
 export function assertWorkloadToken(token: string, name: string): void {
   if (token.length < 32) throw new InternalHttpConfigError(`${name} must contain at least 32 characters.`);
 }

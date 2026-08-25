@@ -464,7 +464,13 @@ export class AuthorityHttpClient implements
         body: serialized,
         signal: requestSignal,
       });
-      if (!response.ok) throw new OrchestratorError(mapStatus(response.status), "Authority rejected the request.");
+      if (!response.ok) {
+        if (process.env.NODE_ENV === "development") {
+          const detail = await response.clone().text().catch(() => "");
+          console.error(`[authority] ${path} -> ${response.status}: ${detail.slice(0, 500)}`);
+        }
+        throw new OrchestratorError(mapStatus(response.status), "Authority rejected the request.");
+      }
       return await readBoundedJson(response);
     } catch (error) {
       if (requestSignal.aborted || signal?.aborted) throw new OrchestratorError("CANCELLED", "Authority request was cancelled.");

@@ -18,8 +18,8 @@ export interface RagAnswer {
 }
 
 export class OrchestratorClientError extends Error {
-  constructor(readonly code: string) {
-    super(code);
+  constructor(readonly code: string, readonly reason?: string) {
+    super(reason ?? code);
     this.name = "OrchestratorClientError";
   }
 }
@@ -183,8 +183,10 @@ export class OrchestratorClient {
 
     if (response.status === 403) {
       const denied = await readBoundedJson(response);
-      const error = (denied as { error?: unknown }).error;
-      throw new OrchestratorClientError(typeof error === "string" ? error : "FORBIDDEN");
+      const record = denied as { error?: unknown; reason?: unknown };
+      const error = typeof record.error === "string" ? record.error : "FORBIDDEN";
+      const reason = typeof record.reason === "string" ? record.reason : undefined;
+      throw new OrchestratorClientError(error, reason);
     }
     if (!response.ok) {
       throw new OrchestratorClientError("ORCHESTRATOR_UNAVAILABLE");
@@ -197,8 +199,10 @@ export class OrchestratorClient {
 
     const status = (payload as { status?: unknown }).status;
     if (status === "DENIED") {
-      const error = (payload as { error?: unknown }).error;
-      throw new OrchestratorClientError(typeof error === "string" ? error : "FORBIDDEN");
+      const record = payload as { error?: unknown; reason?: unknown };
+      const error = typeof record.error === "string" ? record.error : "FORBIDDEN";
+      const reason = typeof record.reason === "string" ? record.reason : undefined;
+      throw new OrchestratorClientError(error, reason);
     }
     const result = this.validateResponse(payload, input.requestId);
     return {

@@ -13,6 +13,7 @@ export interface RetrievalWiringOptions {
   now?: () => number;
   partitionCount?: number;
   persistencePath?: string;
+  checkpointMaxAgeMs?: number;
   subject?: (subjectRef: string) => SubjectFacts;
 }
 
@@ -96,7 +97,7 @@ export function createRetrievalWiring(options: RetrievalWiringOptions = {}) {
     retrieval: ["retrieval.retrieve"],
     pdp: ["pdp.decision"],
     ingestion: ["ingestion.job.submitted", "ingestion.job.withdrawn"],
-  }, () => new Date(), options.partitionCount ?? 64, undefined, undefined, options.persistencePath);
+  }, () => new Date(), options.partitionCount ?? 64, undefined, options.checkpointMaxAgeMs, options.persistencePath);
 
   return {
     pdp,
@@ -136,7 +137,7 @@ export function createRetrievalWiring(options: RetrievalWiringOptions = {}) {
           { fenceId: `fence-${documentVersionRef}`, actorRef: "governance", approverRef: "platform", expiresAt: now() + 3600_000 },
         );
       },
-      health: (state: { quorumAvailable?: boolean; witnessHealthy?: boolean }) => {
+      health: (state: { quorumAvailable?: boolean; witnessHealthy?: boolean; checkpointAt?: number }) => {
         auditLedger.setHealth(state);
       },
     },
@@ -149,7 +150,7 @@ export interface RetrievalDeployment {
   pdp: PolicyDecisionPoint;
   auditLedger: AuditLedger;
   activatePolicy: () => void;
-  setAuditHealth: (state: { quorumAvailable?: boolean; witnessHealthy?: boolean }) => void;
+  setAuditHealth: (state: { quorumAvailable?: boolean; witnessHealthy?: boolean; checkpointAt?: number }) => void;
   /** Track 3: the deployer's write-path handle to the independent publication authority. */
   publicationAuthority: PublicationAuthority;
   publicationAuthorities: ReadonlyMap<string, PublicationAuthority>;
@@ -175,12 +176,18 @@ export interface RetrievalDeploymentOptions {
   /** Optional SQLite database shared by the per-corpus publication authorities. */
   publicationStorePath?: string;
   persistencePath?: string;
+  checkpointMaxAgeMs?: number;
   now?: () => number;
   subject?: (subjectRef: string) => SubjectFacts;
 }
 
 export function createRetrievalDeployment(options: RetrievalDeploymentOptions): RetrievalDeployment {
-  const wiring = createRetrievalWiring({ now: options.now, persistencePath: options.persistencePath, subject: options.subject });
+  const wiring = createRetrievalWiring({
+    now: options.now,
+    persistencePath: options.persistencePath,
+    checkpointMaxAgeMs: options.checkpointMaxAgeMs,
+    subject: options.subject,
+  });
   const now = options.now ?? (() => Date.now());
   const searchIndex = new LexicalSearchIndex();
   const vectorIndex = new VectorSearchIndex();
@@ -314,6 +321,13 @@ export function createRetrievalDeployment(options: RetrievalDeploymentOptions): 
           const queryVector = await options.provider.embed({ model: options.embeddingModel, text: input.queryText }, input.signal);
           return vectorIndex.search({ corpusRef: input.corpusRef, queryVector, laneLimit: input.laneLimit });
         };
+        const hybridVectorEntries = async () => {
+          try {
+            return await vectorEntries();
+          } catch {
+            return [];
+          }
+        };
         let candidates: RetrievalCandidate[];
         if (input.mode === "lexical") {
           candidates = toCandidates(lexicalEntries(), "lexical", (entry) => entry.lexicalScore);
@@ -322,7 +336,7 @@ export function createRetrievalDeployment(options: RetrievalDeploymentOptions): 
         } else if (input.mode === "hybrid") {
           candidates = [
             ...toCandidates(lexicalEntries(), "lexical", (entry) => entry.lexicalScore),
-            ...toCandidates(await vectorEntries(), "vector", (entry) => entry.vectorScore),
+            ...toCandidates(await hybridVectorEntries(), "vector", (entry) => entry.vectorScore),
           ];
         } else {
           const entries = indexPort.search(input);

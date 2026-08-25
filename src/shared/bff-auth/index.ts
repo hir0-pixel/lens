@@ -75,4 +75,4 @@ export function resetBffAuthClient(): void {
 }
 
 export { AuthClientError, createAuthClient } from "./client";
-export type { AuthClient, AuthClientErrorCode, AuthSessionInfo } from "./client";
+export type { AuthClient, AuthClientErrorCode, AuthSessionInfo, IngestionMeta, IngestionJobResult } from "./client";

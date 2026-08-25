@@ -1,7 +1,7 @@
 import { measureOutputUnits } from "../inference-adapter/localMeter";
 import type { SecretStore } from "../secrets/SecretStore";
 import type { ModelDescriptor, ModelProviderAdapter, NormalizedProviderError, ProviderEndpointConfig, ProviderGenerateInput } from "./ProviderAdapter";
-import { assertInternalProviderUrl, modelAllowed, resolveSecretRef } from "./providerEndpointPolicy";
+import { assertInternalProviderUrl, modelAllowed, openAiCompatibleResourceUrl, parseOpenAiCompatibleModelCatalog, resolveSecretRef } from "./providerEndpointPolicy";
 
 type FetchPort = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -26,15 +26,24 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
     return resolveSecretRef(this.config.secretRef);
   }
 
+  private async authHeaders(): Promise<Record<string, string>> {
+    const token = await this.bearer();
+    const headers: Record<string, string> = { authorization: `Bearer ${token}` };
+    if (this.origin.hostname === "generativelanguage.googleapis.com") {
+      headers["x-goog-api-key"] = token;
+    }
+    return headers;
+  }
+
   async discoverModels(): Promise<readonly ModelDescriptor[]> {
-    const response = await this.fetcher(new URL("/v1/models", this.origin), {
-      headers: { authorization: `Bearer ${await this.bearer()}` },
+    const response = await this.fetcher(openAiCompatibleResourceUrl(this.origin, "models"), {
+      headers: { ...await this.authHeaders() },
       redirect: "error",
       signal: AbortSignal.timeout(this.config.timeoutMs),
     });
     if (!response.ok) throw Object.assign(new Error("discover failed"), { status: response.status });
-    const body = await response.json() as { data?: Array<{ id?: string }> };
-    const models = (body.data ?? []).map((row) => row.id).filter((id): id is string => typeof id === "string" && modelAllowed(id, this.config.allowedModels));
+    const body = await response.json();
+    const models = parseOpenAiCompatibleModelCatalog(body).filter((id) => modelAllowed(id, this.config.allowedModels));
     return models.map((id) => ({ id, capabilities: this.config.expectedCapabilities }));
   }
 
@@ -45,9 +54,9 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
 
   async *generateStream(input: ProviderGenerateInput, signal: AbortSignal): AsyncGenerator<string> {
     if (!modelAllowed(input.model, this.config.allowedModels)) throw this.normalizeError(new Error("FORBIDDEN"));
-    const response = await this.fetcher(new URL("/v1/chat/completions", this.origin), {
+    const response = await this.fetcher(openAiCompatibleResourceUrl(this.origin, "chat/completions"), {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${await this.bearer()}` },
+      headers: { "content-type": "application/json", ...await this.authHeaders() },
       redirect: "error",
       body: JSON.stringify({
         model: input.model,
@@ -57,7 +66,13 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
       signal: AbortSignal.any([signal, AbortSignal.timeout(Math.max(1, input.deadlineAt - Date.now()))]),
     });
     if (response.status === 429) throw this.normalizeError(Object.assign(new Error("OVERLOADED"), { status: 429 }));
-    if (!response.ok || !response.body) throw this.normalizeError(Object.assign(new Error("upstream"), { status: response.status }));
+    if (!response.ok || !response.body) {
+      if (process.env.NODE_ENV === "development" && !response.ok) {
+        const detail = await response.text().catch(() => "");
+        console.error(`[openai-compatible] chat/completions ${response.status} ${detail.slice(0, 400)}`);
+      }
+      throw this.normalizeError(Object.assign(new Error("upstream"), { status: response.status }));
+    }
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -86,9 +101,9 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
   async embed(input: { model: string; text: string }, signal: AbortSignal): Promise<number[]> {
     if (!this.config.expectedCapabilities.includes("embed")) throw this.normalizeError(new Error("FORBIDDEN"));
     if (!modelAllowed(input.model, this.config.allowedModels)) throw this.normalizeError(new Error("FORBIDDEN"));
-    const response = await this.fetcher(new URL("/v1/embeddings", this.origin), {
+    const response = await this.fetcher(openAiCompatibleResourceUrl(this.origin, "embeddings"), {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${await this.bearer()}` },
+      headers: { "content-type": "application/json", ...await this.authHeaders() },
       redirect: "error",
       body: JSON.stringify({ model: input.model, input: input.text }),
       signal,
@@ -102,8 +117,8 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
 
   async health(): Promise<boolean> {
     try {
-      const response = await this.fetcher(new URL("/v1/models", this.origin), {
-        headers: { authorization: `Bearer ${await this.bearer()}` },
+      const response = await this.fetcher(openAiCompatibleResourceUrl(this.origin, "models"), {
+        headers: { ...await this.authHeaders() },
         redirect: "error",
         signal: AbortSignal.timeout(Math.min(2_000, this.config.timeoutMs)),
       });

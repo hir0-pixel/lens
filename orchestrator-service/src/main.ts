@@ -4,7 +4,7 @@ import { AuthorityHttpClient } from "./authorityClient";
 import { createOrchestratorHttp } from "./http";
 import { InternalInferenceClient } from "./internalInferenceClient";
 import { RetrievalHttpClient } from "./retrievalClient";
-import { ProductionOrchestratorService, SingleDigestModelSelection, SingleDigestModelEligibility } from "./service";
+import { ProductionOrchestratorService, SingleDigestModelSelection, SingleDigestModelEligibility, CompositeModelEligibility, EmployeeCatalogModelEligibility } from "./service";
 import { InMemoryConversationHistory, type ConversationHistoryPort } from "./conversationHistory";
 import { DurableConversationHistory } from "./durableConversationHistory";
 import { MemoryServiceHttpClient } from "./memoryClient";
@@ -95,6 +95,8 @@ export interface OrchestratorServiceEnv {
   APPROVED_CATALOG_URL?: string;
   APPROVED_CATALOG_TOKEN?: string;
   COMPANY_RAG_PROFILE_JSON?: string;
+  /** Dev lab: set false to use deterministic route classification instead of dispatching router model "default" (not in BFF catalog). */
+  USE_GATEWAY_TURN_ROUTER?: string;
 }
 
 function loadEnv(): OrchestratorServiceEnv {
@@ -146,6 +148,7 @@ function loadEnv(): OrchestratorServiceEnv {
     APPROVED_CATALOG_URL: process.env.LENS_APPROVED_CATALOG_URL,
     APPROVED_CATALOG_TOKEN: process.env.LENS_APPROVED_CATALOG_TOKEN,
     COMPANY_RAG_PROFILE_JSON: process.env.LENS_COMPANY_RAG_PROFILE_JSON,
+    USE_GATEWAY_TURN_ROUTER: process.env.LENS_USE_GATEWAY_TURN_ROUTER,
   };
 }
 
@@ -387,6 +390,16 @@ export function loadSharedAuthorities(
   // state) need to survive a restart, and those don't depend on the signing key.
   const keys = generateKeyPairSync("ed25519");
   const issuer = new AuthorityReceiptIssuer(keys.privateKey, { now });
+  // Dev/test authorities mint model-use/Cost/Agent-run receipts with the throwaway
+  // keypair above, but scheduler leases (and optionally usage receipts) are signed
+  // by the runtime sidecar's own key — Model Gateway must verify both issuers.
+  const verificationKeys: (string | import("node:crypto").KeyObject)[] = [keys.publicKey];
+  if (env.SCHEDULER_LEASE_PUBLIC_KEY) {
+    verificationKeys.push(env.SCHEDULER_LEASE_PUBLIC_KEY.replace(/\\n/g, "\n"));
+  }
+  const receiptVerifier = verificationKeys.length === 1
+    ? new Ed25519ReceiptVerifier(verificationKeys[0], { now })
+    : new CompositeReceiptVerifier(verificationKeys, { now });
   return {
     modelUseAuthority: new SubjectDeviceModelUseAuthority(
       { subject: () => ({ revision: 1, active: true, groups: [] }), device: () => ({ revision: 1, compliant: true }) },
@@ -396,7 +409,7 @@ export function loadSharedAuthorities(
     ),
     costAuthority: new SqliteCostAuthority(costPath, issuer, now),
     agentRunAuthority: new SqliteAgentRunAuthority(agentRunPath, issuer, now),
-    receiptVerifier: new Ed25519ReceiptVerifier(keys.publicKey, { now }),
+    receiptVerifier,
     claimStore: new SqliteClaimStore(claimPath),
     ready: async () => true,
   };
@@ -460,8 +473,24 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   // any active scope references a router model that cannot resolve or is
   // not eligible for rag-route-classification.
   const modelArtifactDigest = env.MODEL_ARTIFACT_DIGEST as `sha256:${string}`;
+  const pinnedModelEligibility = modelEligibility ?? new SingleDigestModelEligibility(modelArtifactDigest, () => Date.now());
+  const ragProfile = env.COMPANY_RAG_PROFILE_JSON
+    ? assertCompanyRagProfile(JSON.parse(env.COMPANY_RAG_PROFILE_JSON))
+    : undefined;
+  const employeeCatalog = env.APPROVED_CATALOG_URL && env.APPROVED_CATALOG_TOKEN
+    ? await loadApprovedCatalogFromBff({
+      catalogUrl: env.APPROVED_CATALOG_URL,
+      token: env.APPROVED_CATALOG_TOKEN,
+      ragProfile,
+    })
+    : undefined;
   const effectiveModelSelection = modelSelection ?? new SingleDigestModelSelection(modelArtifactDigest);
-  const effectiveModelEligibility = modelEligibility ?? new SingleDigestModelEligibility(modelArtifactDigest, () => Date.now());
+  const effectiveModelEligibility = employeeCatalog && !modelEligibility
+    ? new CompositeModelEligibility([
+      pinnedModelEligibility,
+      new EmployeeCatalogModelEligibility(employeeCatalog),
+    ])
+    : pinnedModelEligibility;
   const routePolicyModelsAtBoot = await checkRoutePolicyModelsReady(routePolicy, effectiveModelSelection, effectiveModelEligibility);
   if (!routePolicyModelsAtBoot.ready) {
     throw new Error(
@@ -480,16 +509,6 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && !env.COMPANY_RAG_PROFILE_JSON) {
     throw new Error("Production requires LENS_COMPANY_RAG_PROFILE_JSON so retrieval corpus/mode is profile-driven, not a hard-coded default.");
   }
-  const ragProfile = env.COMPANY_RAG_PROFILE_JSON
-    ? assertCompanyRagProfile(JSON.parse(env.COMPANY_RAG_PROFILE_JSON))
-    : undefined;
-  const employeeCatalog = env.APPROVED_CATALOG_URL && env.APPROVED_CATALOG_TOKEN
-    ? await loadApprovedCatalogFromBff({
-      catalogUrl: env.APPROVED_CATALOG_URL,
-      token: env.APPROVED_CATALOG_TOKEN,
-      ragProfile,
-    })
-    : undefined;
   const service = new ProductionOrchestratorService({
     retrieval,
     scheduler: inference,
@@ -515,10 +534,10 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
     // call, and never the regex/heuristic fallback in router.ts as the
     // production router. `routerModelRef` comes only from the resolved,
     // signed route policy above, never from the employee-selected model_ref.
-    useGatewayTurnRouter: true,
+    useGatewayTurnRouter: env.USE_GATEWAY_TURN_ROUTER !== "false",
     modelArtifactDigest: env.MODEL_ARTIFACT_DIGEST as `sha256:${string}`,
-    modelSelection,
-    modelEligibility,
+    modelSelection: effectiveModelSelection,
+    modelEligibility: effectiveModelEligibility,
     employeeCatalog,
     ragProfile,
     conversationHistory: history,
