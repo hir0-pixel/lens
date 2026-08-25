@@ -46,6 +46,35 @@ For production, use an internal/self-hosted model gateway or a provider endpoint
 
 The provider adapter should expose model discovery and generation through the existing model-provider contract. OpenAI-compatible gateways should be preferred for self-hosted/provider-neutral deployments because one adapter can list and call many hosted models.
 
+
+## Database And Secrets Location
+
+PostgreSQL is not stored inside the desktop UI and should not be treated as part of the browser app. In production it is a company-owned backend database service, usually one of:
+
+- a dedicated internal database VM/server
+- an on-prem PostgreSQL HA cluster
+- a Kubernetes/stateful database deployment owned by the company
+
+PostgreSQL stores shared durable backend state: provider catalog metadata, RAG corpus/index publication state, ingestion jobs, chat/session/turn metadata, authorization/audit/cost/attempt state, and idempotency/retry records.
+
+Provider API keys should live in a secrets manager or encrypted server-side secret store. PostgreSQL should normally store only a `secret_ref`, not the plaintext key.
+
+For local/demo testing, SQLite/local files are acceptable. For multi-user or multi-replica testing, use PostgreSQL or an equivalent shared durable store so every BFF, Orchestrator, Retrieval, Authority, and ingestion replica sees the same state.
+
+Recommended database test progression:
+
+1. Local developer test: SQLite/local files, `npm run validate`.
+2. Integration test: one PostgreSQL instance with production-like environment variables.
+3. Staging test: PostgreSQL HA or managed internal cluster, multiple service replicas, real secrets backend, and mTLS enabled.
+4. Production readiness test: backup/restore, failover, recovery, load, and zero-egress validation.
+
+Minimum database checks before production:
+
+- schema/migrations apply cleanly from an empty database
+- every service can start, read, write, and shut down cleanly
+- one replica can die without losing committed ingestion, audit, provider catalog, turn, or attempt state
+- failover does not return stale or unauthorized RAG content
+- backup/restore preserves audit and corpus publication lineage
 ## RAG Setup
 
 RAG is company-specific and should be changed through configuration and ingestion, not by editing chat code.
