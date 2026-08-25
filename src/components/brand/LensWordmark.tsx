@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import lensLogo from "@/assets/lens-logo.png";
 
 interface LensWordmarkProps {
   /** titlebar ≈ 13–14px; welcome ≈ 24–28px */
@@ -27,15 +28,15 @@ export function LensWordmark({
       )}
     >
       {showMark && (
-        <span
+        <img
+          src={lensLogo}
+          alt=""
           className={cn(
-            "inline-flex shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent-primary)] font-bold text-[var(--text-on-accent)]",
-            welcome ? "h-10 w-10 text-[15px]" : "h-[18px] w-[18px] text-[10px]",
+            "shrink-0 rounded-[var(--radius-md)] object-cover",
+            welcome ? "h-10 w-10" : "h-[18px] w-[18px]",
           )}
           aria-hidden
-        >
-          L
-        </span>
+        />
       )}
       <span className={cn(welcome ? "leading-none" : "leading-none")}>
         Lens

@@ -28,7 +28,7 @@ const LANG_COLORS: Record<string, string> = {
   py: "text-yellow-300",
   js: "text-amber-300",
   json: "text-lime-400",
-  md: "text-zinc-400",
+  md: "text-[var(--text-tertiary)]",
 };
 
 function DiffLineRow({ line }: { line: DiffFileChange["lines"][0] }) {
@@ -36,20 +36,20 @@ function DiffLineRow({ line }: { line: DiffFileChange["lines"][0] }) {
     <div
       className={cn(
         "flex font-mono text-[11px] leading-5",
-        line.type === "add" && "bg-emerald-500/10",
-        line.type === "delete" && "bg-red-500/10",
-        line.type === "modify" && "bg-amber-500/10",
+        line.type === "add" && "bg-[var(--success-muted)]",
+        line.type === "delete" && "bg-[var(--error-muted)]",
+        line.type === "modify" && "bg-[var(--warning)]/10",
       )}
     >
-      <span className="w-8 shrink-0 select-none border-r border-white/5 px-1 text-right text-zinc-600">
+      <span className="w-8 shrink-0 select-none border-r border-[var(--border-subtle)] px-1 text-right text-[var(--text-disabled)]">
         {line.newLineNumber ?? line.oldLineNumber ?? ""}
       </span>
       <span
         className={cn(
           "w-4 shrink-0 select-none text-center",
-          line.type === "add" && "text-emerald-400",
-          line.type === "delete" && "text-red-400",
-          line.type === "modify" && "text-amber-400",
+          line.type === "add" && "text-[var(--success)]",
+          line.type === "delete" && "text-[var(--error)]",
+          line.type === "modify" && "text-[var(--warning)]",
         )}
       >
         {line.type === "add" ? "+" : line.type === "delete" ? "−" : line.type === "modify" ? "~" : " "}
@@ -57,10 +57,10 @@ function DiffLineRow({ line }: { line: DiffFileChange["lines"][0] }) {
       <span
         className={cn(
           "min-w-0 flex-1 whitespace-pre px-2",
-          line.type === "add" && "text-emerald-300",
-          line.type === "delete" && "text-red-300 line-through opacity-80",
-          line.type === "modify" && "text-amber-200",
-          line.type === "context" && "text-zinc-400",
+          line.type === "add" && "text-[var(--success)]",
+          line.type === "delete" && "text-[var(--error)] line-through opacity-80",
+          line.type === "modify" && "text-[var(--warning)]",
+          line.type === "context" && "text-[var(--text-secondary)]",
         )}
       >
         {line.content || " "}
@@ -134,33 +134,33 @@ export function DiffViewer({
   if (files.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-white/10 bg-surface-1 animate-fade-up">
+    <div className="overflow-hidden rounded-lg border border-[var(--border-default)] bg-surface-1 animate-fade-up">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors hover:bg-white/5"
+        className="flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors hover:bg-[var(--bg-hover)]"
       >
         <ChevronRight
           className={cn(
-            "h-3.5 w-3.5 text-zinc-500 transition-transform",
+            "h-3.5 w-3.5 text-[var(--text-tertiary)] transition-transform",
             open && "rotate-90",
           )}
         />
         <GitCompareArrows className="h-3.5 w-3.5 text-accent" />
-        <span className="text-[12px] font-medium text-zinc-300">Review changes</span>
-        <span className="ml-auto text-[11px] text-zinc-500">
+        <span className="text-[12px] font-medium text-[var(--text-secondary)]">Review changes</span>
+        <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
           {files.length} file{files.length !== 1 ? "s" : ""}
           {pendingCount > 0 && ` · ${pendingCount} pending`}
         </span>
       </button>
 
       {open && (
-        <div className="border-t border-white/10">
-          <div className="flex items-center gap-1.5 border-b border-white/5 px-2.5 py-1.5">
+        <div className="border-t border-[var(--border-default)]">
+          <div className="flex items-center gap-1.5 border-b border-[var(--border-subtle)] px-2.5 py-1.5">
             <Button
               size="sm"
               variant="ghost"
               onClick={acceptAll}
-              className="h-7 gap-1 px-2 text-[11px] text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+              className="h-7 gap-1 px-2 text-[11px] text-[var(--success)] hover:bg-[var(--success-muted)] hover:text-[var(--success)]"
             >
               <Check className="h-3 w-3" />
               Accept all
@@ -169,7 +169,7 @@ export function DiffViewer({
               size="sm"
               variant="ghost"
               onClick={rejectAll}
-              className="h-7 gap-1 px-2 text-[11px] text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              className="h-7 gap-1 px-2 text-[11px] text-[var(--error)] hover:bg-[var(--error-muted)] hover:text-[var(--error)]"
             >
               <X className="h-3 w-3" />
               Reject all
@@ -177,15 +177,15 @@ export function DiffViewer({
           </div>
 
           <div className="flex max-h-64">
-            <div className="w-[38%] shrink-0 border-r border-white/5">
+            <div className="w-[38%] shrink-0 border-r border-[var(--border-subtle)]">
               <ScrollArea className="h-full max-h-64">
                 {files.map((file) => (
                   <button
                     key={file.path}
                     onClick={() => setSelectedPath(file.path)}
                     className={cn(
-                      "flex w-full items-start gap-2 border-b border-white/5 px-2.5 py-2 text-left transition-colors hover:bg-white/5",
-                      activeFile?.path === file.path && "bg-white/[0.04]",
+                      "flex w-full items-start gap-2 border-b border-[var(--border-subtle)] px-2.5 py-2 text-left transition-colors hover:bg-[var(--bg-hover)]",
+                      activeFile?.path === file.path && "bg-[var(--bg-selected)]",
                       file.status === "accepted" && "opacity-60",
                       file.status === "rejected" && "opacity-40",
                     )}
@@ -193,18 +193,18 @@ export function DiffViewer({
                     <FileCode2
                       className={cn(
                         "mt-0.5 h-3.5 w-3.5 shrink-0",
-                        LANG_COLORS[file.language] ?? "text-zinc-400",
+                        LANG_COLORS[file.language] ?? "text-[var(--text-tertiary)]",
                       )}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-mono text-[11px] text-zinc-200">
+                      <div className="truncate font-mono text-[11px] text-[var(--text-primary)]">
                         {file.path.split("/").pop()}
                       </div>
-                      <div className="truncate text-[10px] text-zinc-600">{file.path}</div>
+                      <div className="truncate text-[10px] text-[var(--text-disabled)]">{file.path}</div>
                     </div>
                     <span className="flex shrink-0 flex-col items-end font-mono text-[10px]">
-                      <span className="text-emerald-400">+{file.additions}</span>
-                      <span className="text-red-400">−{file.deletions}</span>
+                      <span className="text-[var(--success)]">+{file.additions}</span>
+                      <span className="text-[var(--error)]">−{file.deletions}</span>
                     </span>
                   </button>
                 ))}
@@ -214,8 +214,8 @@ export function DiffViewer({
             <div className="min-w-0 flex-1">
               {activeFile && (
                 <>
-                  <div className="flex items-center justify-between border-b border-white/5 px-2.5 py-1.5">
-                    <span className="truncate font-mono text-[11px] text-zinc-400">
+                  <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-2.5 py-1.5">
+                    <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">
                       {activeFile.path}
                     </span>
                     {activeFile.status === "pending" && (
@@ -224,7 +224,7 @@ export function DiffViewer({
                           size="sm"
                           variant="ghost"
                           onClick={() => accept(activeFile.path)}
-                          className="h-6 px-2 text-[10px] text-emerald-400 hover:bg-emerald-500/10"
+                          className="h-6 px-2 text-[10px] text-[var(--success)] hover:bg-[var(--success-muted)]"
                         >
                           Accept
                         </Button>
@@ -232,17 +232,17 @@ export function DiffViewer({
                           size="sm"
                           variant="ghost"
                           onClick={() => reject(activeFile.path)}
-                          className="h-6 px-2 text-[10px] text-red-400 hover:bg-red-500/10"
+                          className="h-6 px-2 text-[10px] text-[var(--error)] hover:bg-[var(--error-muted)]"
                         >
                           Reject
                         </Button>
                       </div>
                     )}
                     {activeFile.status === "accepted" && (
-                      <span className="text-[10px] text-emerald-400">Accepted</span>
+                      <span className="text-[10px] text-[var(--success)]">Accepted</span>
                     )}
                     {activeFile.status === "rejected" && (
-                      <span className="text-[10px] text-red-400">Rejected</span>
+                      <span className="text-[10px] text-[var(--error)]">Rejected</span>
                     )}
                   </div>
                   <ScrollArea className="max-h-52">

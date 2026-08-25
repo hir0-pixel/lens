@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+﻿import { toast } from "sonner";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
@@ -182,7 +182,7 @@ export const useGitStore = create<GitState>()(
           description: desc || undefined,
           author: "Maryam",
           email: "maryam@lens.app",
-          avatarColor: "#FCAA26",
+          avatarColor: "var(--accent-primary)",
           timestamp: new Date().toISOString(),
           relativeTime: "just now",
           filesChanged: staged.length || 1,

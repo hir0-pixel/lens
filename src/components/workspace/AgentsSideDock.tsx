@@ -104,7 +104,7 @@ export function AgentsSideDock({
   return (
     <aside
       className={cn(
-        "relative flex h-full shrink-0 flex-col border-l border-white/[0.08] bg-[#0d0d0d]",
+        "relative flex h-full shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]",
         "animate-in slide-in-from-right duration-[var(--duration-slow)]",
       )}
       style={{ width }}
@@ -120,10 +120,10 @@ export function AgentsSideDock({
 
       {kind === "picker" ? (
         <div className="flex min-h-0 flex-1 flex-col px-8 pt-16">
-          <h2 className="text-[22px] font-medium tracking-tight text-[#f0f0f0]">
+          <h2 className="text-[22px] font-medium tracking-tight text-[var(--text-primary)]">
             Open tab
           </h2>
-          <p className="mt-1.5 text-[13.5px] text-[#7a7a7a]">
+          <p className="mt-1.5 text-[13.5px] text-[var(--text-tertiary)]">
             Choose a tab to open in the side pane.
           </p>
           <div className="mt-8 grid grid-cols-2 gap-3">
@@ -132,10 +132,10 @@ export function AgentsSideDock({
                 key={tab}
                 type="button"
                 onClick={() => pick(tab)}
-                className="flex h-[92px] flex-col items-start justify-center gap-3 rounded-2xl bg-[#1c1c1c] px-5 text-left hover:bg-[#242424]"
+                className="flex h-[92px] flex-col items-start justify-center gap-3 rounded-2xl bg-[var(--bg-surface-raised)] px-5 text-left hover:bg-[var(--bg-hover)]"
               >
-                <Icon className="h-5 w-5 text-[#d4d4d4]" strokeWidth={1.5} />
-                <span className="text-[14px] text-[#e8e8e8]">{label}</span>
+                <Icon className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={1.5} />
+                <span className="text-[14px] text-[var(--text-primary)]">{label}</span>
               </button>
             ))}
           </div>
@@ -143,8 +143,8 @@ export function AgentsSideDock({
       ) : (
         <>
           {/* Tab strip */}
-          <div className="flex h-9 shrink-0 items-center border-b border-white/[0.08] px-1">
-            <span className="inline-flex h-7 items-center rounded-md bg-white/[0.08] px-2.5 text-[12px] font-medium text-[#e8e8e8]">
+          <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-subtle)] px-1">
+            <span className="inline-flex h-7 items-center rounded-md bg-[var(--bg-hover)] px-2.5 text-[12px] font-medium text-[var(--text-primary)]">
               {kind === "review" ? (
                 <>
                   <FilePlus2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
@@ -155,13 +155,13 @@ export function AgentsSideDock({
               )}
             </span>
             {kind === "terminal" && cwd && (
-              <span className="ml-1 max-w-[200px] truncate font-mono text-[11px] text-[#6a6a6a]" title={cwd}>
+              <span className="ml-1 max-w-[200px] truncate font-mono text-[11px] text-[var(--text-tertiary)]" title={cwd}>
                 {cwd}
               </span>
             )}
             <button
               type="button"
-              className="ml-1 flex h-7 w-7 items-center justify-center rounded text-[#6a6a6a] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+              className="ml-1 flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               aria-label="New tab"
               title="New tab"
               onClick={() => pick("review")}
@@ -170,7 +170,7 @@ export function AgentsSideDock({
             </button>
             <button
               type="button"
-              className="ml-auto flex h-7 w-7 items-center justify-center rounded text-[#8a8a8a] hover:bg-white/[0.06] hover:text-[#e8e8e8]"
+              className="ml-auto flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               aria-label="Close panel"
               title="Close"
               onClick={onClose}
@@ -189,10 +189,10 @@ export function AgentsSideDock({
             )}
             {kind === "review" && <ReviewPanel changes={changes} />}
             {kind === "conversation" && (
-              <div className="flex h-full flex-col items-center justify-center bg-[#111] px-6 text-center">
-                <MessageSquare className="mb-3 h-8 w-8 text-[#5a5a5a]" strokeWidth={1.4} />
-                <p className="text-[14px] text-[#c8c8c8]">Side conversation</p>
-                <p className="mt-1 max-w-[240px] text-[12.5px] text-[#6a6a6a]">
+              <div className="flex h-full flex-col items-center justify-center bg-[var(--bg-surface)] px-6 text-center">
+                <MessageSquare className="mb-3 h-8 w-8 text-[var(--text-tertiary)]" strokeWidth={1.4} />
+                <p className="text-[14px] text-[var(--text-secondary)]">Side conversation</p>
+                <p className="mt-1 max-w-[240px] text-[12.5px] text-[var(--text-tertiary)]">
                   Start a parallel thread without leaving this chat.
                 </p>
               </div>
@@ -228,19 +228,19 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
   const groups = groupByDir(filtered);
   const sel = changes.find((f) => f.id === selectedFile);
 
-  const iconBtn = "rounded p-1 text-[#666] hover:bg-white/[0.06] hover:text-white";
+  const iconBtn = "rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]";
 
   return (
-    <div className="flex h-full flex-col bg-[#0d0d0d]">
+    <div className="flex h-full flex-col bg-[var(--bg-surface)]">
       {/* Git changes header */}
       <div className="flex items-center gap-3 px-3 py-1.5">
-        <button type="button" className="flex items-center gap-1 text-[13px] font-semibold text-white">
-          Git changes <ChevronDown className="h-3.5 w-3.5 text-[#666]" />
+        <button type="button" className="flex items-center gap-1 text-[13px] font-semibold text-[var(--text-primary)]">
+          Git changes <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         </button>
         {changes.length > 0 && (
           <span className="text-[12px]">
-            <span className="text-[#3fb950]">+{totalAdd}</span>{" "}
-            <span className="text-[#f85149]">-{totalDel}</span>
+            <span className="text-[var(--success)]">+{totalAdd}</span>{" "}
+            <span className="text-[var(--error)]">-{totalDel}</span>
           </span>
         )}
         <div className="ml-auto flex items-center gap-0.5">
@@ -282,45 +282,45 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
 
       {/* Selected file header */}
       {sel && (
-        <div className="flex items-center gap-2 border-t border-white/[0.06] px-3 py-1.5">
+        <div className="flex items-center gap-2 border-t border-[var(--border-subtle)] px-3 py-1.5">
           <SettingsGearIcon />
-          <span className="text-[12px] font-medium text-white">
+          <span className="text-[12px] font-medium text-[var(--text-primary)]">
             {sel.path.split("/").pop()}
           </span>
-          <span className="text-[11px] text-[#666]">
+          <span className="text-[11px] text-[var(--text-tertiary)]">
             {sel.path.split("/").slice(0, -1).join("/")}/
           </span>
           <span className="ml-auto text-[11px]">
-            <span className="text-[#3fb950]">+{sel.additions}</span>{" "}
-            <span className="text-[#f85149]">-{sel.deletions}</span>
+            <span className="text-[var(--success)]">+{sel.additions}</span>{" "}
+            <span className="text-[var(--error)]">-{sel.deletions}</span>
           </span>
         </div>
       )}
 
       {/* Filter input */}
-      <div className="flex items-center gap-2 border-t border-white/[0.06] px-3 py-1.5">
-        <Search className="h-3.5 w-3.5 text-[#555]" />
+      <div className="flex items-center gap-2 border-t border-[var(--border-subtle)] px-3 py-1.5">
+        <Search className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         <input
           type="text"
           placeholder="Filter files"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="flex-1 bg-transparent text-[12px] text-white placeholder:text-[#555] outline-none"
+          className="flex-1 bg-transparent text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
         />
       </div>
 
       {/* File tree / empty state */}
-      <div className="min-h-0 flex-1 overflow-y-auto border-t border-white/[0.06]">
+      <div className="min-h-0 flex-1 overflow-y-auto border-t border-[var(--border-subtle)]">
         {changes.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-[14px] text-[#555]">No uncommitted changes yet</p>
+            <p className="text-[14px] text-[var(--text-tertiary)]">No uncommitted changes yet</p>
           </div>
         ) : (
           <div className="py-0.5">
             {[...groups.entries()].map(([dir, files]) => (
               <div key={dir}>
                 {dir && (
-                  <button type="button" className="flex w-full items-center gap-1 px-2 py-1 text-[12px] text-[#999] hover:bg-white/[0.04]">
+                  <button type="button" className="flex w-full items-center gap-1 px-2 py-1 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">
                     <ChevronDown className="h-3 w-3" />
                     <FolderIcon />
                     <span>{dir.split("/").filter(Boolean).join(" › ")}</span>
@@ -333,14 +333,14 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
                       key={file.id}
                       type="button"
                       className={cn(
-                        "flex w-full items-center gap-2 py-1 text-[12px] hover:bg-white/[0.04]",
+                        "flex w-full items-center gap-2 py-1 text-[12px] hover:bg-[var(--bg-hover)]",
                         dir ? "pl-7 pr-2" : "px-2",
-                        selectedFile === file.id && "bg-[#2a2d33]",
+                        selectedFile === file.id && "bg-[var(--bg-active)]",
                       )}
                       onClick={() => setSelectedFile(file.id === selectedFile ? null : file.id)}
                     >
                       <SettingsGearIcon />
-                      <span className="min-w-0 flex-1 truncate text-left text-[#d4d4d4]">{fname}</span>
+                      <span className="min-w-0 flex-1 truncate text-left text-[var(--text-secondary)]">{fname}</span>
                     </button>
                   );
                 })}
@@ -355,7 +355,7 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
 
 function SettingsGearIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[#888]" aria-hidden>
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[var(--text-tertiary)]" aria-hidden>
       <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.2" />
       <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
     </svg>
@@ -364,7 +364,7 @@ function SettingsGearIcon() {
 
 function FolderIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[#888]" aria-hidden>
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[var(--text-tertiary)]" aria-hidden>
       <path d="M2 4a1 1 0 011-1h3l1.5 1.5H13a1 1 0 011 1V12a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" stroke="currentColor" strokeWidth="1.2" />
     </svg>
   );

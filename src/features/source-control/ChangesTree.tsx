@@ -1,4 +1,4 @@
-import { memo } from "react";
+﻿import { memo } from "react";
 import {
   Check,
   Diff,
@@ -51,24 +51,24 @@ const STATUS_LABEL: Record<GitFileStatus, string> = {
 };
 
 const STATUS_COLOR: Record<GitFileStatus, string> = {
-  modified: "text-amber-400",
-  added: "text-emerald-400",
-  deleted: "text-red-400",
-  renamed: "text-sky-400",
-  untracked: "text-zinc-400",
-  ignored: "text-zinc-600",
-  conflict: "text-red-400",
+  modified: "text-[var(--warning)]",
+  added: "text-[var(--success)]",
+  deleted: "text-[var(--error)]",
+  renamed: "text-[var(--info)]",
+  untracked: "text-[var(--text-secondary)]",
+  ignored: "text-[var(--text-tertiary)]",
+  conflict: "text-[var(--error)]",
 };
 
 function FileIcon({ change }: { change: GitChange }) {
-  if (change.status === "conflict") return <FileWarning className="h-3.5 w-3.5 text-red-400" />;
+  if (change.status === "conflict") return <FileWarning className="h-3.5 w-3.5 text-[var(--error)]" />;
   if (change.status === "added" || change.status === "untracked")
-    return <FilePlus className="h-3.5 w-3.5 text-emerald-400" />;
-  if (change.status === "deleted") return <FileMinus className="h-3.5 w-3.5 text-red-400" />;
-  if (change.path.endsWith(".json")) return <FileJson className="h-3.5 w-3.5 text-lime-400" />;
+    return <FilePlus className="h-3.5 w-3.5 text-[var(--success)]" />;
+  if (change.status === "deleted") return <FileMinus className="h-3.5 w-3.5 text-[var(--error)]" />;
+  if (change.path.endsWith(".json")) return <FileJson className="h-3.5 w-3.5 text-[var(--warning)]" />;
   if (change.path.endsWith(".md") || change.path.endsWith(".css"))
-    return <FileText className="h-3.5 w-3.5 text-zinc-400" />;
-  return <FileCode2 className="h-3.5 w-3.5 text-sky-400" />;
+    return <FileText className="h-3.5 w-3.5 text-[var(--text-secondary)]" />;
+  return <FileCode2 className="h-3.5 w-3.5 text-[var(--info)]" />;
 }
 
 function ChangeRow({
@@ -93,7 +93,7 @@ function ChangeRow({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className="group flex h-7 items-center gap-1.5 px-2 text-[12px] hover:bg-white/[0.04]"
+          className="group flex h-7 items-center gap-1.5 px-2 text-[12px] hover:bg-[var(--bg-hover)]"
           role="treeitem"
         >
           <button
@@ -102,9 +102,9 @@ function ChangeRow({
             className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
           >
             <FileIcon change={change} />
-            <span className="truncate text-zinc-200">{name}</span>
+            <span className="truncate text-[var(--text-primary)]">{name}</span>
             {dir && (
-              <span className="truncate font-mono text-[10px] text-zinc-600">{dir}</span>
+              <span className="truncate font-mono text-[10px] text-[var(--text-tertiary)]">{dir}</span>
             )}
           </button>
           <span
@@ -162,7 +162,7 @@ function ChangeRow({
                   <DropdownMenuItem onClick={onUnstage}>Unstage Changes</DropdownMenuItem>
                 )}
                 {onDiscard && (
-                  <DropdownMenuItem onClick={onDiscard} className="text-red-400">
+                  <DropdownMenuItem onClick={onDiscard} className="text-[var(--error)]">
                     Discard Changes
                   </DropdownMenuItem>
                 )}
@@ -190,7 +190,7 @@ function ChangeRow({
         )}
         <ContextMenuSeparator />
         {onDiscard && (
-          <ContextMenuItem onClick={onDiscard} className="text-red-400 focus:text-red-400">
+          <ContextMenuItem onClick={onDiscard} className="text-[var(--error)] focus:text-[var(--error)]">
             <RotateCcw className="mr-2 h-3.5 w-3.5" />
             Discard Changes
           </ContextMenuItem>
@@ -219,7 +219,7 @@ function ChangeSection({
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="mb-1">
       <div className="flex h-7 items-center gap-1 px-1">
-        <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500 hover:bg-white/5 hover:text-zinc-300">
+        <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]">
           {open ? (
             <ChevronDown className="h-3.5 w-3.5" />
           ) : (
@@ -259,7 +259,7 @@ function ChangesTreeComponent() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-1.5 text-[10px] text-red-400"
+            className="h-6 px-1.5 text-[10px] text-[var(--error)]"
             onClick={() => setShowConflicts(true)}
           >
             Resolve
@@ -348,9 +348,9 @@ function ChangesTreeComponent() {
         conflicts.length === 0 &&
         untracked.length === 0 && (
           <div className="flex flex-col items-center px-4 py-8 text-center">
-            <Check className="mb-2 h-6 w-6 text-emerald-500/60" />
-            <p className="text-[12px] text-zinc-400">No changes</p>
-            <p className="mt-1 text-[11px] text-zinc-600">
+            <Check className="mb-2 h-6 w-6 text-[var(--success)] opacity-60" />
+            <p className="text-[12px] text-[var(--text-secondary)]">No changes</p>
+            <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
               Your working tree is clean
             </p>
           </div>

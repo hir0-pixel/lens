@@ -334,7 +334,7 @@ export function AgentChatComposer({
           className={cn(
             "ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
             sending
-              ? "bg-[#ef4444] text-white hover:bg-[#dc2626]"
+              ? "bg-[var(--error)] text-[var(--text-on-accent)] hover:bg-[var(--error)]"
               : canSend
                 ? "bg-[var(--accent-primary)] text-[var(--text-on-accent)] hover:bg-[var(--accent-primary-hover)]"
                 : "bg-[var(--bg-active)] text-[var(--text-disabled)]",

@@ -84,7 +84,7 @@ function CodeBlock({
         >
           {copied ? (
             <>
-              <Check className="h-3 w-3 text-emerald-400" />
+              <Check className="h-3 w-3 text-[var(--success)]" />
               Copied
             </>
           ) : (
@@ -174,8 +174,8 @@ export function DiagnosticInline({ count, kind }: { count: number; kind: "error"
       className={cn(
         "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px]",
         kind === "error"
-          ? "bg-red-500/10 text-red-400"
-          : "bg-amber-500/10 text-amber-400",
+          ? "bg-[var(--error-muted)] text-[var(--error)]"
+          : "bg-[var(--warning)]/10 text-[var(--warning)]",
       )}
     >
       <AlertCircle className="h-3 w-3" />

@@ -233,7 +233,7 @@ function ServersPopover() {
           {activeTab === "Servers" && (
             <div className="flex items-center justify-between py-1.5">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-green-500" />
+                <span className="h-2 w-2 rounded-full bg-[var(--success)]" />
                 <span className="text-[13px] text-[var(--text-primary)] font-medium">Local Server</span>
                 <span className="text-[12px] text-[var(--text-tertiary)]">vlocal</span>
               </div>
@@ -248,7 +248,7 @@ function ServersPopover() {
           )}
           {activeTab === "Plugins" && (
             <div className="flex items-center gap-2 py-1.5">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--success)]" />
               <span className="truncate text-[13px] text-[var(--text-primary)]">
                 file:///C:/Users/PMYLS/.config/opencode/plu...
               </span>
@@ -307,7 +307,7 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
             <div className="px-5 pb-3">
               <div className="flex items-center justify-between rounded-lg px-1 py-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--success)]" />
                   <span className="text-[14px] font-medium text-[var(--text-primary)]">Local Server</span>
                   <span className="text-[13px] text-[var(--text-tertiary)]">vlocal</span>
                 </div>
@@ -395,7 +395,7 @@ function McpEntry() {
   return (
     <div className="flex items-center justify-between py-1.5">
       <div className="flex items-center gap-2">
-        <span className={cn("h-2 w-2 rounded-full transition-colors", on ? "bg-green-500" : "bg-white/20")} />
+        <span className={cn("h-2 w-2 rounded-full transition-colors", on ? "bg-[var(--success)]" : "bg-[var(--bg-active)]")} />
         <span className="text-[13px] text-[var(--text-primary)] font-medium">shadcn</span>
       </div>
       <button

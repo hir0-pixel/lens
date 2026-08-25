@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Check, GitMerge, X } from "lucide-react";
+﻿import { ArrowLeftRight, Check, GitMerge, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +12,10 @@ export function MergeConflictView() {
   const unresolved = conflicts.filter((c) => !c.resolved);
 
   return (
-    <div className="flex h-full min-h-0 flex-col border-t border-white/5 bg-surface-0">
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-white/5 bg-surface-1 px-2">
-        <GitMerge className="h-3.5 w-3.5 text-red-400" />
-        <span className="text-[12px] font-medium text-zinc-200">Merge Conflicts</span>
+    <div className="flex h-full min-h-0 flex-col border-t border-[var(--border-subtle)] bg-surface-0">
+      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-surface-1 px-2">
+        <GitMerge className="h-3.5 w-3.5 text-[var(--error)]" />
+        <span className="text-[12px] font-medium text-[var(--text-primary)]">Merge Conflicts</span>
         <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
           {unresolved.length} remaining
         </Badge>
@@ -36,17 +36,17 @@ export function MergeConflictView() {
             <div
               key={conflict.id}
               className={cn(
-                "overflow-hidden rounded-lg border border-white/10",
+                "overflow-hidden rounded-lg border border-[var(--border-default)]",
                 conflict.resolved && "opacity-60",
               )}
             >
-              <div className="flex items-center gap-2 border-b border-white/5 bg-surface-1 px-2.5 py-1.5">
-                <span className="font-mono text-[11px] text-zinc-300">{conflict.path}</span>
-                <span className="text-[10px] text-zinc-600">
+              <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] bg-surface-1 px-2.5 py-1.5">
+                <span className="font-mono text-[11px] text-[var(--text-secondary)]">{conflict.path}</span>
+                <span className="text-[10px] text-[var(--text-tertiary)]">
                   {index + 1}/{conflicts.length}
                 </span>
                 {conflict.resolved && (
-                  <Badge className="ml-auto h-4 bg-emerald-500/20 text-[10px] text-emerald-400">
+                  <Badge className="ml-auto h-4 bg-[var(--success-muted)] text-[10px] text-[var(--success)]">
                     Resolved ({conflict.resolved})
                   </Badge>
                 )}
@@ -54,25 +54,25 @@ export function MergeConflictView() {
 
               <div className="grid grid-cols-2 divide-x divide-white/5">
                 <div>
-                  <div className="bg-blue-500/10 px-2 py-1 text-[10px] font-medium text-blue-300">
+                  <div className="bg-[var(--bg-hover)] px-2 py-1 text-[10px] font-medium text-[var(--info)]">
                     Current · {conflict.currentLabel}
                   </div>
-                  <pre className="whitespace-pre-wrap p-2 font-mono text-[11px] leading-relaxed text-zinc-400">
+                  <pre className="whitespace-pre-wrap p-2 font-mono text-[11px] leading-relaxed text-[var(--text-secondary)]">
                     {conflict.currentContent}
                   </pre>
                 </div>
                 <div>
-                  <div className="bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-300">
+                  <div className="bg-[var(--success-muted)] px-2 py-1 text-[10px] font-medium text-[var(--success)]">
                     Incoming · {conflict.incomingLabel}
                   </div>
-                  <pre className="whitespace-pre-wrap p-2 font-mono text-[11px] leading-relaxed text-zinc-400">
+                  <pre className="whitespace-pre-wrap p-2 font-mono text-[11px] leading-relaxed text-[var(--text-secondary)]">
                     {conflict.incomingContent}
                   </pre>
                 </div>
               </div>
 
               {!conflict.resolved && (
-                <div className="flex flex-wrap gap-1 border-t border-white/5 bg-surface-1 p-2">
+                <div className="flex flex-wrap gap-1 border-t border-[var(--border-subtle)] bg-surface-1 p-2">
                   <Button
                     size="sm"
                     variant="secondary"
@@ -106,7 +106,7 @@ export function MergeConflictView() {
           ))}
 
           {conflicts.length === 0 && (
-            <div className="py-10 text-center text-[12px] text-zinc-600">
+            <div className="py-10 text-center text-[12px] text-[var(--text-tertiary)]">
               No merge conflicts
             </div>
           )}

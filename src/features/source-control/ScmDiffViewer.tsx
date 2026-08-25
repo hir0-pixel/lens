@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+﻿import { memo, useMemo, useState } from "react";
 import { Columns2, Rows2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,23 +18,23 @@ function DiffLineRow({
       <div
         className={cn(
           "flex font-mono text-[11px] leading-5",
-          line.type === "add" && "bg-emerald-500/10",
-          line.type === "delete" && "bg-red-500/10",
-          line.type === "modify" && "bg-amber-500/10",
+          line.type === "add" && "bg-[var(--success-muted)]",
+          line.type === "delete" && "bg-[var(--error-muted)]",
+          line.type === "modify" && "bg-[var(--bg-hover)]",
         )}
       >
-        <span className="w-8 shrink-0 select-none border-r border-white/5 px-1 text-right text-zinc-600">
+        <span className="w-8 shrink-0 select-none border-r border-[var(--border-subtle)] px-1 text-right text-[var(--text-tertiary)]">
           {line.oldLineNumber ?? ""}
         </span>
-        <span className="w-8 shrink-0 select-none border-r border-white/5 px-1 text-right text-zinc-600">
+        <span className="w-8 shrink-0 select-none border-r border-[var(--border-subtle)] px-1 text-right text-[var(--text-tertiary)]">
           {line.newLineNumber ?? ""}
         </span>
         <span
           className={cn(
             "w-4 shrink-0 select-none text-center",
-            line.type === "add" && "text-emerald-400",
-            line.type === "delete" && "text-red-400",
-            line.type === "modify" && "text-amber-400",
+            line.type === "add" && "text-[var(--success)]",
+            line.type === "delete" && "text-[var(--error)]",
+            line.type === "modify" && "text-[var(--warning)]",
           )}
         >
           {line.type === "add" ? "+" : line.type === "delete" ? "−" : " "}
@@ -42,9 +42,9 @@ function DiffLineRow({
         <span
           className={cn(
             "min-w-0 flex-1 whitespace-pre-wrap break-all px-2",
-            line.type === "add" && "text-emerald-300",
-            line.type === "delete" && "text-red-300 line-through opacity-80",
-            line.type === "context" && "text-zinc-400",
+            line.type === "add" && "text-[var(--success)]",
+            line.type === "delete" && "text-[var(--error)] line-through opacity-80",
+            line.type === "context" && "text-[var(--text-secondary)]",
           )}
         >
           {line.content || " "}
@@ -88,25 +88,25 @@ function SideBySideHunk({ lines }: { lines: DiffLine[] }) {
   return (
     <>
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-2 border-b border-white/[0.03]">
+        <div key={idx} className="grid grid-cols-2 border-b border-[var(--border-subtle)]">
           <div
             className={cn(
               "flex font-mono text-[11px] leading-5",
-              row.left?.type === "delete" && "bg-red-500/10",
-              row.left?.type === "modify" && "bg-amber-500/10",
+              row.left?.type === "delete" && "bg-[var(--error-muted)]",
+              row.left?.type === "modify" && "bg-[var(--bg-hover)]",
             )}
           >
-            <span className="w-8 shrink-0 select-none border-r border-white/5 px-1 text-right text-zinc-600">
+            <span className="w-8 shrink-0 select-none border-r border-[var(--border-subtle)] px-1 text-right text-[var(--text-tertiary)]">
               {row.left?.oldLineNumber ?? ""}
             </span>
-            <span className="w-4 shrink-0 text-center text-red-400">
+            <span className="w-4 shrink-0 text-center text-[var(--error)]">
               {row.left?.type === "delete" ? "−" : " "}
             </span>
             <span
               className={cn(
                 "min-w-0 flex-1 whitespace-pre-wrap break-all px-1",
-                row.left?.type === "delete" && "text-red-300",
-                (!row.left || row.left.type === "context") && "text-zinc-500",
+                row.left?.type === "delete" && "text-[var(--error)]",
+                (!row.left || row.left.type === "context") && "text-[var(--text-tertiary)]",
               )}
             >
               {row.left?.content ?? ""}
@@ -114,22 +114,22 @@ function SideBySideHunk({ lines }: { lines: DiffLine[] }) {
           </div>
           <div
             className={cn(
-              "flex border-l border-white/5 font-mono text-[11px] leading-5",
-              row.right?.type === "add" && "bg-emerald-500/10",
-              row.right?.type === "modify" && "bg-amber-500/10",
+              "flex border-l border-[var(--border-subtle)] font-mono text-[11px] leading-5",
+              row.right?.type === "add" && "bg-[var(--success-muted)]",
+              row.right?.type === "modify" && "bg-[var(--bg-hover)]",
             )}
           >
-            <span className="w-8 shrink-0 select-none border-r border-white/5 px-1 text-right text-zinc-600">
+            <span className="w-8 shrink-0 select-none border-r border-[var(--border-subtle)] px-1 text-right text-[var(--text-tertiary)]">
               {row.right?.newLineNumber ?? ""}
             </span>
-            <span className="w-4 shrink-0 text-center text-emerald-400">
+            <span className="w-4 shrink-0 text-center text-[var(--success)]">
               {row.right?.type === "add" ? "+" : " "}
             </span>
             <span
               className={cn(
                 "min-w-0 flex-1 whitespace-pre-wrap break-all px-1",
-                row.right?.type === "add" && "text-emerald-300",
-                (!row.right || row.right.type === "context") && "text-zinc-500",
+                row.right?.type === "add" && "text-[var(--success)]",
+                (!row.right || row.right.type === "context") && "text-[var(--text-tertiary)]",
               )}
             >
               {row.right?.content ?? ""}
@@ -157,7 +157,7 @@ function CollapsibleContext({ lines }: { lines: DiffLine[] }) {
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="w-full bg-white/[0.02] py-1 text-center font-mono text-[10px] text-zinc-600 hover:bg-white/5 hover:text-zinc-400"
+        className="w-full bg-surface-0/40 py-1 text-center font-mono text-[10px] text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
       >
         ··· {lines.length} unchanged lines ···
       </button>
@@ -171,7 +171,7 @@ function CollapsibleContext({ lines }: { lines: DiffLine[] }) {
       <button
         type="button"
         onClick={() => setExpanded(false)}
-        className="w-full py-0.5 text-center text-[10px] text-zinc-600 hover:text-zinc-400"
+        className="w-full py-0.5 text-center text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
       >
         Collapse
       </button>
@@ -210,17 +210,17 @@ function ScmDiffViewerComponent() {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col border-t border-white/5 bg-surface-0">
-      <div className="sticky top-0 z-10 flex h-8 shrink-0 items-center gap-2 border-b border-white/5 bg-surface-1 px-2">
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-zinc-300">
+    <div className="flex h-full min-h-0 flex-col border-t border-[var(--border-subtle)] bg-surface-0">
+      <div className="sticky top-0 z-10 flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-surface-1 px-2">
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--text-secondary)]">
           {fallback.path}
         </span>
-        <span className="font-mono text-[10px] text-emerald-400">+{fallback.additions}</span>
-        <span className="font-mono text-[10px] text-red-400">−{fallback.deletions}</span>
+        <span className="font-mono text-[10px] text-[var(--success)]">+{fallback.additions}</span>
+        <span className="font-mono text-[10px] text-[var(--error)]">−{fallback.deletions}</span>
         <Button
           variant="ghost"
           size="icon"
-          className={cn("h-6 w-6", diffMode === "side-by-side" && "bg-white/10")}
+          className={cn("h-6 w-6", diffMode === "side-by-side" && "bg-[var(--bg-hover)]")}
           onClick={() => setDiffMode("side-by-side")}
           aria-label="Side by side"
         >
@@ -229,7 +229,7 @@ function ScmDiffViewerComponent() {
         <Button
           variant="ghost"
           size="icon"
-          className={cn("h-6 w-6", diffMode === "inline" && "bg-white/10")}
+          className={cn("h-6 w-6", diffMode === "inline" && "bg-[var(--bg-hover)]")}
           onClick={() => setDiffMode("inline")}
           aria-label="Inline diff"
         >
@@ -249,7 +249,7 @@ function ScmDiffViewerComponent() {
       <ScrollArea className="min-h-0 flex-1">
         {fallback.hunks.map((hunk, hi) => (
           <div key={hi} className="mb-2">
-            <div className="sticky top-0 z-[1] bg-sky-500/10 px-2 py-0.5 font-mono text-[10px] text-sky-400">
+            <div className="sticky top-0 z-[1] bg-[var(--bg-hover)] px-2 py-0.5 font-mono text-[10px] text-[var(--info)]">
               {hunk.header}
             </div>
             {diffMode === "side-by-side" ? (

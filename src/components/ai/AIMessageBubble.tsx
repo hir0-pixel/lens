@@ -66,9 +66,9 @@ export function AIMessageBubble({
                   ) : (
                     <div className="flex h-12 items-center gap-2 px-3">
                       {att.kind === "image" ? (
-                        <ImageIcon className="h-3.5 w-3.5 text-[#8a8a8a]" />
+                        <ImageIcon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                       ) : att.kind === "video" ? (
-                        <Video className="h-3.5 w-3.5 text-[#8a8a8a]" />
+                        <Video className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                       ) : null}
                       <span className="max-w-[140px] truncate text-[12px] text-[var(--text-secondary)]">
                         {att.name}
@@ -133,7 +133,7 @@ export function AIMessageBubble({
           {message.citations.map((citation) => (
             <span
               key={`${citation.source}:${citation.section}`}
-              className="rounded-md border border-white/[0.1] bg-white/[0.03] px-2 py-1 text-[11px] text-[#aeb8c8]"
+              className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-2 py-1 text-[11px] text-[var(--text-secondary)]"
               title={citation.section}
             >
               {citation.source} · {citation.section}
@@ -149,7 +149,7 @@ export function AIMessageBubble({
         aria-label="Copy message"
       >
         {copied ? (
-          <Check className="h-3 w-3 text-[#3fb950]" />
+          <Check className="h-3 w-3 text-[var(--success)]" />
         ) : (
           <Copy className="h-3 w-3" />
         )}

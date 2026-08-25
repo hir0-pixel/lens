@@ -109,7 +109,7 @@ export function MentionPicker({
   return (
     <div
       ref={ref}
-      className="absolute bottom-full left-0 z-50 mb-1.5 w-full animate-scale-in overflow-hidden rounded-lg border border-white/10 bg-surface-2 shadow-float-pop"
+      className="absolute bottom-full left-0 z-50 mb-1.5 w-full animate-scale-in overflow-hidden rounded-lg border border-[var(--border-default)] bg-surface-2 shadow-float-pop"
     >
       <Command shouldFilter={false} className="bg-transparent">
         <CommandInput
@@ -119,7 +119,7 @@ export function MentionPicker({
           className="h-9 border-none text-[12px]"
         />
         <CommandList className="max-h-48">
-          <CommandEmpty className="py-4 text-[12px] text-zinc-500">
+          <CommandEmpty className="py-4 text-[12px] text-[var(--text-tertiary)]">
             No matches found
           </CommandEmpty>
           {(Object.keys(grouped) as MentionKind[]).map((kind) => {
@@ -139,13 +139,13 @@ export function MentionPicker({
                       onSelect={() => onSelect(item)}
                       className={cn(
                         "gap-2 text-[12px]",
-                        globalIndex === activeIndex && "bg-white/10",
+                        globalIndex === activeIndex && "bg-[var(--bg-hover)]",
                       )}
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                      <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
                       <span className="truncate">{item.label}</span>
                       {item.detail && (
-                        <span className="ml-auto truncate text-[10px] text-zinc-600">
+                        <span className="ml-auto truncate text-[10px] text-[var(--text-disabled)]">
                           {item.detail}
                         </span>
                       )}

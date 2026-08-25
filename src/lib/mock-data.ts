@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   ChatMessage,
   Model,
   Project,
@@ -100,7 +100,7 @@ export const INITIAL_THREAD: ChatMessage[] = [
     id: "m4",
     role: "assistant",
     content:
-      "Done. The accent is now amber (#FCAA26) across the app, and the sidebar has a new **Savings Goals** entry with a progress tracker. I updated the mock data to include three goals.",
+      "Done. The accent is now amber (var(--accent-primary)) across the app, and the sidebar has a new **Savings Goals** entry with a progress tracker. I updated the mock data to include three goals.",
     timestamp: "2:17 PM",
     model: "Claude Sonnet 4.5",
     toolCalls: [
@@ -123,7 +123,7 @@ export const INITIAL_THREAD: ChatMessage[] = [
       {
         path: "src/index.css",
         language: "css",
-        summary: "Swap accent to amber #FCAA26",
+        summary: "Swap accent to amber var(--accent-primary)",
         additions: 3,
         deletions: 3,
       },
@@ -148,7 +148,7 @@ export const INITIAL_PROJECTS: Project[] = [
     deployStatus: "live",
     deployedUrl: "https://lens.lens.app",
     updatedAt: "yesterday",
-    color: "#FCAA26",
+    color: "var(--accent-primary)",
   },
   {
     id: "p2",
@@ -158,7 +158,7 @@ export const INITIAL_PROJECTS: Project[] = [
     branch: "main",
     deployStatus: "idle",
     updatedAt: "3 days ago",
-    color: "#34D399",
+    color: "var(--success)",
   },
   {
     id: "p3",
@@ -168,7 +168,7 @@ export const INITIAL_PROJECTS: Project[] = [
     branch: "main",
     deployStatus: "idle",
     updatedAt: "yesterday",
-    color: "#60A5FA",
+    color: "var(--info)",
   },
   {
     id: "p4",

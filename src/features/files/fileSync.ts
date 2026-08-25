@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Real-time two-way file content sync across windows (Tauri + Browser).
  * Uses BroadcastChannel + localStorage events.
  */
@@ -13,12 +13,12 @@ import { Sidebar } from "./components/Sidebar";
 
 export default function App() {
   return (
-    <div className="grid h-screen grid-cols-[240px_1fr] bg-zinc-950 text-zinc-50">
+    <div className="grid h-screen grid-cols-[240px_1fr] bg-[var(--bg-base)] text-[var(--text-primary)]">
       <Sidebar />
       <main className="overflow-y-auto p-8">
         <header className="mb-6">
           <h1 className="text-2xl font-bold">Finance Dashboard</h1>
-          <p className="text-zinc-400">Personal money overview</p>
+          <p className="text-[var(--text-secondary)]">Personal money overview</p>
         </header>
         <CashFlowChart />
         <SavingsGoals />
@@ -40,8 +40,8 @@ createRoot(document.getElementById("root")!).render(
 
 export function Sidebar() {
   return (
-    <aside className="p-4 border-r border-white/10">
-      <h2 className="text-sm font-semibold text-amber-400 mb-4">Finance</h2>
+    <aside className="p-4 border-r border-[var(--border-default)]">
+      <h2 className="text-sm font-semibold text-[var(--accent-primary)] mb-4">Finance</h2>
     </aside>
   );
 }`,

@@ -73,15 +73,15 @@ export function ProjectFilesSidePane({
 
   return (
     <aside
-      className="relative flex h-full shrink-0 flex-col border-l border-white/[0.08] bg-[#0d0d0d] animate-in slide-in-from-right duration-200"
+      className="relative flex h-full shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] animate-in slide-in-from-right duration-200"
       style={{ width: widthPx }}
       aria-label="Project Files"
     >
       {/* Panel Top Header Bar */}
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/[0.08] px-3">
+      <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-3">
         <div className="flex items-center gap-2 min-w-0">
-          <LayoutGrid className="h-4 w-4 text-[#a0a0a0] shrink-0" strokeWidth={1.5} />
-          <span className="truncate text-[11.5px] font-bold tracking-wider text-[#e0e0e0] uppercase">
+          <LayoutGrid className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.5} />
+          <span className="truncate text-[11.5px] font-bold tracking-wider text-[var(--text-primary)] uppercase">
             {projectName}
           </span>
         </div>
@@ -89,7 +89,7 @@ export function ProjectFilesSidePane({
         <button
           type="button"
           onClick={onClose}
-          className="flex h-6 w-6 items-center justify-center rounded text-[#8a8a8a] hover:bg-white/[0.08] hover:text-white transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           aria-label="Collapse panel"
           title="Collapse panel"
         >
@@ -99,15 +99,15 @@ export function ProjectFilesSidePane({
 
       {/* Search Input (if files exist) */}
       {!isEmpty && (
-        <div className="p-2 border-b border-white/[0.06]">
+        <div className="p-2 border-b border-[var(--border-subtle)]">
           <div className="relative flex items-center">
-            <Search className="absolute left-2.5 h-3.5 w-3.5 text-[#555]" strokeWidth={1.5} />
+            <Search className="absolute left-2.5 h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.5} />
             <input
               type="text"
               placeholder="Search files..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7 w-full rounded-md bg-white/[0.04] pl-8 pr-2 text-[12px] text-[#e8e8e8] placeholder-[#555] outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-white/10"
+              className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
             />
           </div>
         </div>
@@ -118,10 +118,10 @@ export function ProjectFilesSidePane({
         {isEmpty ? (
           /* Exact Empty State matching uploaded screenshot */
           <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-            <h3 className="text-[13px] font-bold tracking-widest text-[#7a7a7a] uppercase">
+            <h3 className="text-[13px] font-bold tracking-widest text-[var(--text-tertiary)] uppercase">
               EMPTY
             </h3>
-            <p className="mt-1 text-[12.5px] text-[#555]">
+            <p className="mt-1 text-[12.5px] text-[var(--text-tertiary)]">
               This folder is empty.
             </p>
           </div>
@@ -138,7 +138,7 @@ export function ProjectFilesSidePane({
                     key={file.path}
                     type="button"
                     onClick={() => handleFileClick(file.path)}
-                    className="group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left transition-colors hover:bg-white/[0.06]"
+                    className="group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left transition-colors hover:bg-[var(--bg-hover)]"
                     title={`Click to open ${file.path} in a separate window`}
                   >
                     {file.type === "code" ? (
@@ -146,15 +146,15 @@ export function ProjectFilesSidePane({
                     ) : (
                       <FileText className="h-4 w-4 text-emerald-400 shrink-0" strokeWidth={1.5} />
                     )}
-                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#c8c8c8] group-hover:text-white">
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
                       {file.name}
                     </span>
 
                     {isRecentlyUpdated && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse" title="Edited in separate window" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)] shrink-0 animate-pulse" title="Edited in separate window" />
                     )}
 
-                    <ExternalLink className="h-3 w-3 text-[#555] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" strokeWidth={1.5} />
+                    <ExternalLink className="h-3 w-3 text-[var(--text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" strokeWidth={1.5} />
                   </button>
                 );
               })}

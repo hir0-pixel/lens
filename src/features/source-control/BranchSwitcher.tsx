@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -65,27 +65,27 @@ export function BranchSwitcher() {
 
   return (
     <>
-      <div className="border-b border-white/5 px-2 py-1.5">
+      <div className="border-b border-[var(--border-subtle)] px-2 py-1.5">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               disabled={operation === "checking-out"}
-              className="h-8 w-full justify-between gap-2 px-2 text-[12px] font-normal hover:bg-white/5"
+              className="h-8 w-full justify-between gap-2 px-2 text-[12px] font-normal hover:bg-[var(--bg-hover)]"
             >
               <span className="flex min-w-0 items-center gap-2">
                 <GitBranch className="h-3.5 w-3.5 text-accent" />
-                <span className="truncate text-zinc-200">{current?.name ?? "—"}</span>
+                <span className="truncate text-[var(--text-primary)]">{current?.name ?? "—"}</span>
               </span>
-              <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-zinc-500">
+              <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-[var(--text-tertiary)]">
                 {current && current.ahead > 0 && (
-                  <span className="flex items-center gap-0.5 text-emerald-400">
+                  <span className="flex items-center gap-0.5 text-[var(--success)]">
                     <ArrowUp className="h-2.5 w-2.5" />
                     {current.ahead}
                   </span>
                 )}
                 {current && current.behind > 0 && (
-                  <span className="flex items-center gap-0.5 text-sky-400">
+                  <span className="flex items-center gap-0.5 text-[var(--info)]">
                     <ArrowDown className="h-2.5 w-2.5" />
                     {current.behind}
                   </span>
@@ -95,21 +95,21 @@ export function BranchSwitcher() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-72 p-0">
-            <div className="border-b border-white/5 p-2">
+            <div className="border-b border-[var(--border-subtle)] p-2">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search branches…"
-                  className="h-8 border-white/10 bg-surface-2 pl-7 text-[12px]"
+                  className="h-8 border-[var(--border-default)] bg-surface-2 pl-7 text-[12px]"
                 />
               </div>
             </div>
             <div className="max-h-64 overflow-y-auto p-1">
               {favorites.length > 0 && (
                 <>
-                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-zinc-600">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
                     Favorites
                   </DropdownMenuLabel>
                   {favorites.map((b) => (
@@ -131,7 +131,7 @@ export function BranchSwitcher() {
                   ))}
                 </>
               )}
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-zinc-600">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
                 Local branches
               </DropdownMenuLabel>
               {others.map((b) => (
@@ -152,7 +152,7 @@ export function BranchSwitcher() {
                 />
               ))}
               {filtered.length === 0 && (
-                <div className="px-2 py-4 text-center text-[12px] text-zinc-600">
+                <div className="px-2 py-4 text-center text-[12px] text-[var(--text-tertiary)]">
                   No branches found
                 </div>
               )}
@@ -167,13 +167,13 @@ export function BranchSwitcher() {
               <Plus className="mr-2 h-3.5 w-3.5" />
               Create new branch…
             </DropdownMenuItem>
-            <DropdownMenuItem disabled className="text-zinc-500">
+            <DropdownMenuItem disabled className="text-[var(--text-tertiary)]">
               Merge branch… (coming soon)
             </DropdownMenuItem>
-            <DropdownMenuItem disabled className="text-zinc-500">
+            <DropdownMenuItem disabled className="text-[var(--text-tertiary)]">
               Rebase… (coming soon)
             </DropdownMenuItem>
-            <DropdownMenuItem disabled className="text-zinc-500">
+            <DropdownMenuItem disabled className="text-[var(--text-tertiary)]">
               Cherry-pick… (coming soon)
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -273,17 +273,17 @@ function BranchItem({
       <ContextMenuTrigger asChild>
         <DropdownMenuItem
           onClick={onSelect}
-          className={cn("gap-2", current && "bg-white/5")}
+          className={cn("gap-2", current && "bg-[var(--bg-hover)]")}
         >
           {current ? (
             <Check className="h-3.5 w-3.5 text-accent" />
           ) : (
-            <GitBranch className="h-3.5 w-3.5 text-zinc-500" />
+            <GitBranch className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
           )}
           <span className="min-w-0 flex-1 truncate">{name}</span>
           {favorite && <Star className="h-3 w-3 fill-accent text-accent" />}
           {(ahead > 0 || behind > 0) && (
-            <span className="text-[10px] text-zinc-600">
+            <span className="text-[10px] text-[var(--text-tertiary)]">
               {ahead > 0 && `↑${ahead}`}
               {behind > 0 && ` ↓${behind}`}
             </span>
@@ -301,7 +301,7 @@ function BranchItem({
           Rename…
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
+        <ContextMenuItem onClick={onDelete} className="text-[var(--error)] focus:text-[var(--error)]">
           <Trash2 className="mr-2 h-3.5 w-3.5" />
           Delete…
         </ContextMenuItem>

@@ -1,4 +1,4 @@
-import {
+﻿import {
   SettingsGroup,
   SettingsSectionHeader,
   SettingSelect,
@@ -183,10 +183,10 @@ export function KeyboardSettingsPage() {
             key={`${b.commandId}-${b.keys}`}
             className="flex items-center justify-between gap-3 px-3.5 py-2.5"
           >
-            <span className="truncate font-mono text-[11px] text-zinc-500">
+            <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">
               {b.commandId}
             </span>
-            <Kbd className="shrink-0 rounded border border-white/10 bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-zinc-300">
+            <Kbd className="shrink-0 rounded border border-[var(--border-default)] bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
               {formatShortcut(b.keys)}
             </Kbd>
           </div>
@@ -236,12 +236,12 @@ export function AboutSettingsPage() {
         description="Lens Desktop IDE · Settings backup and restore."
       />
       <SettingsGroup title="Application">
-        <div className="space-y-1 px-3.5 py-3 text-[12px] text-zinc-400">
+        <div className="space-y-1 px-3.5 py-3 text-[12px] text-[var(--text-secondary)]">
           <div>
-            Version <span className="text-zinc-200">0.1.0</span>
+            Version <span className="text-[var(--text-primary)]">0.1.0</span>
           </div>
           <div>
-            Settings schema <span className="text-zinc-200">v1</span>
+            Settings schema <span className="text-[var(--text-primary)]">v1</span>
           </div>
           <div>Tauri 2 · React 19 · Vite 7</div>
         </div>
@@ -257,7 +257,7 @@ export function AboutSettingsPage() {
           <Button
             size="sm"
             variant="secondary"
-            className="text-amber-400"
+            className="text-[var(--warning)]"
             onClick={() => {
               resetAll();
               resetAppearance();

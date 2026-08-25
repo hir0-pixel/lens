@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -50,7 +50,7 @@ export function RemoteToolbar() {
   return (
     <>
       <div
-        className="flex h-8 shrink-0 items-center gap-0.5 border-b border-white/5 px-1.5"
+        className="flex h-8 shrink-0 items-center gap-0.5 border-b border-[var(--border-subtle)] px-1.5"
         role="toolbar"
         aria-label="Git remote operations"
       >
@@ -87,7 +87,7 @@ export function RemoteToolbar() {
           <RotateCcw className="h-3.5 w-3.5" />
         </ToolBtn>
 
-        <div className="mx-0.5 h-4 w-px bg-white/10" />
+        <div className="mx-0.5 h-4 w-px bg-[var(--bg-hover)]" />
 
         <ToolBtn label="Commit History" onClick={() => setShowHistory(true)}>
           <History className="h-3.5 w-3.5" />
@@ -105,18 +105,18 @@ export function RemoteToolbar() {
                 <CloudUpload className="mr-2 h-3.5 w-3.5" />
                 Publish Branch
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setForceOpen(true)} className="text-amber-400">
+              <DropdownMenuItem onClick={() => setForceOpen(true)} className="text-[var(--warning)]">
                 Force Push…
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled className="text-zinc-500">
+              <DropdownMenuItem disabled className="text-[var(--text-tertiary)]">
                 <GitPullRequest className="mr-2 h-3.5 w-3.5" />
                 Create Pull Request…
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="text-zinc-500">
+              <DropdownMenuItem disabled className="text-[var(--text-tertiary)]">
                 Open on GitHub…
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="text-zinc-500">
+              <DropdownMenuItem disabled className="text-[var(--text-tertiary)]">
                 Clone Repository…
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -136,7 +136,7 @@ export function RemoteToolbar() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-amber-600 text-white hover:bg-amber-700"
+              className="bg-[var(--warning)] text-[var(--text-on-accent)] hover:bg-[var(--warning)]"
               onClick={() => void push(true)}
             >
               Force Push
@@ -167,7 +167,7 @@ function ToolBtn({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-zinc-500 hover:text-zinc-200"
+          className="h-7 w-7 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
           onClick={onClick}
           disabled={disabled}
           aria-label={label}

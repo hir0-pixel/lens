@@ -35,18 +35,18 @@ export default {
   				foreground: 'hsl(var(--card-foreground))'
   			},
   			accent: {
-  				'50': '#F5F0FF',
-  				'100': '#EDE4FF',
-  				'200': '#D4C4FF',
-  				'300': '#B794FF',
-  				'400': '#9B6BFA',
-  				'500': '#8B5CF6',
-  				'600': '#7C3AED',
-  				'700': '#6D28D9',
-  				'800': '#5B21B6',
-  				'900': '#4C1D95',
-  				DEFAULT: '#8B5CF6',
-  				foreground: '#0C0C0D'
+				'50': '#FAFAF7',
+				'100': '#F7F7F4',
+				'200': '#EFEEE8',
+				'300': '#E6E5E0',
+				'400': '#CFCDC4',
+				'500': '#F54E00',
+				'600': '#D04200',
+				'700': '#D04200',
+				'800': '#26251E',
+				'900': '#26251E',
+				DEFAULT: '#F54E00',
+				foreground: '#FFFFFF'
   			},
 			surface: {
 				'0': 'var(--surface-0)',
@@ -91,7 +91,7 @@ export default {
 			xl: 'calc(var(--radius) + 4px)'
 		},
 		boxShadow: {
-			'glow-accent': '0 0 0 1px rgba(252, 170, 38, 0.5), 0 0 24px -6px rgba(252, 170, 38, 0.35)',
+			'glow-accent': 'none',
 			'float-pop': 'var(--shadow-overlay)',
 			'sm': 'var(--shadow-sm)',
 			'md': 'var(--shadow-md)',

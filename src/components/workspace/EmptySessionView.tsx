@@ -448,14 +448,14 @@ export function EmptySessionView({
       >
         <span className="min-w-0 flex-1 truncate">{s.title}</span>
                 <div
-          className="p-0.5 cursor-pointer hover:text-yellow-400"
+          className="p-0.5 cursor-pointer hover:text-[var(--warning)]"
           onClick={(e) => {
             e.stopPropagation();
             togglePinSession(s.id);
           }}
         >
           {s.pinned ? (
-            <Pin className="h-3.5 w-3.5 shrink-0 text-yellow-400" strokeWidth={1.5} />
+            <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--warning)]" strokeWidth={1.5} />
           ) : (
             <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] opacity-60" strokeWidth={1.5} />
           )}
@@ -468,22 +468,22 @@ export function EmptySessionView({
   }
   function renderArtifactsView() {
     return (
-      <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#111111] px-8 py-6">
+      <div className="flex flex-1 flex-col h-full overflow-hidden bg-[var(--bg-surface)] px-8 py-6">
         {/* Header */}
-        <div className="flex flex-col gap-1 pb-6 border-b border-white/[0.08]">
+        <div className="flex flex-col gap-1 pb-6 border-b border-[var(--border-subtle)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-[#e8e8e8]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[var(--text-secondary)]">
                 <FileText className="h-5 w-5 opacity-90" strokeWidth={1.5} />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-[#f0f0f0]">Artifacts</h1>
-                <p className="text-[12.5px] text-[#8a8a8a]">
+                <h1 className="text-lg font-semibold text-[var(--text-primary)]">Artifacts</h1>
+                <p className="text-[12.5px] text-[var(--text-tertiary)]">
                   Files created by AI agents during task execution
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11.5px] font-medium text-emerald-400 border border-emerald-500/20">
+            <span className="rounded-full bg-[var(--success)]/10 px-3 py-1 text-[11.5px] font-medium text-[var(--success)] border border-[var(--success)]/20">
               {filteredArtifacts.length} {filteredArtifacts.length === 1 ? "created file" : "created files"}
             </span>
           </div>
@@ -491,13 +491,13 @@ export function EmptySessionView({
           {/* Controls: Search */}
           <div className="mt-4 flex items-center justify-between gap-3">
             <div className="relative flex items-center flex-1 max-w-md">
-              <Search className="absolute left-3 h-3.5 w-3.5 text-[#555]" strokeWidth={1.5} />
+              <Search className="absolute left-3 h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.5} />
               <input
                 type="text"
                 placeholder="Search agent created files..."
                 value={artifactSearch}
                 onChange={(e) => setArtifactSearch(e.target.value)}
-                className="h-8.5 w-full rounded-md bg-white/[0.04] pl-9 pr-3 text-[12px] text-[#e8e8e8] placeholder-[#555] outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-white/10"
+                className="h-8.5 w-full rounded-md bg-[var(--bg-surface-raised)] pl-9 pr-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
               />
             </div>
           </div>
@@ -513,10 +513,10 @@ export function EmptySessionView({
                 return (
                   <div
                     key={art.id}
-                    className="group relative flex flex-col justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 hover:border-white/[0.15] hover:bg-white/[0.04] transition-all"
+                    className="group relative flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] p-4 hover:border-[var(--border-default)] hover:bg-[var(--bg-hover)] transition-all"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-[#d4d4d4]">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-hover)] text-[var(--text-secondary)]">
                         {isImage ? (
                           <Image className="h-5 w-5 text-purple-400" strokeWidth={1.5} />
                         ) : isCode ? (
@@ -527,34 +527,34 @@ export function EmptySessionView({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="truncate text-[13.5px] font-medium text-[#eee] group-hover:text-white">
+                          <h3 className="truncate text-[13.5px] font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)]">
                             {art.name}
                           </h3>
-                          <span className="shrink-0 rounded bg-emerald-500/10 px-2 py-0.5 text-[10.5px] font-medium text-emerald-400 border border-emerald-500/20">
+                          <span className="shrink-0 rounded bg-[var(--success)]/10 px-2 py-0.5 text-[10.5px] font-medium text-[var(--success)] border border-[var(--success)]/20">
                             Created by Agent
                           </span>
                         </div>
                         {art.path && (
-                          <p className="mt-0.5 truncate text-[11.5px] font-mono text-[#666]">
+                          <p className="mt-0.5 truncate text-[11.5px] font-mono text-[var(--text-tertiary)]">
                             {art.path}
                           </p>
                         )}
                         {art.summary && (
-                          <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-[#999]">
+                          <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-[var(--text-secondary)]">
                             {art.summary}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-white/[0.05] pt-3 text-[11.5px] text-[#777]">
+                    <div className="mt-4 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-[11.5px] text-[var(--text-tertiary)]">
                       <div className="flex items-center gap-2">
-                        <span className="truncate max-w-[160px] text-[#aaa]">
+                        <span className="truncate max-w-[160px] text-[var(--text-secondary)]">
                           {art.sessionTitle}
                         </span>
                         {art.sizeLabel && <span>• {art.sizeLabel}</span>}
                         {art.additions !== undefined && (
-                          <span className="font-mono text-[11px] text-emerald-400">
+                          <span className="font-mono text-[11px] text-[var(--success)]">
                             +{art.additions} lines
                           </span>
                         )}
@@ -568,7 +568,7 @@ export function EmptySessionView({
                               toast.success("Path copied to clipboard");
                             }
                           }}
-                          className="rounded p-1 text-[#777] hover:bg-white/[0.08] hover:text-[#d4d4d4]"
+                          className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                           title="Copy file path"
                         >
                           <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -581,7 +581,7 @@ export function EmptySessionView({
                               setActiveTab("chat");
                             }
                           }}
-                          className="flex items-center gap-1 rounded bg-white/[0.06] px-2 py-1 text-[11px] font-medium text-[#c8c8c8] hover:bg-white/[0.12] hover:text-white"
+                          className="flex items-center gap-1 rounded bg-[var(--bg-surface-raised)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                         >
                           <span>Open Chat</span>
                           <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
@@ -594,8 +594,8 @@ export function EmptySessionView({
             </div>
           ) : (
             <div className="flex h-64 flex-col items-center justify-center text-center">
-              <FileText className="h-10 w-10 text-[#444] mb-3" strokeWidth={1.5} />
-              <p className="text-[13px] text-[#8a8a8a]">No artifacts matching search criteria</p>
+              <FileText className="h-10 w-10 text-[var(--text-tertiary)] mb-3" strokeWidth={1.5} />
+              <p className="text-[13px] text-[var(--text-tertiary)]">No artifacts matching search criteria</p>
             </div>
           )}
         </ScrollArea>
@@ -627,16 +627,16 @@ export function EmptySessionView({
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <div className="flex flex-col items-center max-w-md">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[#e8e8e8] shadow-inner">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[var(--text-secondary)] shadow-inner">
             <IconComponent className="h-7 w-7 opacity-90" strokeWidth={1.5} />
           </div>
-          <span className="mb-1 rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#a0a0a0] border border-white/[0.06]">
+          <span className="mb-1 rounded-full bg-[var(--bg-hover)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] border border-[var(--border-subtle)]">
             Coming Soon
           </span>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-[#f0f0f0]">
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
             {meta.title}
           </h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[#8a8a8a]">
+          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-tertiary)]">
             {meta.description}
           </p>
           <button
@@ -645,7 +645,7 @@ export function EmptySessionView({
               setActiveTab("chat");
               newChat();
             }}
-            className="mt-6 inline-flex h-9 items-center gap-2 rounded-lg bg-white/[0.08] px-4 text-[13px] font-medium text-[#e8e8e8] hover:bg-white/[0.12] transition-colors"
+            className="mt-6 inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--bg-hover)] px-4 text-[13px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-colors"
           >
             <Bot className="h-4 w-4" strokeWidth={1.5} />
             Start New Session
@@ -1046,17 +1046,17 @@ export function EmptySessionView({
                   <button
                     type="button"
                     onClick={planNewIdea}
-                    className="inline-flex h-8 items-center gap-2 rounded-full border border-white/[0.1] px-3.5 text-[12px] text-[#b0b0b0] hover:bg-white/[0.04] hover:text-[#e8e8e8]"
+                    className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3.5 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   >
                     Plan New Idea
-                    <span className="text-[11px] tabular-nums text-[#555]">
+                    <span className="text-[11px] tabular-nums text-[var(--text-tertiary)]">
                       ⇧Tab
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={onMultitask}
-                    className="inline-flex h-8 items-center rounded-full border border-white/[0.1] px-3.5 text-[12px] text-[#b0b0b0] hover:bg-white/[0.04] hover:text-[#e8e8e8]"
+                    className="inline-flex h-8 items-center rounded-full border border-[var(--border-subtle)] px-3.5 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                   >
                     Multitask
                   </button>
@@ -1068,7 +1068,7 @@ export function EmptySessionView({
               <button
                 type="button"
                 onClick={onImport}
-                className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] text-[#555] hover:bg-white/[0.03] hover:text-[#8a8a8a]"
+                className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                 <span>

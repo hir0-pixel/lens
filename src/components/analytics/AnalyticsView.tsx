@@ -25,30 +25,30 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
 
   return (
     <div className="flex h-full flex-col bg-surface-0">
-      <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-base font-semibold text-zinc-100">
+            <h1 className="text-base font-semibold text-[var(--text-primary)]">
               {project.name}
             </h1>
-            <div className="flex items-center gap-2 text-[12px] text-zinc-500">
+            <div className="flex items-center gap-2 text-[12px] text-[var(--text-tertiary)]">
               <Globe className="h-3 w-3" />
               {project.deployedUrl}
-              <span className="flex items-center gap-1 text-emerald-400">
+              <span className="flex items-center gap-1 text-[var(--success)]">
                 <Rocket className="h-3 w-3" /> Live
               </span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[12px]">
-          <span className="text-zinc-500">Last</span>
-          <select className="bg-transparent text-zinc-200 outline-none">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-3 py-1.5 text-[12px]">
+          <span className="text-[var(--text-tertiary)]">Last</span>
+          <select className="bg-transparent text-[var(--text-primary)] outline-none">
             <option>7 days</option>
             <option>30 days</option>
           </select>
@@ -62,26 +62,26 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
             {stats.map((s) => (
               <div
                 key={s.label}
-                className="rounded-lg border border-white/10 bg-white/5 p-4"
+                className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-raised)] p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] text-zinc-500">{s.label}</span>
-                  <s.icon className="h-3.5 w-3.5 text-zinc-500" />
+                  <span className="text-[12px] text-[var(--text-tertiary)]">{s.label}</span>
+                  <s.icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 </div>
-                <div className="mt-1.5 text-xl font-bold text-zinc-100">
+                <div className="mt-1.5 text-xl font-bold text-[var(--text-primary)]">
                   {s.value}
                 </div>
                 <span
                   className={cn(
                     "text-[12px] font-medium",
                     s.delta.startsWith("+")
-                      ? "text-emerald-400"
-                      : "text-red-400",
+                      ? "text-[var(--success)]"
+                      : "text-[var(--error)]",
                   )}
                 >
                   {s.delta}
                 </span>
-                <span className="text-[11px] text-zinc-600"> vs prev</span>
+                <span className="text-[11px] text-[var(--text-disabled)]"> vs prev</span>
               </div>
             ))}
           </div>
@@ -89,7 +89,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
           {/* Traffic chart */}
           <div className="rounded-lg border border-white/10 bg-white/5 p-5">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-zinc-100">
+              <h2 className="text-[13px] font-semibold text-[var(--text-primary)]">
                 Visitors
               </h2>
               <div className="flex gap-1.5">
@@ -100,7 +100,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
                       "rounded-md px-2 py-0.5 text-[11px] transition-colors",
                       d === 14
                         ? "bg-accent text-surface-0"
-                        : "text-zinc-500 hover:text-zinc-300",
+                        : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
                     )}
                   >
                     {d}d
@@ -124,7 +124,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
 
           {/* Top pages */}
           <div className="rounded-lg border border-white/10 bg-white/5 p-5">
-            <h2 className="mb-3 text-[13px] font-semibold text-zinc-100">
+            <h2 className="mb-3 text-[13px] font-semibold text-[var(--text-primary)]">
               Top pages
             </h2>
             <div className="space-y-2">
@@ -135,16 +135,16 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
                 { path: "/savings-goals", views: "4,980", pct: 12 },
               ].map((row) => (
                 <div key={row.path} className="flex items-center gap-3">
-                  <span className="w-40 truncate font-mono text-[12px] text-zinc-300">
+                  <span className="w-40 truncate font-mono text-[12px] text-[var(--text-secondary)]">
                     {row.path}
                   </span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--bg-hover)]">
                     <div
                       className="h-full rounded-full bg-accent"
                       style={{ width: `${row.pct}%` }}
                     />
                   </div>
-                  <span className="w-16 text-right text-[12px] text-zinc-500">
+                  <span className="w-16 text-right text-[12px] text-[var(--text-tertiary)]">
                     {row.views}
                   </span>
                 </div>

@@ -92,32 +92,32 @@ export function GitToolsCard() {
         aria-expanded={false}
         aria-label="Expand changes"
         onClick={() => setExpanded(true)}
-        className="inline-flex h-8 items-center gap-2 rounded-full border border-white/[0.1] bg-[#1c1c1c] px-3.5 text-[13.5px] text-[#c8c8c8] hover:bg-[#252525]"
+        className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-3.5 text-[13.5px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
       >
-        <FileDiff className="h-4 w-4 text-[#9a9a9a]" strokeWidth={1.6} />
+        <FileDiff className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.6} />
         <span>Changes</span>
-        <span className="tabular-nums text-[#3fb950]">+{additions}</span>
-        <span className="tabular-nums text-[#f85149]">-{deletions}</span>
-        <ChevronDown className="h-3.5 w-3.5 text-[#6a6a6a]" strokeWidth={2} />
+        <span className="tabular-nums text-[var(--success)]">+{additions}</span>
+        <span className="tabular-nums text-[var(--error)]">-{deletions}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={2} />
       </button>
     );
   }
 
   return (
-    <div className="w-[280px] overflow-hidden rounded-xl border border-white/[0.08] bg-[#1a1a1a] shadow-[0_8px_28px_rgba(0,0,0,0.35)]">
+    <div className="w-[280px] overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[0_8px_28px_rgba(0,0,0,0.35)]">
       <div className="flex h-8 items-center px-3">
-        <span className="text-[12px] text-[#8a8a8a]">Git tools</span>
+        <span className="text-[12px] text-[var(--text-tertiary)]">Git tools</span>
         <div className="ml-auto flex items-center gap-0.5">
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded text-[#6a6a6a] hover:bg-white/[0.06] hover:text-[#c8c8c8]"
+            className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             aria-label="Git tools menu"
           >
             <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded text-[#6a6a6a] hover:bg-white/[0.06] hover:text-[#c8c8c8]"
+            className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             aria-label="Open review pane"
             onClick={() => {
               collapse();
@@ -129,23 +129,23 @@ export function GitToolsCard() {
         </div>
       </div>
 
-      <div className="flex h-8 w-full items-center gap-1 px-3 text-[13px] text-[#e6e6e6]">
+      <div className="flex h-8 w-full items-center gap-1 px-3 text-[13px] text-[var(--text-primary)]">
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 text-left hover:text-white"
+          className="flex min-w-0 flex-1 items-center gap-2 text-left hover:text-[var(--text-primary)]"
           onClick={() => {
             collapse();
             openReview();
           }}
         >
-          <FileDiff className="h-3.5 w-3.5 text-[#9a9a9a]" strokeWidth={1.6} />
+          <FileDiff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.6} />
           <span>Changes</span>
-          <span className="ml-auto tabular-nums text-[#3fb950]">+{additions}</span>
-          <span className="tabular-nums text-[#f85149]">-{deletions}</span>
+          <span className="ml-auto tabular-nums text-[var(--success)]">+{additions}</span>
+          <span className="tabular-nums text-[var(--error)]">-{deletions}</span>
         </button>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[#6a6a6a] hover:bg-white/[0.06] hover:text-[#c8c8c8]"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           aria-label="Collapse changes"
           aria-expanded={true}
           onClick={collapse}
@@ -158,19 +158,19 @@ export function GitToolsCard() {
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-8 w-full items-center gap-2 px-3 text-left text-[13px] text-[#e6e6e6] hover:bg-white/[0.04]"
+            className="flex h-8 w-full items-center gap-2 px-3 text-left text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
           >
-            <GitBranch className="h-3.5 w-3.5 text-[#9a9a9a]" strokeWidth={1.6} />
+            <GitBranch className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.6} />
             <span className="min-w-0 flex-1 truncate">
               {current?.name ?? "main"}
             </span>
-            <ChevronDown className="h-3 w-3 text-[#6a6a6a]" strokeWidth={2} />
+            <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
           </button>
         </PopoverTrigger>
         <PopoverContent
           align="start"
           side="bottom"
-          className="w-[280px] rounded-xl border-white/[0.1] bg-[#1c1c1c] p-0"
+          className="w-[280px] rounded-xl border-[var(--border-subtle)] bg-[var(--bg-overlay)] p-0"
         >
           <GitBranchPicker onClose={() => setBranchOpen(false)} />
         </PopoverContent>
@@ -180,10 +180,10 @@ export function GitToolsCard() {
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-8 w-full items-center gap-2 rounded-b-xl px-3 text-left text-[13px] text-[#c8c8c8] hover:bg-white/[0.04]"
+            className="flex h-8 w-full items-center gap-2 rounded-b-xl px-3 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
           >
             <GitCommitHorizontal
-              className="h-3.5 w-3.5 text-[#9a9a9a]"
+              className="h-3.5 w-3.5 text-[var(--text-tertiary)]"
               strokeWidth={1.6}
             />
             Commit or push
@@ -192,18 +192,18 @@ export function GitToolsCard() {
         <PopoverContent
           align="end"
           side="bottom"
-          className="w-[360px] rounded-xl border-white/[0.1] bg-[#1c1c1c] p-0"
+          className="w-[360px] rounded-xl border-[var(--border-subtle)] bg-[var(--bg-overlay)] p-0"
         >
           <div className="flex items-center gap-2 px-3 py-2.5">
-            <GitBranch className="h-3.5 w-3.5 text-[#9a9a9a]" strokeWidth={1.6} />
-            <span className="text-[13px] text-[#e6e6e6]">
+            <GitBranch className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.6} />
+            <span className="text-[13px] text-[var(--text-primary)]">
               {current?.name ?? "main"}
             </span>
-            <ChevronDown className="h-3 w-3 text-[#6a6a6a]" />
-            <span className="ml-auto tabular-nums text-[12.5px] text-[#3fb950]">
+            <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" />
+            <span className="ml-auto tabular-nums text-[12.5px] text-[var(--success)]">
               +{additions.toLocaleString()}
             </span>
-            <span className="tabular-nums text-[12.5px] text-[#f85149]">
+            <span className="tabular-nums text-[12.5px] text-[var(--error)]">
               -{deletions.toLocaleString()}
             </span>
           </div>
@@ -213,18 +213,18 @@ export function GitToolsCard() {
               onChange={(e) => setCommitMessage(e.target.value)}
               rows={3}
               placeholder="Commit message (leave empty to generate)"
-              className="w-full resize-none rounded-lg bg-[#141414] px-3 py-2.5 pr-8 text-[13px] text-[#e6e6e6] placeholder:text-[#6a6a6a] focus:outline-none"
+              className="w-full resize-none rounded-lg bg-[var(--bg-surface-raised)] px-3 py-2.5 pr-8 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
             />
             <button
               type="button"
-              className="absolute right-5 top-2.5 text-[#8a8a8a] hover:text-[#e8e8e8]"
+              className="absolute right-5 top-2.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               aria-label="Generate commit message"
               onClick={() => void generateMessage()}
             >
               <Sparkles className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           </div>
-          <label className="mt-2 flex items-center gap-2 px-3 py-2 text-[13px] text-[#c8c8c8]">
+          <label className="mt-2 flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--text-secondary)]">
             <Checkbox
               checked={includeUnstaged}
               onCheckedChange={(v) => setIncludeUnstaged(v === true)}
@@ -240,7 +240,7 @@ export function GitToolsCard() {
               type="button"
               disabled={operation === "committing"}
               onClick={() => void runCommit(false)}
-              className="flex h-8 w-full items-center gap-2 bg-white/[0.05] px-3 text-[13px] text-[#e8e8e8] hover:bg-white/[0.08]"
+              className="flex h-8 w-full items-center gap-2 bg-[var(--bg-surface-raised)] px-3 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
             >
               <GitCommitHorizontal className="h-3.5 w-3.5" strokeWidth={1.6} />
               Commit
@@ -250,7 +250,7 @@ export function GitToolsCard() {
               type="button"
               disabled={operation === "committing" || operation === "pushing"}
               onClick={() => void runCommit(true)}
-              className="flex h-8 w-full items-center gap-2 px-3 text-[13px] text-[#d4d4d4] hover:bg-white/[0.04]"
+              className="flex h-8 w-full items-center gap-2 px-3 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             >
               <CloudUpload className="h-3.5 w-3.5" strokeWidth={1.6} />
               Commit and push
@@ -260,8 +260,8 @@ export function GitToolsCard() {
               disabled={!canPush || operation === "pushing"}
               onClick={() => void push()}
               className={cn(
-                "flex h-8 w-full items-center gap-2 px-3 text-[13px] hover:bg-white/[0.04]",
-                canPush ? "text-[#d4d4d4]" : "text-[#6a6a6a]",
+                "flex h-8 w-full items-center gap-2 px-3 text-[13px] hover:bg-[var(--bg-hover)]",
+                canPush ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]",
               )}
             >
               <CloudUpload className="h-3.5 w-3.5" strokeWidth={1.6} />

@@ -19,15 +19,15 @@ const TONE: Record<
 > = {
   error: {
     icon: AlertCircle,
-    bar: "bg-red-400",
-    bg: "bg-red-500/10 border-red-500/20",
-    text: "text-red-300",
+    bar: "bg-[var(--error)]",
+    bg: "bg-[var(--error)]/10 border-[var(--error)]/20",
+    text: "text-[var(--error)]",
   },
   warning: {
     icon: AlertTriangle,
-    bar: "bg-amber-400",
-    bg: "bg-amber-500/10 border-amber-500/20",
-    text: "text-amber-200",
+    bar: "bg-[var(--warning)]",
+    bg: "bg-[var(--warning)]/10 border-[var(--warning)]/20",
+    text: "text-[var(--warning)]",
   },
   info: {
     icon: Info,

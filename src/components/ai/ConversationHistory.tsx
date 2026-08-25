@@ -96,7 +96,7 @@ function ConversationRow({
       <div
         className={cn(
           "group flex items-center gap-1 rounded-md pr-1 transition-colors",
-          active ? "bg-white/10" : "hover:bg-white/5",
+          active ? "bg-[var(--bg-hover)]" : "hover:bg-[var(--bg-surface-raised)]",
         )}
       >
         <button
@@ -105,11 +105,11 @@ function ConversationRow({
         >
           <div className="flex items-center gap-1.5">
             {conv.pinned && <Pin className="h-3 w-3 shrink-0 text-accent" />}
-            <span className="truncate text-[13px] font-medium text-zinc-200" title={conv.title}>
+            <span className="truncate text-[13px] font-medium text-[var(--text-primary)]" title={conv.title}>
               {conv.title}
             </span>
           </div>
-          <div className="truncate text-[11px] text-zinc-600" title={conv.preview}>
+          <div className="truncate text-[11px] text-[var(--text-disabled)]" title={conv.preview}>
             {conv.preview}
           </div>
         </button>
@@ -143,7 +143,7 @@ function ConversationRow({
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
+            <DropdownMenuItem onClick={onDelete} className="text-[var(--error)] focus:text-[var(--error)]">
               <Trash2 className="mr-2 h-3.5 w-3.5" />
               Delete
             </DropdownMenuItem>
@@ -209,7 +209,7 @@ function GroupSection({
 
   return (
     <div className="mb-3">
-      <div className="mb-1 px-2.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+      <div className="mb-1 px-2.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-disabled)]">
         {label}
       </div>
       {items.map((conv) => (
@@ -253,21 +253,21 @@ export function ConversationHistory({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[300px] border-white/10 bg-surface-1 p-0 sm:max-w-[300px]">
-        <SheetHeader className="border-b border-white/5 px-4 py-3">
-          <SheetTitle className="text-[13px] font-semibold text-zinc-200">
+      <SheetContent side="left" className="w-[300px] border-[var(--border-default)] bg-surface-1 p-0 sm:max-w-[300px]">
+        <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
+          <SheetTitle className="text-[13px] font-semibold text-[var(--text-primary)]">
             Conversation history
           </SheetTitle>
         </SheetHeader>
 
-        <div className="border-b border-white/5 px-3 py-2">
+        <div className="border-b border-[var(--border-subtle)] px-3 py-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search conversations…"
-              className="h-8 border-white/10 bg-surface-2 pl-8 text-[12px]"
+              className="h-8 border-[var(--border-default)] bg-surface-2 pl-8 text-[12px]"
             />
           </div>
         </div>
@@ -311,7 +311,7 @@ export function ConversationHistory({
               onRename={onRename}
             />
             {filtered.length === 0 && (
-              <div className="px-2 py-8 text-center text-[12px] text-zinc-600">
+              <div className="px-2 py-8 text-center text-[12px] text-[var(--text-disabled)]">
                 No conversations found
               </div>
             )}

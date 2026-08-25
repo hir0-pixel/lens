@@ -21,16 +21,16 @@ export const SEMANTIC_CSS = `
   --ds-border: var(--cursor-border);
   --ds-selection: var(--cursor-list-active);
   --ds-hover: var(--cursor-list-hover);
-  --ds-pressed: rgba(255, 255, 255, 0.12);
+  --ds-pressed: #cfcdc4;
   --ds-disabled: 0.4;
 
   /* Brand / status */
   --ds-primary: var(--lens-accent);
   --ds-secondary: var(--cursor-focus);
-  --ds-warning: #d29922;
+  --ds-warning: #c08532;
   --ds-error: var(--cursor-error);
-  --ds-success: #3fb950;
-  --ds-info: #58a6ff;
+  --ds-success: #1f8a65;
+  --ds-info: #9fbbe0;
 
   /* Spacing scale */
   --ds-space-1: 4px;

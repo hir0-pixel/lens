@@ -255,7 +255,7 @@ export function CommandPalette() {
           />
           <ModeHint mode={paletteMode} />
           <CommandList className="max-h-[min(420px,55vh)] scroll-py-1">
-            <CommandEmpty className="py-8 text-[13px] text-zinc-500">
+            <CommandEmpty className="py-8 text-[13px] text-[var(--text-tertiary)]">
               No results found.
             </CommandEmpty>
 
@@ -268,9 +268,9 @@ export function CommandPalette() {
                     onSelect={() => openSession(s.id)}
                     className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-white"
                   >
-                    <MessageSquare className="h-3.5 w-3.5 text-zinc-500" />
+                    <MessageSquare className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                     <span className="truncate">{s.title}</span>
-                    <span className="ml-auto text-[11px] text-zinc-600">
+                    <span className="ml-auto text-[11px] text-[var(--text-secondary)]">
                       {s.type}
                     </span>
                   </CommandItem>
@@ -286,13 +286,13 @@ export function CommandPalette() {
                       key={`pin-${cmd.id}`}
                       value={cmd.id}
                       onSelect={() => void runCommand(cmd.id)}
-                      className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-white"
+                    className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-[var(--text-on-accent)]"
                     >
                       <Pin className="h-3.5 w-3.5 text-accent" />
-                      <span className="text-zinc-500">{cmd.category}:</span>
+                      <span className="text-[var(--text-tertiary)]">{cmd.category}:</span>
                       <span className="truncate">{cmd.title}</span>
                       {cmd.shortcut && (
-                        <CommandShortcut className="font-mono text-[11px] text-zinc-600">
+                        <CommandShortcut className="font-mono text-[11px] text-[var(--text-secondary)]">
                           {cmd.shortcut}
                         </CommandShortcut>
                       )}
@@ -304,7 +304,7 @@ export function CommandPalette() {
 
             {paletteMode === "commands" && !filterText && recentCmds.length > 0 && (
               <>
-                <CommandSeparator className="bg-white/5" />
+                <CommandSeparator className="bg-[var(--border-subtle)]" />
                 <CommandGroup heading="Recently used">
                   {recentCmds.map((cmd) =>
                     cmd ? (
@@ -312,13 +312,13 @@ export function CommandPalette() {
                         key={`recent-${cmd.id}`}
                         value={`recent-${cmd.id}`}
                         onSelect={() => void runCommand(cmd.id)}
-                        className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-white"
+                        className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-[var(--text-on-accent)]"
                       >
-                        {cmd.icon && <cmd.icon className="h-4 w-4 text-zinc-500" />}
-                        <span className="text-zinc-500">{cmd.category}:</span>
+                        {cmd.icon && <cmd.icon className="h-4 w-4 text-[var(--text-tertiary)]" />}
+                        <span className="text-[var(--text-tertiary)]">{cmd.category}:</span>
                         <span className="truncate">{cmd.title}</span>
                         {cmd.shortcut && (
-                          <CommandShortcut className="font-mono text-[11px] text-zinc-600">
+                          <CommandShortcut className="font-mono text-[11px] text-[var(--text-secondary)]">
                             {cmd.shortcut}
                           </CommandShortcut>
                         )}
@@ -332,7 +332,7 @@ export function CommandPalette() {
             {paletteMode === "commands" && (
               <>
                 {(pinnedCmds.length > 0 || recentCmds.length > 0) && filterText === "" && (
-                  <CommandSeparator className="bg-white/5" />
+                <CommandSeparator className="bg-[var(--border-subtle)]" />
                 )}
                 <CommandGroup heading={filterText ? "Commands" : "All commands"}>
                   {commandResults.map((cmd) => {
@@ -343,26 +343,26 @@ export function CommandPalette() {
                         value={cmd.id}
                         onSelect={() => void runCommand(cmd.id)}
                         disabled={typeof cmd.enabled === "function" ? !cmd.enabled() : cmd.enabled === false}
-                        className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-white data-[disabled=true]:opacity-40"
+                        className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-[var(--text-on-accent)] data-[disabled=true]:opacity-40"
                       >
                         {Icon ? (
-                          <Icon className="h-4 w-4 shrink-0 text-zinc-500" />
+                          <Icon className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
                         ) : (
-                          <Hash className="h-4 w-4 shrink-0 text-zinc-600" />
+                          <Hash className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" />
                         )}
-                        <span className="shrink-0 text-zinc-500">{cmd.category}:</span>
+                        <span className="shrink-0 text-[var(--text-tertiary)]">{cmd.category}:</span>
                         <HighlightedText
                           text={cmd.title}
                           indices={cmd._fuzzyIndices}
                           className="truncate"
                         />
                         {cmd.description && !filterText && (
-                          <span className="ml-1 hidden truncate text-[11px] text-zinc-600 lg:inline">
+                          <span className="ml-1 hidden truncate text-[11px] text-[var(--text-secondary)] lg:inline">
                             {cmd.description}
                           </span>
                         )}
                         {cmd.shortcut && (
-                          <CommandShortcut className="font-mono text-[11px] text-zinc-600">
+                          <CommandShortcut className="font-mono text-[11px] text-[var(--text-secondary)]">
                             {cmd.shortcut}
                           </CommandShortcut>
                         )}
@@ -389,9 +389,9 @@ export function CommandPalette() {
                             className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-white"
                           >
                             <Pin className="h-3 w-3 text-accent" />
-                            <Icon className="h-4 w-4 text-sky-400" />
+                            <Icon className="h-4 w-4 text-[var(--info)]" />
                             <span className="truncate">{file.name}</span>
-                            <span className="ml-auto truncate font-mono text-[11px] text-zinc-600">
+                            <span className="ml-auto truncate font-mono text-[11px] text-[var(--text-secondary)]">
                               {file.parent ?? ""}
                             </span>
                           </CommandItem>
@@ -417,13 +417,13 @@ export function CommandPalette() {
                           onSelect={() => openFile(file.path)}
                           className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-white"
                         >
-                          <Icon className="h-4 w-4 shrink-0 text-sky-400" />
+                          <Icon className="h-4 w-4 shrink-0 text-[var(--info)]" />
                           <HighlightedText
                             text={file.name}
                             indices={nameMatch}
                             className="truncate"
                           />
-                          <span className="ml-auto max-w-[45%] truncate font-mono text-[11px] text-zinc-600">
+                          <span className="ml-auto max-w-[45%] truncate font-mono text-[11px] text-[var(--text-secondary)]">
                             {file.path}
                           </span>
                         </CommandItem>
@@ -444,10 +444,10 @@ export function CommandPalette() {
                       onSelect={() => goToSymbol(sym.file, sym.line)}
                       className="cursor-quick-item h-[22px] gap-2 px-2 text-[13px] data-[selected=true]:bg-[var(--cursor-list-active)] data-[selected=true]:text-white"
                     >
-                      <Icon className="h-4 w-4 shrink-0 text-violet-400" />
+                      <Icon className="h-4 w-4 shrink-0 text-[var(--info)]" />
                       <HighlightedText text={sym.name} indices={sym._fuzzyIndices} />
-                      <span className="text-[11px] text-zinc-600">{sym.kind}</span>
-                      <span className="ml-auto truncate font-mono text-[11px] text-zinc-600">
+                      <span className="text-[11px] text-[var(--text-secondary)]">{sym.kind}</span>
+                      <span className="ml-auto truncate font-mono text-[11px] text-[var(--text-secondary)]">
                         {sym.file}:{sym.line}
                       </span>
                     </CommandItem>
@@ -461,9 +461,9 @@ export function CommandPalette() {
                 <CommandItem
                   value="goto"
                   onSelect={goToLine}
-                  className="h-9 data-[selected=true]:bg-white/10"
+                  className="h-9 data-[selected=true]:bg-[var(--bg-hover)]"
                 >
-                  <Type className="h-4 w-4 text-zinc-500" />
+                  <Type className="h-4 w-4 text-[var(--text-tertiary)]" />
                   Go to line {filterText || "…"}
                   <CommandShortcut>Enter</CommandShortcut>
                 </CommandItem>
@@ -471,15 +471,15 @@ export function CommandPalette() {
             )}
           </CommandList>
 
-          <div className="flex items-center gap-3 border-t border-white/5 px-3 py-1.5 text-[10px] text-zinc-600">
+          <div className="flex items-center gap-3 border-t border-[var(--border-subtle)] px-3 py-1.5 text-[10px] text-[var(--text-secondary)]">
             <span>
-              <kbd className="rounded border border-white/10 bg-surface-2 px-1">↑↓</kbd> navigate
+              <kbd className="rounded border border-[var(--border-default)] bg-surface-2 px-1">↑↓</kbd> navigate
             </span>
             <span>
-              <kbd className="rounded border border-white/10 bg-surface-2 px-1">↵</kbd> open
+              <kbd className="rounded border border-[var(--border-default)] bg-surface-2 px-1">↵</kbd> open
             </span>
             <span>
-              <kbd className="rounded border border-white/10 bg-surface-2 px-1">esc</kbd> close
+              <kbd className="rounded border border-[var(--border-default)] bg-surface-2 px-1">esc</kbd> close
             </span>
           </div>
         </Command>

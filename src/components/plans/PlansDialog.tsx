@@ -48,7 +48,7 @@ export default function PlansDialog({ open, onClose, credits }: PlansDialogProps
                 <div className="mt-1 flex items-center gap-1 text-[11.5px] text-muted-foreground"><Zap className="h-3 w-3 text-primary" />{plan.creditsPerMonth} credits</div>
                 <Separator className="my-3" />
                 <div className="space-y-1.5">
-                  {plan.features.map((feature) => <div key={feature} className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Check className="h-3 w-3 text-emerald-500" />{feature}</div>)}
+                  {plan.features.map((feature) => <div key={feature} className="flex items-center gap-1.5 text-[12px] text-muted-foreground"><Check className="h-3 w-3 text-[var(--success)]" />{feature}</div>)}
                 </div>
                 <Button type="button" disabled variant={plan.highlight ? "default" : "outline"} className="mt-4 w-full text-[12.5px]">
                   {plan.name === "Pro" ? "Current plan" : `Switch to ${plan.name}`}

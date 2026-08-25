@@ -18,7 +18,7 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="flex h-7 shrink-0 items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/15 px-3 text-[11px] text-amber-100"
+      className="flex h-7 shrink-0 items-center justify-center gap-2 border-b border-[var(--warning)]/30 bg-[var(--warning)]/15 px-3 text-[11px] text-[var(--warning)]"
     >
       <WifiOff className="h-3.5 w-3.5" aria-hidden />
       You are offline. Provider requests and updates are unavailable until connectivity

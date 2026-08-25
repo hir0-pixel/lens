@@ -54,14 +54,14 @@ function ToolActionRow({ call }: { call: ToolCallRecord }) {
 
   return (
     <AccordionItem value={call.id} className="border-white/5">
-      <AccordionTrigger className="gap-2 px-3 py-2 hover:bg-white/[0.03] hover:no-underline [&[data-state=open]>svg.chevron]:rotate-90">
+      <AccordionTrigger className="gap-2 px-3 py-2 hover:bg-[var(--bg-hover)] hover:no-underline [&[data-state=open]>svg.chevron]:rotate-90">
         <div className="flex flex-1 items-center gap-2 text-left">
           <span
             className={cn(
               "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
-              call.status === "running" && "bg-accent/10 text-accent",
-              call.status === "done" && "bg-emerald-500/10 text-emerald-400",
-              call.status === "error" && "bg-red-500/10 text-red-400",
+              call.status === "running" && "bg-[var(--bg-hover)] text-[var(--accent-primary)]",
+              call.status === "done" && "bg-[var(--success-muted)] text-[var(--success)]",
+              call.status === "error" && "bg-[var(--error-muted)] text-[var(--error)]",
             )}
           >
             {call.status === "running" ? (
@@ -72,28 +72,28 @@ function ToolActionRow({ call }: { call: ToolCallRecord }) {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-[12px] font-medium text-zinc-300">{meta.label}</span>
-              <span className="truncate font-mono text-[11px] text-zinc-500">{call.name}</span>
+              <span className="text-[12px] font-medium text-[var(--text-secondary)]">{meta.label}</span>
+              <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">{call.name}</span>
             </div>
-            <div className="truncate text-[11px] text-zinc-600">{call.detail}</div>
+            <div className="truncate text-[11px] text-[var(--text-disabled)]">{call.detail}</div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {call.timestamp && (
-              <span className="text-[10px] tabular-nums text-zinc-600">{call.timestamp}</span>
+              <span className="text-[10px] tabular-nums text-[var(--text-disabled)]">{call.timestamp}</span>
             )}
             {call.durationMs != null && call.status === "done" && (
               <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
                 {(call.durationMs / 1000).toFixed(1)}s
               </Badge>
             )}
-            {call.status === "done" && <Check className="h-3 w-3 text-emerald-400" />}
-            {call.status === "error" && <X className="h-3 w-3 text-red-400" />}
+            {call.status === "done" && <Check className="h-3 w-3 text-[var(--success)]" />}
+            {call.status === "error" && <X className="h-3 w-3 text-[var(--error)]" />}
           </div>
         </div>
-        <ChevronRight className="chevron h-3.5 w-3.5 shrink-0 text-zinc-600 transition-transform" />
+        <ChevronRight className="chevron h-3.5 w-3.5 shrink-0 text-[var(--text-disabled)] transition-transform" />
       </AccordionTrigger>
       <AccordionContent className="px-3 pb-3">
-        <div className="rounded-md border border-white/5 bg-surface-0 p-2.5 font-mono text-[11px] leading-relaxed text-zinc-400">
+        <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 font-mono text-[11px] leading-relaxed text-[var(--text-secondary)]">
           {call.expandedContent ?? call.detail}
         </div>
       </AccordionContent>
@@ -113,14 +113,14 @@ export function AgentWorkflow({ calls, thinking }: AgentWorkflowProps) {
 
   if (thinking && calls.length === 0) {
     return (
-      <div className="animate-fade-in overflow-hidden rounded-lg border border-white/10 bg-surface-1">
+      <div className="animate-fade-in overflow-hidden rounded-lg border border-[var(--border-default)] bg-surface-1">
         <div className="flex items-center gap-2.5 px-3 py-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10">
-            <Brain className="h-4 w-4 animate-pulse text-accent" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--bg-hover)]">
+            <Brain className="h-4 w-4 animate-pulse text-[var(--accent-primary)]" />
           </span>
           <div className="flex-1">
-            <div className="text-[12px] font-medium text-zinc-300">Thinking…</div>
-            <div className="text-[11px] text-zinc-600">Planning next steps</div>
+            <div className="text-[12px] font-medium text-[var(--text-secondary)]">Thinking…</div>
+            <div className="text-[11px] text-[var(--text-disabled)]">Planning next steps</div>
           </div>
           <span className="flex gap-1">
             {[0, 1, 2].map((i) => (
@@ -139,14 +139,14 @@ export function AgentWorkflow({ calls, thinking }: AgentWorkflowProps) {
   if (calls.length === 0) return null;
 
   return (
-    <div className="animate-fade-up overflow-hidden rounded-lg border border-white/10 bg-surface-1">
-      <div className="border-b border-white/5 px-3 py-2">
+    <div className="animate-fade-up overflow-hidden rounded-lg border border-[var(--border-default)] bg-surface-1">
+      <div className="border-b border-[var(--border-subtle)] px-3 py-2">
         <div className="flex items-center gap-2">
-          <FolderSearch className="h-3.5 w-3.5 text-accent" />
-          <span className="text-[12px] font-medium text-zinc-300">
+          <FolderSearch className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
+          <span className="text-[12px] font-medium text-[var(--text-secondary)]">
             {running ? "Agent is working…" : "Completed actions"}
           </span>
-          <span className="ml-auto text-[11px] tabular-nums text-zinc-500">
+          <span className="ml-auto text-[11px] tabular-nums text-[var(--text-tertiary)]">
             {done}/{calls.length}
           </span>
         </div>
@@ -169,7 +169,7 @@ export function ThinkingIndicator({
   label?: string;
 }) {
   return (
-    <div className="flex items-center gap-1 text-[12.5px] text-[#8a8a8a] animate-cursor-fade">
+    <div className="flex items-center gap-1 text-[12.5px] text-[var(--text-tertiary)] animate-cursor-fade">
       <span>{label}</span>
       <ChevronRight className="h-3 w-3" strokeWidth={2} />
     </div>

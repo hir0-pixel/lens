@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+﻿import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import {
   Field,
@@ -28,9 +28,9 @@ export function SettingsSectionHeader({
 }) {
   return (
     <div className="mb-5">
-      <h2 className="text-[15px] font-semibold text-zinc-100">{title}</h2>
+      <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">{title}</h2>
       {description && (
-        <p className="mt-1 text-[12px] leading-relaxed text-zinc-500">{description}</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">{description}</p>
       )}
     </div>
   );
@@ -46,7 +46,7 @@ export function SettingsGroup({
   return (
     <div className="mb-6">
       {title && (
-        <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+        <h3 className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
           {title}
         </h3>
       )}
@@ -72,14 +72,14 @@ export function SettingRow({
     <Field
       id={id}
       orientation="horizontal"
-      className="items-start justify-between gap-4 bg-white/[0.02] px-3.5 py-3 transition-colors hover:bg-white/[0.04]"
+      className="items-start justify-between gap-4 bg-surface-0/40 px-3.5 py-3 transition-colors hover:bg-[var(--bg-hover)]"
     >
       <FieldLabel className="flex-col items-start gap-1 pt-0.5">
-        <FieldTitle className="text-[13px] font-medium text-zinc-200">
+        <FieldTitle className="text-[13px] font-medium text-[var(--text-primary)]">
           {title}
         </FieldTitle>
         {description && (
-          <FieldDescription className="text-[11.5px] leading-relaxed text-zinc-500">
+          <FieldDescription className="text-[11.5px] leading-relaxed text-[var(--text-secondary)]">
             {description}
           </FieldDescription>
         )}
@@ -129,7 +129,7 @@ export function SettingSelect({
   return (
     <SettingRow title={title} description={description} id={id}>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="h-8 w-[180px] border-white/10 bg-surface-2 text-[12px]">
+        <SelectTrigger className="h-8 w-[180px] border-[var(--border-default)] bg-surface-2 text-[12px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -177,7 +177,7 @@ export function SettingSlider({
           className="flex-1"
           aria-label={title}
         />
-        <span className="w-10 text-right font-mono text-[11px] tabular-nums text-zinc-400">
+        <span className="w-10 text-right font-mono text-[11px] tabular-nums text-[var(--text-secondary)]">
           {value}
           {suffix ?? ""}
         </span>
@@ -213,7 +213,7 @@ export function SettingInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          "h-8 w-[220px] border-white/10 bg-surface-2 text-[12px]",
+          "h-8 w-[220px] border-[var(--border-default)] bg-surface-2 text-[12px]",
           mono && "font-mono",
         )}
         aria-label={title}
@@ -245,7 +245,7 @@ export function SettingRadio({
         className="flex flex-wrap justify-end gap-3"
       >
         {options.map((o) => (
-          <label key={o.value} className="flex items-center gap-1.5 text-[12px] text-zinc-300">
+          <label key={o.value} className="flex items-center gap-1.5 text-[12px] text-[var(--text-secondary)]">
             <RadioGroupItem value={o.value} id={`${id}-${o.value}`} />
             {o.label}
           </label>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+﻿import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import {
   CaseSensitive,
   ChevronDown,
@@ -59,12 +59,12 @@ function MatchLine({
   return (
     <button
       onClick={onOpen}
-      className="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-left font-mono text-[12px] hover:bg-white/5"
+      className="flex w-full items-start gap-2 rounded-sm px-2 py-0.5 text-left font-mono text-[12px] hover:bg-[var(--bg-hover)]"
     >
-      <span className="w-8 shrink-0 select-none text-right tabular-nums text-zinc-600">
+      <span className="w-8 shrink-0 select-none text-right tabular-nums text-[var(--text-tertiary)]">
         {line}
       </span>
-      <span className="min-w-0 flex-1 truncate text-zinc-400">
+      <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">
         {before}
         <span className="rounded-sm bg-accent/30 text-accent-200">{match}</span>
         {after}
@@ -84,23 +84,23 @@ function FileGroup({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[12px] hover:bg-white/[0.03]">
+      <CollapsibleTrigger className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-[12px] hover:bg-[var(--bg-hover)]">
         {open ? (
-          <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+          <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-zinc-500" />
+          <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         )}
-        <FileCode2 className="h-3.5 w-3.5 text-sky-400" />
-        <span className="truncate font-medium text-zinc-200">
+        <FileCode2 className="h-3.5 w-3.5 text-[var(--info)]" />
+        <span className="truncate font-medium text-[var(--text-primary)]">
           {group.file.split("/").pop()}
         </span>
-        <span className="truncate font-mono text-[11px] text-zinc-600">{group.file}</span>
-        <span className="ml-auto shrink-0 rounded-full bg-white/5 px-1.5 text-[10px] tabular-nums text-zinc-500">
+        <span className="truncate font-mono text-[11px] text-[var(--text-tertiary)]">{group.file}</span>
+        <span className="ml-auto shrink-0 rounded-full bg-[var(--bg-hover)] px-1.5 text-[10px] tabular-nums text-[var(--text-tertiary)]">
           {group.matches.length}
         </span>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="border-l border-white/5 ml-4 mb-1">
+        <div className="border-l border-[var(--border-subtle)] ml-4 mb-1">
           {group.matches.map((m, i) => (
             <MatchLine
               key={`${m.line}-${m.column}-${i}`}
@@ -196,7 +196,7 @@ export function GlobalSearchPanel() {
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent
         className={cn(
-          "top-[8%] flex h-[min(720px,80vh)] w-full translate-y-0 flex-col gap-0 overflow-hidden border-white/10 bg-surface-1 p-0 shadow-float-pop",
+          "top-[8%] flex h-[min(720px,80vh)] w-full translate-y-0 flex-col gap-0 overflow-hidden border-[var(--border-default)] bg-surface-1 p-0 shadow-float-pop",
           "sm:max-w-[720px]",
           "[&>button]:hidden",
         )}
@@ -204,8 +204,8 @@ export function GlobalSearchPanel() {
       >
         <DialogTitle className="sr-only">Search in workspace</DialogTitle>
 
-        <div className="flex items-center justify-between border-b border-white/5 px-3 py-2">
-          <div className="flex items-center gap-2 text-[13px] font-medium text-zinc-200">
+        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-3 py-2">
+          <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--text-primary)]">
             <Search className="h-4 w-4 text-accent" />
             Search
           </div>
@@ -220,14 +220,14 @@ export function GlobalSearchPanel() {
           </Button>
         </div>
 
-        <div className="space-y-2 border-b border-white/5 p-3">
+        <div className="space-y-2 border-b border-[var(--border-subtle)] p-3">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search"
-                className="h-9 border-white/10 bg-surface-2 pr-24 text-[13px]"
+                className="h-9 border-[var(--border-default)] bg-surface-2 pr-24 text-[13px]"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter") runSearch(options);
@@ -261,7 +261,7 @@ export function GlobalSearchPanel() {
             <Button
               variant="ghost"
               size="icon"
-              className={cn("h-9 w-9", showReplace && "bg-white/10")}
+              className={cn("h-9 w-9", showReplace && "bg-[var(--bg-hover)]")}
               onClick={() => setShowReplace((v) => !v)}
               aria-label="Toggle replace"
             >
@@ -275,7 +275,7 @@ export function GlobalSearchPanel() {
               </PopoverTrigger>
               <PopoverContent align="end" className="w-56 p-1">
                 {searchHistory.length === 0 ? (
-                  <div className="px-2 py-3 text-center text-[12px] text-zinc-600">
+                  <div className="px-2 py-3 text-center text-[12px] text-[var(--text-tertiary)]">
                     No recent searches
                   </div>
                 ) : (
@@ -283,7 +283,7 @@ export function GlobalSearchPanel() {
                     <button
                       key={q}
                       onClick={() => setQuery(q)}
-                      className="flex w-full rounded-md px-2 py-1.5 text-left text-[12px] text-zinc-300 hover:bg-white/5"
+                      className="flex w-full rounded-md px-2 py-1.5 text-left text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                     >
                       {q}
                     </button>
@@ -299,7 +299,7 @@ export function GlobalSearchPanel() {
                 value={replace}
                 onChange={(e) => setReplace(e.target.value)}
                 placeholder="Replace"
-                className="h-9 flex-1 border-white/10 bg-surface-2 text-[13px]"
+                className="h-9 flex-1 border-[var(--border-default)] bg-surface-2 text-[13px]"
                 aria-label="Replace with"
               />
               <Button
@@ -316,31 +316,31 @@ export function GlobalSearchPanel() {
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="mb-1 text-[10px] uppercase tracking-wide text-zinc-600">
+              <Label className="mb-1 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
                 files to include
               </Label>
               <Input
                 value={include}
                 onChange={(e) => setInclude(e.target.value)}
                 placeholder="e.g. src/**/*.tsx"
-                className="h-8 border-white/10 bg-surface-2 font-mono text-[11px]"
+                className="h-8 border-[var(--border-default)] bg-surface-2 font-mono text-[11px]"
               />
             </div>
             <div>
-              <Label className="mb-1 text-[10px] uppercase tracking-wide text-zinc-600">
+              <Label className="mb-1 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
                 files to exclude
               </Label>
               <Input
                 value={exclude}
                 onChange={(e) => setExclude(e.target.value)}
                 placeholder="e.g. **/node_modules/**"
-                className="h-8 border-white/10 bg-surface-2 font-mono text-[11px]"
+                className="h-8 border-[var(--border-default)] bg-surface-2 font-mono text-[11px]"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex h-7 shrink-0 items-center gap-2 border-b border-white/5 px-3 text-[11px] text-zinc-500">
+        <div className="flex h-7 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3 text-[11px] text-[var(--text-tertiary)]">
           {pending ? (
             <span className="animate-pulse">Searching…</span>
           ) : query.trim() ? (
@@ -352,7 +352,7 @@ export function GlobalSearchPanel() {
             <span>Type to search the workspace</span>
           )}
           {replaceCount > 0 && (
-            <span className="text-emerald-400">Replaced {replaceCount} occurrence(s)</span>
+            <span className="text-[var(--success)]">Replaced {replaceCount} occurrence(s)</span>
           )}
         </div>
 
@@ -377,7 +377,7 @@ export function GlobalSearchPanel() {
           </div>
         </ScrollArea>
 
-        <div className="flex items-center gap-3 border-t border-white/5 px-3 py-1.5 text-[10px] text-zinc-600">
+        <div className="flex items-center gap-3 border-t border-[var(--border-subtle)] px-3 py-1.5 text-[10px] text-[var(--text-tertiary)]">
           <label className="flex items-center gap-1.5">
             <Checkbox
               checked={caseSensitive}
@@ -426,7 +426,7 @@ function ToggleIcon({
       aria-label={label}
       aria-pressed={active}
       className={cn(
-        "flex h-7 w-7 items-center justify-center rounded text-zinc-500 hover:bg-white/10 hover:text-zinc-200",
+        "flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
         active && "bg-accent/15 text-accent",
       )}
     >

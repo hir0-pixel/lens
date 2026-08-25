@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, type ComponentType } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, type ComponentType } from "react";
 import { Search, Star, X } from "lucide-react";
 import {
   Breadcrumb,
@@ -182,7 +182,7 @@ export function SettingsLayout() {
           <InputGroup className="h-8 border-border bg-surface-2 shadow-none">
             <InputGroupAddon
               align="inline-start"
-              className="pl-2.5 text-zinc-500"
+              className="pl-2.5 text-[var(--text-tertiary)]"
             >
               <Search className="h-3.5 w-3.5" />
             </InputGroupAddon>
@@ -215,7 +215,7 @@ export function SettingsLayout() {
               <InputGroupButton
                 data-align="inline-end"
                 size="icon-xs"
-                className="mr-1 text-zinc-500 hover:text-zinc-200"
+                className="mr-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
               >
@@ -319,11 +319,11 @@ export function SettingsLayout() {
         >
           {searchQuery.trim() ? (
             <div>
-              <h2 className="mb-3 text-[14px] font-semibold text-zinc-100">
+              <h2 className="mb-3 text-[14px] font-semibold text-[var(--text-primary)]">
                 Results for &ldquo;{searchQuery}&rdquo;
               </h2>
               {searchHits.length === 0 ? (
-                <p className="text-[13px] text-zinc-500">No settings found.</p>
+                <p className="text-[13px] text-[var(--text-tertiary)]">No settings found.</p>
               ) : (
                 <div className="space-y-1" role="listbox" aria-label="Search results">
                   {searchHits.map((hit) => (
@@ -343,12 +343,12 @@ export function SettingsLayout() {
                           });
                         });
                       }}
-                      className="h-auto w-full flex-col items-start gap-0.5 rounded-lg border border-white/5 px-3 py-2.5 text-left hover:bg-white/[0.04]"
+                      className="h-auto w-full flex-col items-start gap-0.5 rounded-lg border border-[var(--border-subtle)] px-3 py-2.5 text-left hover:bg-[var(--bg-hover)]"
                     >
-                      <span className="text-[13px] text-zinc-200">
+                      <span className="text-[13px] text-[var(--text-primary)]">
                         {highlightMatch(hit.title, searchQuery)}
                       </span>
-                      <span className="text-[11px] text-zinc-600">
+                      <span className="text-[11px] text-[var(--text-tertiary)]">
                         {SETTINGS_NAV.find((n) => n.id === hit.section)?.label}
                         {hit.description ? ` · ${hit.description}` : ""}
                       </span>
@@ -375,7 +375,7 @@ function NavGroup({
 }) {
   return (
     <div className="mb-2">
-      <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+      <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
         {label}
       </div>
       {children}
@@ -404,8 +404,8 @@ function NavButton({
       className={cn(
         "group flex items-center rounded-md transition-colors",
         active
-          ? "bg-white/10 text-zinc-100"
-          : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
+          ? "bg-[var(--bg-hover)] text-[var(--text-primary)]"
+          : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
       )}
     >
       <Button
@@ -427,7 +427,7 @@ function NavButton({
           e.stopPropagation();
           onToggleFavorite();
         }}
-        className="mr-1 opacity-0 hover:bg-white/10 group-hover:opacity-100 focus-visible:opacity-100"
+        className="mr-1 opacity-0 hover:bg-[var(--bg-hover)] group-hover:opacity-100 focus-visible:opacity-100"
         aria-label={favorited ? "Remove favorite" : "Add favorite"}
       >
         <Star

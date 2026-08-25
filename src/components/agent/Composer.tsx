@@ -85,19 +85,19 @@ export default function Composer({
           {attachments.map((att) => (
             <div
               key={att.id}
-              className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-zinc-300"
+              className="flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-hover)] px-2 py-1 text-[11px] text-[var(--text-secondary)]"
             >
               {att.kind === "image" && <ImageIcon className="h-3 w-3 text-accent" />}
-              {att.kind === "video" && <Video className="h-3 w-3 text-pink-400" />}
+              {att.kind === "video" && <Video className="h-3 w-3 text-[var(--info)]" />}
               <span className="max-w-[140px] truncate">{att.name}</span>
-              <span className="text-[10px] text-zinc-500">{att.sizeLabel}</span>
+              <span className="text-[10px] text-[var(--text-tertiary)]">{att.sizeLabel}</span>
               <button
                 onClick={() =>
                   setAttachments((prev) =>
                     prev.filter((a) => a.id !== att.id),
                   )
                 }
-                className="ml-0.5 text-zinc-500 transition-colors hover:text-zinc-200"
+                className="ml-0.5 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
               >
                 ✕
               </button>
@@ -117,7 +117,7 @@ export default function Composer({
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           title="Upload images or videos"
         >
           <Paperclip className="h-4 w-4" />
@@ -133,13 +133,13 @@ export default function Composer({
           onKeyDown={handleKeyDown}
           rows={1}
           placeholder="Build, edit, plan or fix…"
-          className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-1.5 text-[13px] text-zinc-100 placeholder-zinc-500 outline-none"
+          className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-1.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
         />
 
         <div className="relative">
           <button
             onClick={() => setModelMenuOpen((v) => !v)}
-            className="flex h-8 items-center gap-1 rounded-lg px-2 text-[12px] font-medium text-zinc-300 transition-colors hover:bg-white/10"
+            className="flex h-8 items-center gap-1 rounded-lg px-2 text-[12px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]"
           >
             <span
               className={cn(
@@ -147,12 +147,12 @@ export default function Composer({
                 activeModel.provider === "lens"
                   ? "bg-accent"
                   : activeModel.provider === "claude"
-                    ? "bg-[#D97757]"
-                    : "bg-[#10A37F]",
+                    ? "bg-[var(--warning)]"
+                    : "bg-[var(--success)]",
               )}
             />
             <span className="max-w-[120px] truncate">{activeModel.label}</span>
-            <ChevronDown className="h-3 w-3 text-zinc-500" />
+            <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" />
           </button>
           {modelMenuOpen && (
             <>
@@ -169,18 +169,18 @@ export default function Composer({
                       setModelMenuOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-zinc-300 transition-colors hover:bg-white/5",
-                      m.id === activeModel.id && "bg-white/5 text-zinc-100",
+                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]",
+                      m.id === activeModel.id && "bg-[var(--bg-hover)] text-[var(--text-primary)]",
                     )}
                   >
                     <span
                       className={cn(
                         "h-1.5 w-1.5 rounded-full",
                         m.provider === "lens" && "bg-accent",
-                        m.provider === "claude" && "bg-[#D97757]",
-                        m.provider === "chatgpt" && "bg-[#10A37F]",
-                        m.provider === "gemini" && "bg-[#4285F4]",
-                        m.provider === "copilot" && "bg-[#2490EB]",
+                        m.provider === "claude" && "bg-[var(--warning)]",
+                        m.provider === "chatgpt" && "bg-[var(--success)]",
+                        m.provider === "gemini" && "bg-[var(--info)]",
+                        m.provider === "copilot" && "bg-[var(--accent-primary-active)]",
                       )}
                     />
                     {m.label}
@@ -196,7 +196,7 @@ export default function Composer({
           className={cn(
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors",
             sending
-              ? "bg-white/10 text-zinc-200 hover:bg-white/20"
+              ? "bg-[var(--bg-active)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
               : "bg-accent text-surface-0 hover:bg-accent-600",
           )}
           title={sending ? "Stop" : "Send"}
@@ -209,7 +209,7 @@ export default function Composer({
         </button>
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-zinc-600">
+      <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-[var(--text-tertiary)]">
         <span>1 credit ≈ 1 word of AI output</span>
         <span>Enter to send · Shift+Enter for newline</span>
       </div>

@@ -1,4 +1,4 @@
-export type WorkspaceFileKind = "file" | "folder";
+﻿export type WorkspaceFileKind = "file" | "folder";
 
 export interface WorkspaceFile {
   id: string;
@@ -28,12 +28,12 @@ import { Sidebar } from "./components/Sidebar";
 
 export default function App() {
   return (
-    <div className="grid h-screen grid-cols-[240px_1fr] bg-zinc-950 text-zinc-50">
+    <div className="grid h-screen grid-cols-[240px_1fr] bg-[var(--bg-base)] text-[var(--text-primary)]">
       <Sidebar />
       <main className="overflow-y-auto p-8">
         <header className="mb-6">
           <h1 className="text-2xl font-bold">Finance Dashboard</h1>
-          <p className="text-zinc-400">Personal money overview</p>
+          <p className="text-[var(--text-secondary)]">Personal money overview</p>
         </header>
         <CashFlowChart />
         <SavingsGoals />
@@ -62,8 +62,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 @tailwind utilities;
 
 :root {
-  --accent: #FCAA26;
-  --surface: #0C0C0D;
+  --accent: var(--accent-primary);
+  --surface: var(--bg-base);
 }`,
   },
   "src/components/Sidebar.tsx": {
@@ -79,11 +79,11 @@ const NAV = [
 
 export function Sidebar() {
   return (
-    <aside className="border-r border-white/10 p-4">
-      <h2 className="mb-4 text-sm font-semibold text-amber-400">Finance</h2>
+    <aside className="border-r border-[var(--border-default)] p-4">
+      <h2 className="mb-4 text-sm font-semibold text-[var(--accent-primary)]">Finance</h2>
       <nav className="space-y-1">
         {NAV.map((item) => (
-          <a key={item.label} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-white/5">
+          <a key={item.label} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">
             <item.icon className="h-4 w-4" />
             {item.label}
           </a>
@@ -96,25 +96,25 @@ export function Sidebar() {
   "src/components/SavingsGoals.tsx": {
     lang: "typescript",
     content: `const GOALS = [
-  { label: "Emergency Fund", current: 48, total: 10_000, color: "#FCAA26" },
-  { label: "Trip to Japan", current: 72, total: 6_000, color: "#34D399" },
-  { label: "New Laptop", current: 35, total: 2_500, color: "#60A5FA" },
+  { label: "Emergency Fund", current: 48, total: 10_000, color: "var(--accent-primary)" },
+  { label: "Trip to Japan", current: 72, total: 6_000, color: "var(--success)" },
+  { label: "New Laptop", current: 35, total: 2_500, color: "var(--info)" },
 ];
 
 export function SavingsGoals() {
   return (
-    <section className="mt-6 rounded-lg border border-white/10 bg-white/5 p-5">
+    <section className="mt-6 rounded-lg border border-[var(--border-default)] bg-[var(--bg-hover)] p-5">
       <h2 className="mb-3 text-base font-semibold">Savings Goals</h2>
       <div className="space-y-4">
         {GOALS.map((goal) => (
           <div key={goal.label}>
             <div className="mb-1 flex justify-between text-sm">
               <span>{goal.label}</span>
-              <span className="text-zinc-400">
+              <span className="text-[var(--text-secondary)]">
                 \${goal.current * 100} / \${goal.total.toLocaleString()}
               </span>
             </div>
-            <div className="h-2 rounded-full bg-white/10">
+            <div className="h-2 rounded-full bg-[var(--bg-hover)]">
               <div className="h-full rounded-full" style={{ width: \`\${goal.current}%\`, background: goal.color }} />
             </div>
           </div>
@@ -132,16 +132,16 @@ const VALUES = [4200, 3800, 5100, 4700, 5300, 4900];
 export function CashFlowChart() {
   const max = Math.max(...VALUES);
   return (
-    <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+    <section className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-hover)] p-5">
       <h2 className="mb-4 text-base font-semibold">Monthly Cash Flow</h2>
       <div className="flex h-40 items-end gap-3">
         {MONTHS.map((m, i) => (
           <div key={m} className="flex flex-1 flex-col items-center gap-1">
             <div
-              className="w-full rounded-t bg-amber-400/80"
+              className="w-full rounded-t bg-[var(--accent-primary)]/80"
               style={{ height: \`\${(VALUES[i] / max) * 100}%\` }}
             />
-            <span className="text-xs text-zinc-500">{m}</span>
+            <span className="text-xs text-[var(--text-primary)]0">{m}</span>
           </div>
         ))}
       </div>

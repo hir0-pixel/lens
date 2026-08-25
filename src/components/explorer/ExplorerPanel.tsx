@@ -440,7 +440,7 @@ export function ExplorerPanel({
                 className={cn(
                   "mr-1 h-4 w-4 shrink-0",
                   isFolder
-                    ? "text-[#dcb67a]"
+                    ? "text-[var(--warning)]"
                     : "text-[var(--ds-fg-muted)]",
                 )}
                 strokeWidth={1.5}

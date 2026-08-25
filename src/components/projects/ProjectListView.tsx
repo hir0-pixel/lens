@@ -24,19 +24,19 @@ const STATUS_STYLES: Record<
 > = {
   live: {
     label: "Live",
-    cls: "text-success bg-emerald-400/10 border-emerald-400/20",
+    cls: "text-[var(--success)] bg-[var(--success-muted)] border-[var(--success)]/20",
   },
   building: {
     label: "Building",
-    cls: "text-accent bg-accent/10 border-accent/20",
+    cls: "text-[var(--accent-primary)] bg-[var(--accent-primary-muted)] border-[var(--accent-primary)]/20",
   },
   failed: {
     label: "Failed",
-    cls: "text-error bg-red-400/10 border-red-400/20",
+    cls: "text-[var(--error)] bg-[var(--error-muted)] border-[var(--error)]/20",
   },
   idle: {
     label: "Not deployed",
-    cls: "text-muted-foreground bg-secondary border-border",
+    cls: "text-[var(--text-secondary)] bg-[var(--bg-surface)] border-[var(--border-default)]",
   },
 };
 

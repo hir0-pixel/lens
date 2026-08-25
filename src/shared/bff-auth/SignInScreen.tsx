@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { ShieldCheck, LogIn, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { getBffAuthClient } from "./index";
@@ -38,7 +38,7 @@ export function SignInScreen() {
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 0%, hsl(262 70% 45% / 0.12), transparent 60%)",
+            "radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in srgb, var(--accent-primary) 12%, transparent), transparent 60%)",
         }}
       />
 
