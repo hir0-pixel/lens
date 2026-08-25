@@ -46,7 +46,7 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
               {provider.status}
             </Badge>
           </div>
-          <p className="type-caption text-[var(--text-tertiary)]">{provider.baseUrl}</p>
+          <p className="type-caption text-[var(--text-tertiary)]">Sovereign platform routing</p>
         </div>
       </div>
 
@@ -101,6 +101,8 @@ export function ProvidersSettingsPage() {
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [allowlist, setAllowlist] = useState("");
+  const [adapterType, setAdapterType] = useState<"openai-compatible">("openai-compatible");
+  const [providerIdHint, setProviderIdHint] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>();
 
@@ -111,6 +113,7 @@ export function ProvidersSettingsPage() {
     setMessage(undefined);
     try {
       const result = await client.onboardProvider({
+        adapterType,
         baseUrl,
         apiKey,
         tlsWorkloadRef: "workload:runtime-adapter",
@@ -121,7 +124,7 @@ export function ProvidersSettingsPage() {
         idempotencyKey: crypto.randomUUID(),
       });
       setApiKey("");
-      setMessage(`Provider ${result.id} is ${result.status}.`);
+      setMessage(`Provider ${result.id} is ${result.status}${providerIdHint ? ` (note: ${providerIdHint})` : ""}.`);
       await refreshCatalog();
     } catch {
       setApiKey("");
@@ -145,8 +148,25 @@ export function ProvidersSettingsPage() {
       {administrator && (
         <Card className="mt-4 gap-0 rounded-lg bg-surface-0/40 p-4 ring-[var(--border-default)]">
           <p className="type-caption font-medium text-[var(--text-primary)]">Register an internal model gateway</p>
-          <p className="mt-1 type-caption text-[var(--text-tertiary)]">The API key is sent once over the authenticated BFF and is never written to browser storage.</p>
+          <p className="mt-1 type-caption text-[var(--text-tertiary)]">The API key is sent once over the authenticated BFF and is never written to browser storage. The server assigns the provider id.</p>
           <div className="mt-3 space-y-2">
+            <div>
+              <Label htmlFor="provider-adapter" className="mb-1 block type-caption font-normal text-[var(--text-tertiary)]">Adapter type</Label>
+              <select
+                id="provider-adapter"
+                aria-label="Adapter type"
+                value={adapterType}
+                onChange={(event) => setAdapterType(event.target.value as "openai-compatible")}
+                className="h-9 w-full rounded-md border border-[var(--border-default)] bg-surface-2 px-2 type-caption text-[var(--text-primary)]"
+              >
+                <option value="openai-compatible">openai-compatible</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="provider-id-hint" className="mb-1 block type-caption font-normal text-[var(--text-tertiary)]">Provider id</Label>
+              <Input id="provider-id-hint" value={providerIdHint} onChange={(event) => setProviderIdHint(event.target.value)} placeholder="internal-gateway" className="h-9 border-[var(--border-default)] bg-surface-2 type-caption" />
+              <p className="mt-1 type-caption text-[var(--text-tertiary)]">Used only as a local note. The BFF returns the canonical id after register.</p>
+            </div>
             <Input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://models.company.internal/v1" className="h-9 border-[var(--border-default)] bg-surface-2 type-caption" />
             <Input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Provider API key" className="h-9 border-[var(--border-default)] bg-surface-2 type-caption" />
             <Input value={allowlist} onChange={(event) => setAllowlist(event.target.value)} placeholder="allowed model ids, comma-separated" className="h-9 border-[var(--border-default)] bg-surface-2 type-caption" />
