@@ -1,6 +1,8 @@
 import * as React from "react"
+import { BREAKPOINTS } from "@/shared/design-system/breakpoints"
 
-const MOBILE_BREAKPOINT = 768
+/** DESIGN: top-nav / shell hamburger-equivalent below 768px */
+const MOBILE_BREAKPOINT = BREAKPOINTS.navCollapse
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)

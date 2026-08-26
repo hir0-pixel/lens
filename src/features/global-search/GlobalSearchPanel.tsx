@@ -1,4 +1,4 @@
-ï»¿import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import {
   CaseSensitive,
   ChevronDown,
@@ -84,7 +84,7 @@ function FileGroup({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left type-caption hover:bg-[var(--bg-hover)]">
+      <CollapsibleTrigger className="flex w-full items-center gap-2 px-2 py-1.5 text-left type-caption hover:bg-[var(--bg-hover)]">
         {open ? (
           <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
         ) : (
@@ -184,7 +184,7 @@ export function GlobalSearchPanel() {
   function handleReplaceAll() {
     if (!query.trim()) return;
     setReplaceCount(totalMatches);
-    // Mock replace â€” dispatches event for future editor integration
+    // Mock replace — dispatches event for future editor integration
     window.dispatchEvent(
       new CustomEvent("lens:replace-all", {
         detail: { query, replace, options },
@@ -342,7 +342,7 @@ export function GlobalSearchPanel() {
 
         <div className="flex h-7 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3 type-caption text-[var(--text-tertiary)]">
           {pending ? (
-            <span className="animate-pulse">Searchingâ€¦</span>
+            <span className="animate-pulse">Searching…</span>
           ) : query.trim() ? (
             <span>
               {totalMatches} result{totalMatches !== 1 ? "s" : ""} in {results.length} file
@@ -370,7 +370,7 @@ export function GlobalSearchPanel() {
               <div className="px-4 py-12 text-center">
                 <p className="type-caption text-foreground/80">Search the workspace</p>
                 <p className="mt-1 type-caption text-muted-foreground">
-                  Use match options below Â· <kbd className="wb-kbd">Enter</kbd> to search
+                  Use match options below · <kbd className="wb-kbd">Enter</kbd> to search
                 </p>
               </div>
             )}
@@ -378,7 +378,7 @@ export function GlobalSearchPanel() {
         </ScrollArea>
 
         <div className="flex items-center gap-3 border-t border-[var(--border-subtle)] px-3 py-1.5 type-caption text-[var(--text-tertiary)]">
-          <label className="flex items-center gap-1.5">
+          <label className="flex items-center gap-2">
             <Checkbox
               checked={caseSensitive}
               onCheckedChange={(v) => setCaseSensitive(v === true)}
@@ -386,7 +386,7 @@ export function GlobalSearchPanel() {
             />
             Case
           </label>
-          <label className="flex items-center gap-1.5">
+          <label className="flex items-center gap-2">
             <Checkbox
               checked={wholeWord}
               onCheckedChange={(v) => setWholeWord(v === true)}
@@ -394,7 +394,7 @@ export function GlobalSearchPanel() {
             />
             Word
           </label>
-          <label className="flex items-center gap-1.5">
+          <label className="flex items-center gap-2">
             <Checkbox
               checked={useRegex}
               onCheckedChange={(v) => setUseRegex(v === true)}

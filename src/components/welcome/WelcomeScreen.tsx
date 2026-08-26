@@ -127,7 +127,7 @@ export function WelcomeScreen({
           </div>
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => {
             const Icon = card.icon;
             return (

@@ -129,7 +129,7 @@ export const SEMANTIC = {
   added: "#0070f3",
   deleted: "#ee0000",
   conflict: "#f5a623",
-  ignored: "#888888",
+  ignored: "#8f8f8f",
   brand: "#0070f3",
   focus: "#0070f3",
 } as const;
@@ -143,7 +143,7 @@ export const PROVIDER_COLORS = {
   ollama: "#ffffff",
   openrouter: "#d8ccf1",
   azure: "#0070f3",
-  custom: "#888888",
+  custom: "#8f8f8f",
   chatgpt: "#0070f3",
   claude: "#ffefcf",
   gemini: "#d8ccf1",

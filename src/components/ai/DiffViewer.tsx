@@ -155,7 +155,7 @@ export function DiffViewer({
 
       {open && (
         <div className="border-t border-[var(--border-default)]">
-          <div className="flex items-center gap-1.5 border-b border-[var(--border-subtle)] px-2.5 py-1.5">
+          <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-2.5 py-1.5">
             <Button
               size="sm"
               variant="ghost"

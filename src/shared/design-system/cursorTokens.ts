@@ -1,6 +1,5 @@
 /**
- * Cursor-inspired workbench tokens.
- * Colors mirror DESIGN-cursor.md; layout constants remain local workbench values.
+ * Workbench layout constants + DESIGN-vercel.md color mirrors.
  */
 
 export const CURSOR = {
@@ -22,15 +21,15 @@ export const CURSOR = {
   sidebarDefaultWidth: 300,
   secondarySidebarDefaultWidth: 360,
 
-  // Cursor design colors
+  // DESIGN-vercel.md colors only
   colors: {
     activityBarBg: "#ffffff",
-    activityBarBorder: "#f5f5f5",
+    activityBarBorder: "#ebebeb",
     activityBarFg: "#171717",
-    activityBarInactiveFg: "#888888",
+    activityBarInactiveFg: "#8f8f8f",
     activityBarActiveBorder: "#0070f3",
     sideBarBg: "#ffffff",
-    sideBarBorder: "#f5f5f5",
+    sideBarBorder: "#ebebeb",
     sideBarFg: "#4d4d4d",
     editorBg: "#fafafa",
     editorFg: "#171717",
@@ -40,60 +39,47 @@ export const CURSOR = {
     panelBorder: "#ebebeb",
     panelTitleActiveBorder: "#0070f3",
     panelTitleActiveFg: "#171717",
-    panelTitleInactiveFg: "#888888",
+    panelTitleInactiveFg: "#8f8f8f",
     statusBarBg: "#ffffff",
-    statusBarBorder: "#f5f5f5",
+    statusBarBorder: "#ebebeb",
     statusBarFg: "#4d4d4d",
-    statusBarHoverBg: "#ebebeb",
-    titleBarActiveBg: "#ffffff",
+    statusBarHoverBg: "#f2f2f2",
+    titleBarActiveBg: "#fafafa",
     titleBarActiveFg: "#171717",
     titleBarInactiveBg: "#fafafa",
-    titleBarInactiveFg: "#888888",
-    titleBarBorder: "#f5f5f5",
+    titleBarInactiveFg: "#8f8f8f",
+    titleBarBorder: "#ebebeb",
     tabActiveBg: "#fafafa",
     tabInactiveBg: "#ffffff",
     tabActiveFg: "#171717",
-    tabInactiveFg: "#888888",
+    tabInactiveFg: "#8f8f8f",
     tabBorder: "#ebebeb",
     tabActiveBorderTop: "#0070f3",
     inputBg: "#ffffff",
     inputBorder: "#ebebeb",
     inputFg: "#171717",
-    inputPlaceholder: "#888888",
+    inputPlaceholder: "#a1a1a1",
     dropdownBg: "#ffffff",
     menuBg: "#ffffff",
-    menuSelectionBg: "#ebebeb",
+    menuSelectionBg: "#f2f2f2",
     quickInputBg: "#ffffff",
     widgetBorder: "#ebebeb",
     focusBorder: "#0070f3",
-    buttonBg: "#0070f3",
-    buttonHoverBg: "#0761d1",
+    buttonBg: "#171717",
+    buttonHoverBg: "#0a0a0a",
     foreground: "#171717",
     descriptionFg: "#4d4d4d",
     errorFg: "#ee0000",
-    listHoverBg: "#ebebeb",
+    listHoverBg: "#f2f2f2",
     listActiveSelectionBg: "#ebebeb",
     scrollbarSlider: "#a1a1a1",
-    scrollbarSliderHover: "#a1a1a1",
+    scrollbarSliderHover: "#8f8f8f",
   },
 
   // Typography — workbench UI font stack (VS Code)
-  fontUi: '"Inter", ui-sans-serif, system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif',
-  fontMono: '"JetBrains Mono", "Fira Code", monospace',
-  fontSizeUi: 13,
-  fontSizeStatus: 13,
-  fontSizeSideBarTitle: 11,
-  lineHeightUi: 1.4,
-
-  // Motion — workbench feels snappy
-  motion: {
-    fast: "80ms",
-    normal: "120ms",
-    slow: "180ms",
-    panel: "200ms",
-    easing: "cubic-bezier(0.25, 0.1, 0.25, 1)",
-    easingOut: "cubic-bezier(0.16, 1, 0.3, 1)",
-  },
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif',
+  fontSize: 13,
+  fontWeight: 400,
+  lineHeight: 1.4,
 } as const;
-
-export type CursorTokens = typeof CURSOR;

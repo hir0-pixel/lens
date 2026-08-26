@@ -15,7 +15,7 @@ function NativeSelect({
   return (
     <div
       className={cn(
-        "group/native-select relative w-fit has-[select:disabled]:opacity-50",
+        "group/native-select relative w-fit has-[select:disabled]:opacity-100 has-[select:disabled]:text-[var(--text-disabled)]",
         className
       )}
       data-slot="native-select-wrapper"
@@ -24,7 +24,7 @@ function NativeSelect({
       <select
         data-slot="native-select"
         data-size={size}
-        className="h-9 w-full min-w-0 appearance-none rounded-md border border-input bg-transparent py-1 pr-8 pl-2.5 text-sm transition-colors duration-[120ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] outline-none select-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-destructive data-[size=sm]:h-8 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50"
+        className="h-9 w-full min-w-0 appearance-none rounded-md border border-[var(--border-default)] bg-[var(--bg-surface)] py-1 pr-8 pl-2.5 text-sm text-[var(--text-primary)] transition-colors duration-[120ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] outline-none select-none selection:bg-primary selection:text-primary-foreground placeholder:text-[var(--text-tertiary)] hover:border-[var(--border-strong)] focus-visible:border-[var(--border-strong)] focus-visible:outline-[length:var(--focus-ring-width)] focus-visible:outline-offset-[var(--focus-ring-offset)] focus-visible:outline-[var(--focus-ring-color)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[#f2f2f2] disabled:text-[var(--text-disabled)] aria-invalid:border-destructive data-[size=sm]:h-8 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50"
         {...props}
       />
       <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-muted-foreground select-none" aria-hidden="true" data-slot="native-select-icon" />

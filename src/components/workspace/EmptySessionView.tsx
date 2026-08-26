@@ -497,7 +497,7 @@ export function EmptySessionView({
                 placeholder="Search agent created files..."
                 value={artifactSearch}
                 onChange={(e) => setArtifactSearch(e.target.value)}
-                className="h-8.5 w-full rounded-md bg-[var(--bg-surface-raised)] pl-9 pr-3 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus:outline focus:outline-1 focus:outline-[var(--border-focus)]"
+                className="h-8.5 w-full rounded-md bg-[var(--bg-surface-raised)] pl-9 pr-3 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus-visible:outline focus-visible:outline-[length:var(--focus-ring-width)] focus-visible:outline-offset-[var(--focus-ring-offset)] focus-visible:outline-[var(--focus-ring-color)]"
               />
             </div>
           </div>
@@ -506,14 +506,14 @@ export function EmptySessionView({
         {/* Artifacts List */}
         <ScrollArea className="flex-1 mt-4">
           {filteredArtifacts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-3 pb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-3 pb-6">
               {filteredArtifacts.map((art) => {
                 const isImage = art.fileType === "image";
                 const isCode = art.fileType === "code";
                 return (
                   <div
                     key={art.id}
-                  className="group relative flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] p-4 transition-[background-color,border-color] duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:border-[var(--border-default)] hover:bg-[var(--bg-hover)]"
+                  className="group relative flex flex-col justify-between rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface-raised)] p-4 transition-[background-color,border-color] duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-hover)]"
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-hover)] text-[var(--text-secondary)]">
@@ -559,7 +559,7 @@ export function EmptySessionView({
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -658,7 +658,7 @@ export function EmptySessionView({
   return (
     <div className="flex min-h-0 flex-1 bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       <aside
-        className="flex w-[244px] shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]"
+        className="flex w-[244px] shrink-0 flex-col border-r border-[var(--border-default)] bg-[var(--bg-surface)]"
         aria-label="Session navigator"
       >
         <div className="flex items-center gap-1 px-3.5 pt-3 pb-1">
@@ -713,7 +713,7 @@ export function EmptySessionView({
               >
                 <Bot className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
                 <span className="min-w-0 flex-1 truncate font-medium">New session</span>
-                <span className="flex items-center gap-0.5">
+                <span className="flex items-center gap-1">
                   <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 type-caption font-sans text-[var(--text-tertiary)]">Ctrl</kbd>
                   <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 type-caption font-sans text-[var(--text-tertiary)]">N</kbd>
                 </span>
@@ -785,14 +785,14 @@ export function EmptySessionView({
                   placeholder="Search sessions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full rounded-md border border-transparent bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:border-[var(--border-focus)] focus:bg-[var(--bg-overlay)]"
+                  className="h-8 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:border-[var(--border-focus)] focus:bg-[var(--bg-overlay)]"
                 />
               </div>
             </div>
 
             {/* PINNED Section */}
             <div className="mt-4 px-2">
-              <div className="flex items-center gap-1.5 px-1 py-1 type-caption font-semibold tracking-wider text-[var(--text-tertiary)] uppercase">
+              <div className="flex items-center gap-2 px-1 py-1 type-caption font-semibold tracking-wider text-[var(--text-tertiary)] uppercase">
                 <LayoutGrid className="h-3 w-3 shrink-0" strokeWidth={2} />
                 <span>PINNED</span>
               </div>
@@ -813,7 +813,7 @@ export function EmptySessionView({
             {/* PROJECTS Section */}
             <div className="mt-4 flex flex-col px-2">
               <div className="flex items-center justify-between px-1 py-1 type-caption font-semibold tracking-wider text-[var(--text-tertiary)] uppercase">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <LayoutGrid className="h-3 w-3 shrink-0" strokeWidth={2} />
                   <span>PROJECTS</span>
                 </div>
@@ -844,7 +844,7 @@ export function EmptySessionView({
                   const nested = repoSessions(repo);
                   return (
                     <li key={repo.id} className="group/repo">
-                      <div className="flex h-8 w-full items-center gap-0.5 rounded-md px-1">
+                      <div className="flex h-8 w-full items-center gap-1 rounded-md px-1">
                         <button
                           type="button"
                           title={repo.name}
@@ -967,7 +967,7 @@ export function EmptySessionView({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 hover:text-[#888888]"
+                        className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
                       >
                         <Folder className="h-3.5 w-3.5" strokeWidth={1.5} />
                         <span className="max-w-[160px] truncate">
@@ -1010,7 +1010,7 @@ export function EmptySessionView({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 hover:text-[#888888]"
+                        className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
                       >
                         {location === "this-pc" ? (
                           <Monitor className="h-3 w-3" strokeWidth={1.5} />
@@ -1088,7 +1088,7 @@ export function EmptySessionView({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 max-w-[180px] items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex h-7 max-w-[180px] items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
                     <Folder className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
                     <span className="truncate">{activeRepo?.name ?? "lens"}</span>
@@ -1127,7 +1127,7 @@ export function EmptySessionView({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex h-7 items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
                     <GitBranch className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.5} />
                     <span>{branchName}</span>
@@ -1185,7 +1185,7 @@ export function EmptySessionView({
               />
             </div>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--bg-canvas)] via-[var(--bg-canvas)]/90 to-transparent px-6 pb-4 pt-10">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--bg-canvas)] via-[var(--bg-canvas)]/90 to-transparent px-6 pb-6 pt-10">
               <div className="pointer-events-auto mx-auto w-full max-w-[760px]">
                 {renderComposer()}
               </div>

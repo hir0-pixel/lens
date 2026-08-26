@@ -16,7 +16,7 @@ export const TERMINAL_THEME: NonNullable<ITerminalOptions["theme"]> = {
   magenta: "#7928ca",
   cyan: "#0070f3",
   white: "#a1a1a1",
-  brightBlack: "#888888",
+  brightBlack: "#8f8f8f",
   brightRed: "#ff4d4d",
   brightGreen: "#50e3c2",
   brightYellow: "#ffefcf",

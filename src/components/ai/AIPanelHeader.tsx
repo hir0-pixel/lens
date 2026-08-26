@@ -201,7 +201,7 @@ export function AIPanelHeader({
                 onClick={() => onModeChange(m.id)}
                 className={cn(
                   "rounded-[var(--radius-sm)] px-2 py-1.5 type-caption font-medium transition-[background-color,color] duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
-                  "focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]",
+                  "focus-visible:outline focus-visible:outline-[length:var(--focus-ring-width)] focus-visible:outline-offset-[var(--focus-ring-offset)] focus-visible:outline-[var(--focus-ring-color)]",
                   mode === m.id
                     ? "bg-[var(--bg-surface-raised)] text-[var(--text-primary)]"
                     : "bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",

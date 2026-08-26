@@ -151,7 +151,7 @@ function NavAction({
         >
           {pressed && (
             <span
-              className="absolute bottom-2 left-0 top-2 w-0.5 rounded-r bg-[var(--accent-primary)]"
+              className="absolute bottom-2 left-0 top-2 w-0.5 rounded-r bg-[var(--link)]"
               aria-hidden
             />
           )}

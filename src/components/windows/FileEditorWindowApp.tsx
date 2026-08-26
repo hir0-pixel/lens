@@ -88,7 +88,7 @@ export default function FileEditorWindowApp() {
           <span className="type-caption font-semibold text-[#ffffff] truncate">
             {fileName}
           </span>
-          <span className="type-code text-[#888888] truncate hidden sm:inline">
+          <span className="type-code text-[var(--text-tertiary)] truncate hidden sm:inline">
             {filePath}
           </span>
         </div>
@@ -118,7 +118,7 @@ export default function FileEditorWindowApp() {
           }}
           theme="vs-dark"
           loading={
-            <div className="flex h-full items-center justify-center type-caption text-[#888888]">
+            <div className="flex h-full items-center justify-center type-caption text-[var(--text-tertiary)]">
               Loading editor…
             </div>
           }

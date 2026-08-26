@@ -127,7 +127,7 @@ export function WorkspaceNavigator({
                       "hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]",
                     )}
                   >
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       {c.pinned && (
                         <Pin
                           className="h-3 w-3 shrink-0 text-[var(--accent-primary)]"

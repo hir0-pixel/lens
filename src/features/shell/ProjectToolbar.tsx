@@ -25,7 +25,7 @@ interface ProjectToolbarProps {
 }
 
 /**
- * Toolbar — 40px, clear hierarchy: Deploy (primary) > Import (secondary) > ghosts.
+ * Toolbar — 44px (Prompt 10), clear hierarchy: Deploy (primary) > Import (secondary) > ghosts.
  */
 export function ProjectToolbar({
   project,
@@ -42,7 +42,7 @@ export function ProjectToolbar({
 }: ProjectToolbarProps) {
   return (
     <div
-      className="flex h-10 shrink-0 items-center gap-4 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3"
+      className="flex h-[var(--project-toolbar-height)] shrink-0 items-center gap-4 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3"
       role="toolbar"
       aria-label="Project toolbar"
     >

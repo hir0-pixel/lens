@@ -106,7 +106,7 @@ export default function Composer({
         </div>
       )}
 
-      <div className="flex items-end gap-1.5 rounded-xl border border-white/10 bg-surface-2 p-1.5">
+      <div className="lens-composer-chrome flex items-end gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-1.5">
         <input
           ref={fileInputRef}
           type="file"

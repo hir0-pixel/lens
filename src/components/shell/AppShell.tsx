@@ -17,6 +17,7 @@ import { PanelSash } from "@/components/shell/PanelSash";
 import { useLayoutStore } from "@/stores/layoutStore";
 import type { Model, Project } from "@/lib/types";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { BREAKPOINTS } from "@/shared/design-system/breakpoints";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -73,8 +74,9 @@ export default function AppShell({
 
   useEffect(() => {
     function onResize() {
-      setNarrow(window.innerWidth < 1024);
-      setCompact(window.innerWidth < 768);
+      // DESIGN: tools compress below desktop (1024); nav hamburger-eq below 768
+      setNarrow(window.innerWidth < BREAKPOINTS.desktop);
+      setCompact(window.innerWidth < BREAKPOINTS.navCollapse);
     }
     onResize();
     window.addEventListener("resize", onResize);
@@ -152,7 +154,7 @@ export default function AppShell({
           )}
 
           {showNav ? (
-            <div className="workbench-nav relative min-h-0 min-w-0 overflow-hidden border-r border-[var(--border-subtle)]">
+            <div className="workbench-nav relative min-h-0 min-w-0 overflow-hidden border-r border-[var(--border-default)]">
               <div className="absolute right-1 top-1 z-10">
                 <button
                   type="button"
@@ -186,7 +188,7 @@ export default function AppShell({
           <div
             className={cn(
               "workbench-agent min-h-0 min-w-0 overflow-hidden",
-              showDockedTools && "border-r border-[var(--border-subtle)]",
+              showDockedTools && "border-r border-[var(--border-default)]",
             )}
           >
             {agentWorkspace}
@@ -202,7 +204,7 @@ export default function AppShell({
                 onDragEnd={() => setDragging(false)}
                 onResizeTo={onToolsResize}
               />
-              <div className="flex h-full min-w-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+              <div className="flex h-full min-w-0 flex-col border-l border-[var(--border-default)] bg-[var(--bg-surface)]">
                 <ToolsWorkspace />
               </div>
             </div>
@@ -223,7 +225,7 @@ export default function AppShell({
                   onResizeTo={onBottomResize}
                 />
               )}
-              <div className="h-full overflow-hidden border-t border-[var(--border-subtle)]">
+              <div className="h-full overflow-hidden border-t border-[var(--border-default)]">
                 <BottomPanel />
               </div>
             </div>
@@ -239,7 +241,7 @@ export default function AppShell({
                 className="absolute inset-0 z-[30] bg-[#171717]/45"
                 onClick={closeTools}
               />
-              <aside className="absolute inset-y-0 right-0 z-[35] flex w-[min(100%,480px)] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+              <aside className="absolute inset-y-0 right-0 z-[35] flex w-[min(100%,480px)] flex-col border-l border-[var(--border-default)] bg-[var(--bg-surface)]">
                 <ToolsWorkspace />
               </aside>
             </>
@@ -248,7 +250,7 @@ export default function AppShell({
 
         {compact && (
           <nav
-            className="flex h-10 shrink-0 items-center justify-around border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]"
+            className="flex h-11 shrink-0 items-center justify-around border-t border-[var(--border-default)] bg-[var(--bg-surface)]"
             aria-label="Mobile views"
           >
             <button

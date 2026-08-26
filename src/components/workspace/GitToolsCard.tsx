@@ -231,7 +231,7 @@ export function GitToolsCard() {
               className="h-3.5 w-3.5 border-white/30"
             />
             Include unstaged changes
-            <span className="ml-auto type-caption text-[#888888]">
+            <span className="ml-auto type-caption text-[var(--text-tertiary)]">
               {fileCount} files
             </span>
           </label>
@@ -244,7 +244,7 @@ export function GitToolsCard() {
             >
               <GitCommitHorizontal className="h-3.5 w-3.5" strokeWidth={1.6} />
               Commit
-              <span className="ml-auto type-caption text-[#888888]">Ctrl+↵</span>
+              <span className="ml-auto type-caption text-[var(--text-tertiary)]">Ctrl+↵</span>
             </button>
             <button
               type="button"

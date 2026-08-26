@@ -20,12 +20,18 @@
         "minHeight": 640,
         "resizable": true,
         "decorations": false,
-        "theme": "Dark",
-        "backgroundColor": "#f7f7f4",
+        "theme": "Light",
+        "backgroundColor": "#fafafa",
         "fullscreen": false,
         "center": true
       }
     ],
+    "trayIcon": {
+      "id": "main",
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": true,
+      "tooltip": "Lens"
+    },
     "security": {
       "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'none'; form-action 'self';",
       "devCsp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: http: ws: wss:; frame-src 'self' https: http:;"

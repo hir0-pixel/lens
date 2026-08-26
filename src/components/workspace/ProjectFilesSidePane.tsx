@@ -73,7 +73,7 @@ export function ProjectFilesSidePane({
 
   return (
     <aside
-      className="relative flex h-full shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] animate-in slide-in-from-right duration-[var(--duration-base)] ease-[var(--ease-enter)]"
+      className="relative flex h-full shrink-0 flex-col border-l border-[var(--border-default)] bg-[var(--bg-surface)] animate-in slide-in-from-right duration-[var(--duration-base)] ease-[var(--ease-enter)]"
       style={{ width: widthPx }}
       aria-label="Project Files"
     >

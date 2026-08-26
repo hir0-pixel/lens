@@ -91,7 +91,7 @@ export default function TerminalPanel({
         <span className="px-2 py-1 type-caption text-[#4d4d4d]">{subtitle}</span>
         <span className="flex items-center gap-1.5 rounded bg-[#171717] px-2.5 py-1 type-caption font-medium text-white">
           {name ?? "shell"}
-          <span className="type-code text-[#888888]" title={cwd}>
+          <span className="type-code text-[var(--text-tertiary)]" title={cwd}>
             {projectName ?? ""}
           </span>
         </span>

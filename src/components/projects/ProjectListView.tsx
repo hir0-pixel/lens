@@ -62,7 +62,7 @@ export default function ProjectListView({
             <button
               type="button"
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-1.5 type-caption font-medium text-foreground/90 transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-secondary/80"
+              className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1.5 type-caption font-medium text-foreground/90 transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-secondary/80"
             >
               <CloudDownload className="h-3.5 w-3.5" />
               Import
@@ -70,7 +70,7 @@ export default function ProjectListView({
             <button
               type="button"
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 type-caption font-semibold text-accent-foreground transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-accent-600"
+              className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 type-caption font-semibold text-accent-foreground transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-accent-600"
             >
               <Plus className="h-3.5 w-3.5" />
               New
@@ -99,7 +99,7 @@ export default function ProjectListView({
             ]}
           />
         ) : (
-          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => {
               const status = STATUS_STYLES[p.deployStatus];
               return (

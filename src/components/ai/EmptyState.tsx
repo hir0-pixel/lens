@@ -68,7 +68,7 @@ export function EmptyState({
               type="button"
               title={item.prompt}
               onClick={() => onPromptSelect(item.prompt)}
-              className="rounded-[var(--radius-sm)] px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]"
+              className="rounded-[var(--radius-sm)] px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-[length:var(--focus-ring-width)] focus-visible:outline-offset-[var(--focus-ring-offset)] focus-visible:outline-[var(--focus-ring-color)]"
             >
               <span className="block truncate">{item.label}</span>
             </button>
@@ -77,7 +77,7 @@ export function EmptyState({
 
         {recentWorkspaces.length > 0 && onWorkspaceSelect && (
           <div className="mb-3">
-            <div className="mb-1 flex items-center gap-1.5 px-2 type-caption-uppercase text-[var(--text-tertiary)]">
+            <div className="mb-1 flex items-center gap-2 px-2 type-caption-uppercase text-[var(--text-tertiary)]">
               <FolderOpen className="h-3 w-3" strokeWidth={1.5} />
               Recent
             </div>
@@ -87,7 +87,7 @@ export function EmptyState({
                 type="button"
                 title={ws.name}
                 onClick={() => onWorkspaceSelect?.(ws)}
-                className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-left transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]"
+                className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-left transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-[length:var(--focus-ring-width)] focus-visible:outline-offset-[var(--focus-ring-offset)] focus-visible:outline-[var(--focus-ring-color)]"
               >
                 <span
                   className="h-1.5 w-1.5 shrink-0 rounded-full"

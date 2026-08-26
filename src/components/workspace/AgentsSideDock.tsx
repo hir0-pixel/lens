@@ -104,7 +104,7 @@ export function AgentsSideDock({
   return (
     <aside
       className={cn(
-        "relative flex h-full shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]",
+        "relative flex h-full shrink-0 flex-col border-l border-[var(--border-default)] bg-[var(--bg-surface)]",
         "animate-in slide-in-from-right duration-[var(--duration-slow)]",
       )}
       style={{ width }}
@@ -132,7 +132,7 @@ export function AgentsSideDock({
                 key={tab}
                 type="button"
                 onClick={() => pick(tab)}
-                className="flex h-[92px] flex-col items-start justify-center gap-3 rounded-2xl bg-[var(--bg-surface-raised)] px-5 text-left hover:bg-[var(--bg-hover)]"
+                className="flex h-[92px] flex-col items-start justify-center gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-5 text-left hover:bg-[var(--bg-hover)]"
               >
                 <Icon className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={1.5} />
                 <span className="type-body-sm text-[var(--text-primary)]">{label}</span>
@@ -243,7 +243,7 @@ function ReviewPanel({ changes }: { changes: { id: string; path: string; additio
             <span className="text-[var(--error)]">-{totalDel}</span>
           </span>
         )}
-        <div className="ml-auto flex items-center gap-0.5">
+        <div className="ml-auto flex items-center gap-1">
           <button type="button" className={iconBtn} title="Previous change">
             <ArrowLeft className="h-3.5 w-3.5" />
           </button>

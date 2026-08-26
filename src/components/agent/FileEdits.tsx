@@ -59,7 +59,7 @@ export default function FileEdits({ edits }: { edits: FileEdit[] }) {
                   {edit.summary}
                 </div>
               </div>
-              <span className="ml-auto flex shrink-0 items-center gap-1.5 type-code">
+              <span className="ml-auto flex shrink-0 items-center gap-2 type-code">
                 <span className="text-[var(--success)]">+{edit.additions}</span>
                 <span className="text-[var(--error)]">−{edit.deletions}</span>
               </span>

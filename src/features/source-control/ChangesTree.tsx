@@ -1,4 +1,4 @@
-﻿import { memo } from "react";
+import { memo } from "react";
 import {
   Check,
   Diff,
@@ -93,13 +93,13 @@ function ChangeRow({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className="group flex h-7 items-center gap-1.5 px-2 type-caption hover:bg-[var(--bg-hover)]"
+          className="group flex h-7 items-center gap-2 px-2 type-caption hover:bg-[var(--bg-hover)]"
           role="treeitem"
         >
           <button
             type="button"
             onClick={onOpenDiff}
-            className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
           >
             <FileIcon change={change} />
             <span className="truncate text-[var(--text-primary)]">{name}</span>

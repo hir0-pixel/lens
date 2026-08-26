@@ -1,6 +1,6 @@
 ﻿import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import GithubIcon from "@/components/ui/GithubIcon";
+import { BrandLogo, type BrandId } from "@/shared/brand/BrandLogo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +12,16 @@ import {
 import { useGitStore } from "@/stores/gitStore";
 import { cn } from "@/lib/utils";
 
+const GIT_BRAND: Record<string, BrandId> = {
+  github: "github",
+  gitlab: "gitlab",
+  local: "github",
+};
+
 function ProviderIcon({ provider }: { provider: string }) {
-  if (provider === "github" || provider === "local") {
-    return <GithubIcon className="h-3.5 w-3.5" />;
+  const brand = GIT_BRAND[provider];
+  if (brand) {
+    return <BrandLogo brand={brand} className="h-3.5 w-3.5" />;
   }
   return (
     <span className="flex h-3.5 w-3.5 items-center justify-center rounded-sm bg-[var(--bg-hover)] text-[8px] font-semibold text-[var(--warning)]">
