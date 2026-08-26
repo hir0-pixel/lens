@@ -270,7 +270,7 @@ export default function OutputTabs() {
                 }}
                 className={cn(
                   "cursor-tab group relative flex max-w-[180px] min-w-[120px] shrink-0 cursor-pointer items-center gap-2",
-                  "transition-[color,background-color,box-shadow] duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
+                  "transition-[color,background-color] duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
                 )}
               >
                 {t.pinned && (
@@ -333,7 +333,7 @@ export default function OutputTabs() {
               )}
               <button
                 type="button"
-                className="max-w-[120px] truncate transition-colors duration-[var(--duration-instant)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]"
+                className="max-w-[120px] truncate transition-colors duration-[var(--duration-instant)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]"
                 title={crumbs.slice(0, i + 1).join("/")}
                 onClick={() => {
                   if (i < crumbs.length - 1) {

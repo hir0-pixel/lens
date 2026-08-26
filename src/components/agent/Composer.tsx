@@ -97,7 +97,7 @@ export default function Composer({
                     prev.filter((a) => a.id !== att.id),
                   )
                 }
-                className="ml-0.5 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+                className="ml-0.5 text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:text-[var(--text-primary)]"
               >
                 ✕
               </button>
@@ -117,7 +117,7 @@ export default function Composer({
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           title="Upload images or videos"
         >
           <Paperclip className="h-4 w-4" />
@@ -139,7 +139,7 @@ export default function Composer({
         <div className="relative">
           <button
             onClick={() => setModelMenuOpen((v) => !v)}
-            className="flex h-8 items-center gap-1 rounded-lg px-2 type-caption font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]"
+            className="flex h-8 items-center gap-1 rounded-lg px-2 type-caption font-medium text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]"
           >
             <span
               className={cn(
@@ -160,7 +160,7 @@ export default function Composer({
                 className="fixed inset-0 z-30"
                 onClick={() => setModelMenuOpen(false)}
               />
-              <div className="absolute bottom-full right-0 z-40 mb-1.5 w-64 animate-scale-in rounded-lg border border-white/10 bg-surface-2 p-1.5 shadow-float-pop">
+              <div className="absolute bottom-full right-0 z-40 mb-1.5 w-64 animate-scale-in rounded-lg border border-white/10 bg-surface-2 p-1.5">
                 {models.map((m) => (
                   <button
                     key={m.id}
@@ -169,7 +169,7 @@ export default function Composer({
                       setModelMenuOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]",
+                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]",
                       m.id === activeModel.id && "bg-[var(--bg-hover)] text-[var(--text-primary)]",
                     )}
                   >
@@ -194,7 +194,7 @@ export default function Composer({
         <button
           onClick={sending ? onStop : submit}
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
             sending
               ? "bg-[var(--bg-active)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
               : "bg-accent text-surface-0 hover:bg-accent-600",

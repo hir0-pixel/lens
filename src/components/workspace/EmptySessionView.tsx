@@ -497,7 +497,7 @@ export function EmptySessionView({
                 placeholder="Search agent created files..."
                 value={artifactSearch}
                 onChange={(e) => setArtifactSearch(e.target.value)}
-                className="h-8.5 w-full rounded-md bg-[var(--bg-surface-raised)] pl-9 pr-3 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
+                className="h-8.5 w-full rounded-md bg-[var(--bg-surface-raised)] pl-9 pr-3 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus:outline focus:outline-1 focus:outline-[var(--border-focus)]"
               />
             </div>
           </div>
@@ -513,7 +513,7 @@ export function EmptySessionView({
                 return (
                   <div
                     key={art.id}
-                    className="group relative flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] p-4 hover:border-[var(--border-default)] hover:bg-[var(--bg-hover)] transition-all"
+                  className="group relative flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] p-4 transition-[background-color,border-color] duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:border-[var(--border-default)] hover:bg-[var(--bg-hover)]"
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-hover)] text-[var(--text-secondary)]">
@@ -627,7 +627,7 @@ export function EmptySessionView({
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <div className="flex flex-col items-center max-w-md">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[var(--text-secondary)] shadow-inner">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[var(--text-secondary)]">
             <IconComponent className="h-7 w-7 opacity-90" strokeWidth={1.5} />
           </div>
           <span className="mb-1 rounded-full bg-[var(--bg-hover)] px-3 py-1 type-caption-uppercase text-[var(--text-tertiary)] border border-[var(--border-subtle)]">
@@ -645,7 +645,7 @@ export function EmptySessionView({
               setActiveTab("chat");
               newChat();
             }}
-            className="mt-6 inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--bg-hover)] px-4 type-button text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-colors"
+            className="mt-6 inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--bg-hover)] px-4 type-button text-[var(--text-primary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-active)]"
           >
             <Bot className="h-4 w-4" strokeWidth={1.5} />
             Start New Session
@@ -785,7 +785,7 @@ export function EmptySessionView({
                   placeholder="Search sessions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full rounded-md border border-transparent bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--border-focus)] focus:bg-[var(--bg-overlay)]"
+                  className="h-8 w-full rounded-md border border-transparent bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:border-[var(--border-focus)] focus:bg-[var(--bg-overlay)]"
                 />
               </div>
             </div>

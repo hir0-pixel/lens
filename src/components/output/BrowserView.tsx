@@ -145,7 +145,7 @@ export default function BrowserView({
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
         </button>
 
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-[var(--bg-surface-raised)] px-3 py-1 ring-1 ring-[var(--border-subtle)]">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] px-3 py-1">
           <Lock className="h-3 w-3 shrink-0 text-[var(--text-tertiary)]" />
           <input
             ref={urlInputRef}

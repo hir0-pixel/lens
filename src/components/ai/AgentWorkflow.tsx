@@ -90,7 +90,7 @@ function ToolActionRow({ call }: { call: ToolCallRecord }) {
             {call.status === "error" && <X className="h-3 w-3 text-[var(--error)]" />}
           </div>
         </div>
-        <ChevronRight className="chevron h-3.5 w-3.5 shrink-0 text-[var(--text-disabled)] transition-transform" />
+        <ChevronRight className="chevron h-3.5 w-3.5 shrink-0 text-[var(--text-disabled)] transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]" />
       </AccordionTrigger>
       <AccordionContent className="px-3 pb-3">
         <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 type-code leading-relaxed text-[var(--text-secondary)]">

@@ -134,10 +134,10 @@ export function WelcomeScreen({
               <Card
                 key={card.id}
                 className={cn(
-                  "aspect-square transition-all duration-150",
+                  "aspect-square transition-[background-color,border-color,transform] duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
                   card.disabled
                     ? "opacity-70"
-                    : "hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]",
+                    : "hover:-translate-y-0.5",
                 )}
               >
                 <CardContent className="h-full p-0">

@@ -21,9 +21,9 @@ export function OutputPanel() {
             aria-selected={ch.id === activeChannel}
             onClick={() => setActiveChannel(ch.id)}
             className={cn(
-              "h-7 shrink-0 px-2.5 type-caption transition-colors",
+              "h-7 shrink-0 px-2.5 type-caption transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
               ch.id === activeChannel
-                ? "border-b-2 border-accent text-zinc-100"
+                ? "border-b border-accent text-zinc-100"
                 : "text-zinc-500 hover:text-zinc-300",
             )}
           >

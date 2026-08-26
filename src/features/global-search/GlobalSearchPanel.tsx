@@ -196,7 +196,7 @@ export function GlobalSearchPanel() {
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent
         className={cn(
-          "top-[8%] flex h-[min(720px,80vh)] w-full translate-y-0 flex-col gap-0 overflow-hidden border-[var(--border-default)] bg-surface-1 p-0 shadow-float-pop",
+          "top-[8%] flex h-[min(720px,80vh)] w-full translate-y-0 flex-col gap-0 overflow-hidden border-[var(--border-default)] bg-surface-1 p-0",
           "sm:max-w-[720px]",
           "[&>button]:hidden",
         )}

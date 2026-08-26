@@ -69,7 +69,7 @@ export function AppearanceSettingsPage() {
                 onPressedChange={() => setAccent(id)}
                 aria-label={id}
                 className={cn(
-                  "size-7 min-w-0 rounded-full border-2 p-0 transition-transform hover:scale-110 hover:bg-transparent aria-pressed:bg-transparent",
+                  "size-7 min-w-0 rounded-full border p-0 transition-transform duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:scale-110 hover:bg-transparent aria-pressed:bg-transparent",
                   accent === id ? "border-white" : "border-transparent",
                 )}
                 style={{ backgroundColor: ACCENT_COLORS[id] }}

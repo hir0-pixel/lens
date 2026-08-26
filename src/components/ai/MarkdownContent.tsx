@@ -123,7 +123,7 @@ export function MarkdownContent({ content, streaming, className }: MarkdownConte
         "[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:type-caption",
         "[&_th]:border [&_th]:border-[var(--border-default)] [&_th]:bg-[var(--bg-surface-raised)] [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:text-[var(--text-primary)]",
         "[&_td]:border [&_td]:border-[var(--border-default)] [&_td]:px-2 [&_td]:py-1 [&_td]:text-[var(--text-secondary)]",
-        "[&_blockquote]:border-l-2 [&_blockquote]:border-[var(--accent-primary)] [&_blockquote]:pl-3 [&_blockquote]:text-[var(--text-secondary)]",
+        "[&_blockquote]:border-l [&_blockquote]:border-[var(--accent-primary)] [&_blockquote]:pl-3 [&_blockquote]:text-[var(--text-secondary)]",
         "[&_a]:text-[var(--accent-primary)] [&_a]:underline [&_a]:underline-offset-2",
         "[&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-[var(--border-default)]",
         "[&_hr]:my-4 [&_hr]:border-[var(--border-subtle)]",

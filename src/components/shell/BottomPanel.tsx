@@ -91,10 +91,10 @@ export default function BottomPanel() {
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  "relative h-full rounded-none border-0 bg-transparent px-2 type-caption font-normal tracking-wide shadow-none",
+                  "relative h-full rounded-none border-0 bg-transparent px-2 type-caption font-normal tracking-wide",
                   "text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)]",
                   "hover:text-[var(--text-secondary)]",
-                  "data-[state=active]:bg-transparent data-[state=active]:text-[var(--text-secondary)] data-[state=active]:shadow-none",
+                  "data-[state=active]:bg-transparent data-[state=active]:text-[var(--text-secondary)]",
                   !bottomPanelSlim &&
                     "px-2.5 type-caption data-[state=active]:text-[var(--text-primary)] data-[state=active]:after:absolute data-[state=active]:after:inset-x-2 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[var(--accent-primary)]",
                 )}

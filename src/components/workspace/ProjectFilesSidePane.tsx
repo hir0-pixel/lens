@@ -73,7 +73,7 @@ export function ProjectFilesSidePane({
 
   return (
     <aside
-      className="relative flex h-full shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] animate-in slide-in-from-right duration-200"
+      className="relative flex h-full shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] animate-in slide-in-from-right duration-[var(--duration-base)] ease-[var(--ease-enter)]"
       style={{ width: widthPx }}
       aria-label="Project Files"
     >
@@ -89,7 +89,7 @@ export function ProjectFilesSidePane({
         <button
           type="button"
           onClick={onClose}
-          className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           aria-label="Collapse panel"
           title="Collapse panel"
         >
@@ -107,7 +107,7 @@ export function ProjectFilesSidePane({
               placeholder="Search files..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:bg-[var(--bg-overlay)] focus:ring-1 focus:ring-[var(--border-focus)]"
+              className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus:outline focus:outline-1 focus:outline-[var(--border-focus)]"
             />
           </div>
         </div>
@@ -138,7 +138,7 @@ export function ProjectFilesSidePane({
                     key={file.path}
                     type="button"
                     onClick={() => handleFileClick(file.path)}
-                    className="group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left transition-colors hover:bg-[var(--bg-hover)]"
+                    className="group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]"
                     title={`Click to open ${file.path} in a separate window`}
                   >
                     {file.type === "code" ? (
@@ -154,7 +154,7 @@ export function ProjectFilesSidePane({
                       <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)] shrink-0 animate-pulse" title="Edited in separate window" />
                     )}
 
-                    <ExternalLink className="h-3 w-3 text-[var(--text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" strokeWidth={1.5} />
+                    <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-tertiary)] opacity-0 transition-opacity duration-[var(--duration-instant)] ease-[var(--ease-standard)] group-hover:opacity-100" strokeWidth={1.5} />
                   </button>
                 );
               })}

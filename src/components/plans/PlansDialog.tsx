@@ -20,7 +20,7 @@ export default function PlansDialog({ open, onClose, credits }: PlansDialogProps
   return (
     <Modal open={open} onClose={onClose} title="Plans & Credits" subtitle="Usage-based credits. 1 credit is about 1 English word of AI output." size="xl">
       <div className="p-6">
-        <Card className="mb-6 bg-primary/10 ring-primary/30">
+        <Card className="mb-6 border border-primary/30 bg-primary/10">
           <CardContent className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/20"><Coins className="h-5 w-5 text-primary" /></span>
@@ -40,7 +40,7 @@ export default function PlansDialog({ open, onClose, credits }: PlansDialogProps
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {PLANS.map((plan) => (
-            <Card key={plan.name} className={cn("relative gap-0", plan.highlight && "ring-primary/60 bg-primary/5")}>
+            <Card key={plan.name} className={cn("relative gap-0", plan.highlight && "border border-primary/60 bg-primary/5")}>
               <CardContent className="flex h-full flex-col">
                 {plan.highlight && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-2.5 py-0.5 type-caption-uppercase text-primary-foreground">POPULAR</span>}
                 <div className="type-title-sm">{plan.name}</div>

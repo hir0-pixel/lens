@@ -145,7 +145,7 @@ function NavAction({
             "relative flex h-12 w-12 items-center justify-center text-[var(--text-tertiary)]",
             "transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
             "hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-            "focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]",
+            "focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]",
             pressed && "text-[var(--text-primary)]",
           )}
         >

@@ -141,7 +141,7 @@ export function DiffViewer({
       >
         <ChevronRight
           className={cn(
-            "h-3.5 w-3.5 text-[var(--text-tertiary)] transition-transform",
+            "h-3.5 w-3.5 text-[var(--text-tertiary)] transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
             open && "rotate-90",
           )}
         />

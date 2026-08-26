@@ -29,7 +29,7 @@ export default function AnalyticsView({ project, onBack }: AnalyticsViewProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>

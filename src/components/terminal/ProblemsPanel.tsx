@@ -66,7 +66,7 @@ export function ProblemsPanel() {
               return (
                 <tr
                   key={problem.id}
-                  className="border-b border-border transition-colors duration-150 hover:bg-secondary"
+                  className="border-b border-border transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-secondary"
                   tabIndex={0}
                   role="row"
                 >

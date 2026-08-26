@@ -179,7 +179,7 @@ export function SettingsLayout() {
     <div className="flex min-h-0 flex-1">
       <aside className="flex min-h-0 w-[200px] shrink-0 flex-col border-r border-border bg-surface-0/40">
         <div className="sticky top-0 z-sticky border-b border-border p-2">
-          <InputGroup className="h-8 border-border bg-surface-2 shadow-none">
+          <InputGroup className="h-8 border-border bg-surface-2">
             <InputGroupAddon
               align="inline-start"
               className="pl-2.5 text-[var(--text-tertiary)]"
@@ -402,7 +402,7 @@ function NavButton({
   return (
     <div
       className={cn(
-        "group flex items-center rounded-md transition-colors",
+        "group flex items-center rounded-md transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
         active
           ? "bg-[var(--bg-hover)] text-[var(--text-primary)]"
           : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
@@ -414,7 +414,7 @@ function NavButton({
         ref={buttonRef}
         onClick={onSelect}
         aria-current={active ? "page" : undefined}
-        className="h-auto min-w-0 flex-1 justify-start gap-2 px-2 py-1.5 text-left type-caption font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-inset"
+        className="h-auto min-w-0 flex-1 justify-start gap-2 px-2 py-1.5 text-left type-caption font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]"
       >
         <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
         <span className="truncate">{item.label}</span>

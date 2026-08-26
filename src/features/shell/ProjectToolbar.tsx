@@ -168,7 +168,7 @@ export function ProjectToolbar({
           >
             <Sun
               className={cn(
-                "absolute h-3.5 w-3.5 transition-all duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
+                "absolute h-3.5 w-3.5 transition-[transform,opacity] duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
                 theme === "dark"
                   ? "scale-100 opacity-100"
                   : "scale-75 opacity-0",
@@ -177,7 +177,7 @@ export function ProjectToolbar({
             />
             <Moon
               className={cn(
-                "absolute h-3.5 w-3.5 transition-all duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
+                "absolute h-3.5 w-3.5 transition-[transform,opacity] duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
                 theme === "light"
                   ? "scale-100 opacity-100"
                   : "scale-75 opacity-0",

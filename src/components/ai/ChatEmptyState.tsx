@@ -18,7 +18,7 @@ export function DropdownPill({
     <button
       type="button"
       className={cn(
-        "flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-400 bg-white/5 hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+        "flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-400 bg-white/5 hover:bg-white/10 transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-white/20",
       )}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -268,7 +268,7 @@ export function ChatInputCard() {
 {/* Large borderless auto-growing textarea */}
           <textarea
             ref={taRef}
-            className="w-full rounded-xl px-4 py-3 bg-transparent border-0 resize-none text-lg text-gray-200 placeholder-gray-500 focus-visible:outline-none focus-visible:ring-0"
+            className="w-full rounded-xl px-4 py-3 bg-transparent border-0 resize-none text-lg text-gray-200 placeholder-gray-500 focus-visible:outline-none"
             placeholder="Ask anything, @ to add context, / for commands or capabilities"
             value={text}
             onChange={(e) => {

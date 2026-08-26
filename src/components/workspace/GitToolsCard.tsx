@@ -104,7 +104,7 @@ export function GitToolsCard() {
   }
 
   return (
-    <div className="w-[280px] overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-float-pop">
+    <div className="w-[280px] overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
       <div className="flex h-8 items-center px-3">
         <span className="type-caption text-[var(--text-tertiary)]">Git tools</span>
         <div className="ml-auto flex items-center gap-0.5">

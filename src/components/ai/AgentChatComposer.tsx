@@ -135,7 +135,7 @@ export function AgentChatComposer({
   }
 
   return (
-    <div className="rounded-2xl border border-transparent bg-[var(--bg-surface)] transition-all">
+    <div className="rounded-2xl border border-transparent bg-[var(--bg-surface)] transition-[background-color,border-color] duration-[var(--duration-instant)] ease-[var(--ease-standard)]">
       {fileInput}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-1.5 px-3.5 pt-3">
@@ -221,7 +221,7 @@ export function AgentChatComposer({
             align="start"
             side="top"
             sideOffset={8}
-            className="w-[280px] rounded-xl border-[var(--border-default)] bg-[var(--bg-overlay)] p-1.5 text-[var(--text-primary)] shadow-[var(--shadow-lg)]"
+            className="w-[280px] rounded-xl border-[var(--border-default)] bg-[var(--bg-overlay)] p-1.5 text-[var(--text-primary)]"
           >
             {APPLY_OPTIONS.map((opt) => {
               const Icon = opt.icon;
@@ -332,7 +332,7 @@ export function AgentChatComposer({
           onClick={sending ? onStop : onSubmit}
           disabled={!sending && !canSend}
           className={cn(
-            "ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
+            "ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
             sending
               ? "bg-[var(--error)] text-[var(--text-on-accent)] hover:bg-[var(--error)]"
               : canSend

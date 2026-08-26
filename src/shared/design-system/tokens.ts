@@ -89,18 +89,17 @@ export const RADIUS = {
 } as const;
 
 export const MOTION = {
-  instant: 100,
-  fast: 150,
-  base: 220,
-  slow: 320,
-  hover: 100,
-  panel: 320,
-  enter: 220,
-  easing: "cubic-bezier(0.2, 0, 0, 1)",
-  easingOut: "cubic-bezier(0, 0, 0, 1)",
-  easingIn: "cubic-bezier(0.3, 0, 1, 1)",
-  easingSpring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-  easingHover: "cubic-bezier(0.2, 0, 0, 1)",
+  instant: 80,
+  fast: 120,
+  base: 180,
+  slow: 200,
+  hover: 80,
+  panel: 200,
+  enter: 180,
+  easing: "cubic-bezier(0.25, 0.1, 0.25, 1)",
+  easingOut: "cubic-bezier(0.16, 1, 0.3, 1)",
+  easingIn: "cubic-bezier(0.16, 1, 0.3, 1)",
+  easingHover: "cubic-bezier(0.25, 0.1, 0.25, 1)",
 } as const;
 
 export const Z = {

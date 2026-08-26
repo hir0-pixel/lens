@@ -239,7 +239,7 @@ export default function AppShell({
                 className="absolute inset-0 z-[30] bg-[#171717]/45"
                 onClick={closeTools}
               />
-              <aside className="absolute inset-y-0 right-0 z-[35] flex w-[min(100%,480px)] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-lg)]">
+              <aside className="absolute inset-y-0 right-0 z-[35] flex w-[min(100%,480px)] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]">
                 <ToolsWorkspace />
               </aside>
             </>

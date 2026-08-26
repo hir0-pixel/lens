@@ -33,7 +33,7 @@ export function PortsPanel() {
               href={`http://localhost:${p.port}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 type-caption text-[var(--cursor-focus)] transition-colors hover:underline"
+              className="flex items-center gap-1 type-caption text-[var(--cursor-focus)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               Open

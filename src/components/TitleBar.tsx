@@ -209,7 +209,7 @@ function ServersPopover() {
       <PopoverContent
         align="center"
         sideOffset={4}
-        className="w-[340px] rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-0 text-[var(--text-primary)] shadow-xl"
+        className="w-[340px] rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-0 text-[var(--text-primary)]"
       >
         <div className="flex border-b border-[var(--border-subtle)]">
           {SERVERS_TABS.map((tab) => (
@@ -219,7 +219,7 @@ function ServersPopover() {
               className={cn(
                 "px-3 py-2 type-caption transition-colors",
                 activeTab === tab
-                  ? "border-b-2 border-[var(--accent-primary)] text-[var(--text-primary)]"
+                  ? "border-b border-[var(--accent-primary)] text-[var(--text-primary)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
               )}
               onClick={() => setActiveTab(tab)}
@@ -283,7 +283,7 @@ function ManageServersDialog({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) close(); else onOpenChange(v); }}>
-      <DialogContent className="max-w-[460px] gap-0 rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-0 text-[var(--text-primary)] shadow-2xl [&>button]:hidden">
+      <DialogContent className="max-w-[460px] gap-0 rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-0 text-[var(--text-primary)] [&>button]:hidden">
         {view === "list" ? (
           <>
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
@@ -410,7 +410,7 @@ function McpEntry() {
       >
         <span
           className={cn(
-            "absolute top-0.5 h-4 w-4 rounded-full bg-[var(--bg-surface)] shadow-sm transition-transform",
+            "absolute top-0.5 h-4 w-4 rounded-full bg-[var(--bg-surface)] transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
             on ? "left-[18px]" : "left-0.5",
           )}
         />

@@ -379,7 +379,7 @@ export function ExplorerPanel({
               className={cn(
                 "group relative flex cursor-pointer items-center gap-0.5 pr-2 type-caption outline-none",
                 "transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
-                isDrop && "ring-1 ring-inset ring-[var(--accent-primary)]",
+                isDrop && "outline outline-1 -outline-offset-1 outline-[var(--accent-primary)]",
                 isSelected && "bg-[var(--bg-selected)] text-[var(--text-primary)]",
               )}
               style={{
@@ -426,12 +426,12 @@ export function ExplorerPanel({
                 {isFolder &&
                   (isOpen ? (
                     <ChevronDown
-                      className="h-4 w-4 transition-transform duration-[var(--ds-dur-normal)]"
+                      className="h-4 w-4 transition-transform duration-[var(--ds-dur-normal)] ease-[var(--ds-ease)]"
                       strokeWidth={1.5}
                     />
                   ) : (
                     <ChevronRight
-                      className="h-4 w-4 transition-transform duration-[var(--ds-dur-normal)]"
+                      className="h-4 w-4 transition-transform duration-[var(--ds-dur-normal)] ease-[var(--ds-ease)]"
                       strokeWidth={1.5}
                     />
                   ))}
@@ -466,7 +466,7 @@ export function ExplorerPanel({
               )}
             </div>
           </ContextMenuTrigger>
-          <ContextMenuContent className="min-w-[180px] rounded-none border-[var(--ds-border)] bg-[var(--ds-surface-elevated)] p-0 type-caption shadow-[var(--shadow-overlay)] animate-cursor-fade">
+          <ContextMenuContent className="min-w-[180px] rounded-none border-[var(--ds-border)] bg-[var(--ds-surface-elevated)] p-0 type-caption animate-cursor-fade">
             {isFolder ? (
               <>
                 <ContextMenuItem

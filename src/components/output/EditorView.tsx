@@ -116,7 +116,7 @@ export function SavingsGoals() {
         {data.map((height, i) => (
           <div key={i} className="flex-1">
             <div
-              className="max-w-10 rounded-t bg-[var(--accent-primary-muted)] transition-all hover:bg-[var(--accent-primary)]"
+              className="max-w-10 rounded-t bg-[var(--accent-primary-muted)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--accent-primary)]"
               style={{ height: \`\${height}%\` }}
             />
           </div>

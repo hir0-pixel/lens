@@ -32,7 +32,7 @@ export function MenuBar({
               aria-haspopup="menu"
               className={cn(
                 "type-nav px-2 text-[var(--cursor-title-fg)] outline-none",
-                "transition-colors duration-[100ms] ease-[cubic-bezier(0.33,1,0.68,1)]",
+                "transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
                 "hover:bg-[var(--cursor-list-hover)]",
                 "focus-visible:bg-[var(--cursor-list-hover)]",
                 "data-[state=open]:bg-[var(--cursor-list-hover)]",
@@ -44,7 +44,7 @@ export function MenuBar({
           <DropdownMenuContent
             align="start"
             sideOffset={0}
-            className="type-nav min-w-[240px] rounded-none border-[var(--cursor-border)] bg-popover p-0 text-popover-foreground shadow-[var(--shadow-overlay)] animate-cursor-fade"
+            className="type-nav min-w-[240px] rounded-none border-[var(--cursor-border)] bg-popover p-0 text-popover-foreground animate-cursor-fade"
           >
             {menu.items.map((item) => (
               <MenuItemRow key={item.id} item={item} />

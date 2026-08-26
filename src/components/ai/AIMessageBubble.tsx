@@ -104,7 +104,7 @@ export function AIMessageBubble({
         {streaming ? "Working" : workedLabel(message)}
         <ChevronRight
           className={cn(
-            "h-3 w-3 transition-transform",
+            "h-3 w-3 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
             traceOpen && "rotate-90",
           )}
           strokeWidth={2}
@@ -145,7 +145,7 @@ export function AIMessageBubble({
       <button
         type="button"
         onClick={copyContent}
-        className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 type-caption text-[var(--text-tertiary)] opacity-0 transition-opacity hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100"
+        className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md px-1.5 type-caption text-[var(--text-tertiary)] opacity-0 transition-opacity duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100"
         aria-label="Copy message"
       >
         {copied ? (

@@ -46,11 +46,11 @@ export function ToolCallsList({ calls }: { calls: ToolCallRecord[] }) {
     <div className="overflow-hidden rounded-lg border border-[var(--border-default)] bg-surface-1">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors hover:bg-[var(--bg-hover)]"
+        className="flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]"
       >
         <ChevronRight
           className={cn(
-            "h-3.5 w-3.5 text-[var(--text-tertiary)] transition-transform",
+            "h-3.5 w-3.5 text-[var(--text-tertiary)] transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]",
             open && "rotate-90",
           )}
         />

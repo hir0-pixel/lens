@@ -109,7 +109,7 @@ export function MentionPicker({
   return (
     <div
       ref={ref}
-      className="absolute bottom-full left-0 z-50 mb-1.5 w-full animate-scale-in overflow-hidden rounded-lg border border-[var(--border-default)] bg-surface-2 shadow-float-pop"
+      className="absolute bottom-full left-0 z-50 mb-1.5 w-full animate-scale-in overflow-hidden rounded-lg border border-[var(--border-default)] bg-surface-2"
     >
       <Command shouldFilter={false} className="bg-transparent">
         <CommandInput

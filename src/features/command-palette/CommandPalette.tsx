@@ -227,7 +227,7 @@ export function CommandPalette() {
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent
         className={cn(
-          "top-[15%] translate-y-0 gap-0 overflow-hidden rounded-none border-[var(--cursor-border)] bg-[var(--cursor-quick-input-bg)] p-0 shadow-[var(--shadow-overlay)]",
+          "top-[15%] translate-y-0 gap-0 overflow-hidden rounded-none border-[var(--cursor-border)] bg-[var(--cursor-quick-input-bg)] p-0",
           "sm:max-w-[600px]",
           "[&>button]:hidden",
           "animate-cursor-scale",

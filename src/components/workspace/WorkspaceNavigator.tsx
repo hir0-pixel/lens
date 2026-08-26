@@ -124,7 +124,7 @@ export function WorkspaceNavigator({
                     className={cn(
                       "flex w-full flex-col gap-0.5 rounded-[var(--radius-sm)] px-2 py-1.5 text-left",
                       "transition-colors duration-[var(--duration-instant)]",
-                      "hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]",
+                      "hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]",
                     )}
                   >
                     <span className="flex items-center gap-1.5">
@@ -163,7 +163,7 @@ export function WorkspaceNavigator({
                       className={cn(
                         "flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-[5px] text-left",
                         "transition-colors duration-[var(--duration-instant)]",
-                        "hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]",
+                        "hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]",
                         activeProjectId === p.id && "bg-[var(--bg-selected)]",
                       )}
                     >

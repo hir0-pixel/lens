@@ -33,7 +33,7 @@ export function LogsPanel() {
           {MOCK_LOGS.map((entry) => (
             <div
               key={entry.id}
-              className="flex gap-2 border-b border-border/50 px-2 py-1 type-code transition-colors duration-150 hover:bg-secondary"
+              className="flex gap-2 border-b border-border/50 px-2 py-1 type-code transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-secondary"
             >
               <span className="shrink-0 tabular-nums text-muted-foreground/70">
                 {entry.timestamp}

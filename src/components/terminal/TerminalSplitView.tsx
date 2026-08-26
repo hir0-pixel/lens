@@ -30,7 +30,7 @@ function SplitNode({ pane, projectName }: TerminalSplitViewProps) {
           setFocusedPane(pane.id);
           setActiveSession(pane.sessionId!);
         }}
-        className={cn(isActive && "ring-1 ring-inset ring-accent/20")}
+        className={cn(isActive && "outline outline-1 -outline-offset-1 outline-accent/20")}
       />
     );
   }

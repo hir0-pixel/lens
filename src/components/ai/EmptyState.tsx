@@ -68,7 +68,7 @@ export function EmptyState({
               type="button"
               title={item.prompt}
               onClick={() => onPromptSelect(item.prompt)}
-              className="rounded-[var(--radius-sm)] px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]"
+              className="rounded-[var(--radius-sm)] px-2 py-1.5 text-left type-caption text-[var(--text-secondary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]"
             >
               <span className="block truncate">{item.label}</span>
             </button>
@@ -87,7 +87,7 @@ export function EmptyState({
                 type="button"
                 title={ws.name}
                 onClick={() => onWorkspaceSelect?.(ws)}
-                className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-left transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus-ring)]"
+                className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-left transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]"
               >
                 <span
                   className="h-1.5 w-1.5 shrink-0 rounded-full"

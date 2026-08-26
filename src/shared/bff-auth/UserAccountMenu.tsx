@@ -53,7 +53,7 @@ export function UserAccountMenu({ showLabel = false }: UserAccountMenuProps = {}
         ) : (
           <button
             type="button"
-            className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] type-caption font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
+            className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] type-caption font-semibold text-[var(--text-primary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]"
             aria-label="Account menu"
             title={session?.email ?? displayName}
           >

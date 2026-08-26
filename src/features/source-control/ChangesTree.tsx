@@ -115,7 +115,7 @@ function ChangeRow({
           >
             {STATUS_LABEL[change.status]}
           </span>
-          <div className="flex opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <div className="flex opacity-0 transition-opacity duration-[var(--duration-instant)] ease-[var(--ease-standard)] group-hover:opacity-100 group-focus-within:opacity-100">
             {onStage && (
               <Button
                 variant="ghost"

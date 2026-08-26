@@ -93,7 +93,7 @@ export function TitleBarOverflowMenu() {
       <DropdownMenuContent
         align="end"
         sideOffset={6}
-        className="min-w-[248px] rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-1.5 text-[var(--text-primary)] shadow-[var(--shadow-lg)]"
+        className="min-w-[248px] rounded-xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-1.5 text-[var(--text-primary)]"
       >
         <DropdownMenuItem
           className={itemClass()}

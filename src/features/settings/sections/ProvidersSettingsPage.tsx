@@ -23,7 +23,7 @@ function ProviderCard({ provider }: { provider: AiProviderConfig }) {
   ));
 
   return (
-    <Card className="gap-0 rounded-lg bg-surface-0/40 p-4 ring-[var(--border-default)]">
+    <Card className="gap-0 rounded-lg border border-[var(--border-default)] bg-surface-0/40 p-4">
       <div className="flex items-center gap-3">
         <div
           className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white"
@@ -143,7 +143,7 @@ export function ProvidersSettingsPage() {
         ))}
       </div>
       {administrator && (
-        <Card className="mt-4 gap-0 rounded-lg bg-surface-0/40 p-4 ring-[var(--border-default)]">
+        <Card className="mt-4 gap-0 rounded-lg border border-[var(--border-default)] bg-surface-0/40 p-4">
           <p className="type-caption font-medium text-[var(--text-primary)]">Register an internal model gateway</p>
           <p className="mt-1 type-caption text-[var(--text-tertiary)]">The API key is sent once over the authenticated BFF and is never written to browser storage.</p>
           <div className="mt-3 space-y-2">

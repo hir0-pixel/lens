@@ -72,7 +72,7 @@ export function SettingRow({
     <Field
       id={id}
       orientation="horizontal"
-      className="items-start justify-between gap-4 bg-surface-0/40 px-3.5 py-3 transition-colors hover:bg-[var(--bg-hover)]"
+      className="items-start justify-between gap-4 bg-surface-0/40 px-3.5 py-3 transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]"
     >
       <FieldLabel className="flex-col items-start gap-1 pt-0.5">
         <FieldTitle className="type-caption font-medium text-[var(--text-primary)]">

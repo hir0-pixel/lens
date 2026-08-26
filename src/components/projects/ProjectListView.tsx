@@ -62,7 +62,7 @@ export default function ProjectListView({
             <button
               type="button"
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-1.5 type-caption font-medium text-foreground/90 transition-colors duration-150 hover:bg-secondary/80"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-1.5 type-caption font-medium text-foreground/90 transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-secondary/80"
             >
               <CloudDownload className="h-3.5 w-3.5" />
               Import
@@ -70,7 +70,7 @@ export default function ProjectListView({
             <button
               type="button"
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 type-caption font-semibold text-accent-foreground transition-colors duration-150 hover:bg-accent-600"
+              className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 type-caption font-semibold text-accent-foreground transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-accent-600"
             >
               <Plus className="h-3.5 w-3.5" />
               New
@@ -107,7 +107,7 @@ export default function ProjectListView({
                   key={p.id}
                   type="button"
                   onClick={() => onOpenProject(p)}
-                  className="group rounded-lg border border-border bg-secondary/40 p-4 text-left transition-colors duration-150 hover:border-border hover:bg-secondary"
+                  className="group rounded-lg border border-border bg-secondary/40 p-4 text-left transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:border-border hover:bg-secondary"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2">
@@ -158,7 +158,7 @@ export default function ProjectListView({
         <button
           type="button"
           onClick={onBack}
-          className="type-caption text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          className="type-caption text-muted-foreground transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:text-foreground"
         >
           ← Back to workspace
         </button>
