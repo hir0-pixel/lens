@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 import { generateKeyPairSync } from "node:crypto";
 import { AuthorityHttpClient } from "./authorityClient";
 import { createOrchestratorHttp } from "./http";
+import { DevelopmentHeuristicTurnRouter } from "./router";
 import { InternalInferenceClient } from "./internalInferenceClient";
 import { RetrievalHttpClient } from "./retrievalClient";
 import { ProductionOrchestratorService, SingleDigestModelSelection, SingleDigestModelEligibility, CompositeModelEligibility, EmployeeCatalogModelEligibility } from "./service";
@@ -529,12 +530,14 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
     usageReceiptPublicKey: env.USAGE_RECEIPT_PUBLIC_KEY,
     routePolicy,
     // The route-classification model step dispatches through the same
-    // ModelGateway/Scheduler as final generation, with its own reservation,
-    // one-use step fence, and budget (item 7) — never a raw, unbudgeted
-    // call, and never the regex/heuristic fallback in router.ts as the
-    // production router. `routerModelRef` comes only from the resolved,
-    // signed route policy above, never from the employee-selected model_ref.
+    // ModelGateway/Scheduler as final generation when LENS_USE_GATEWAY_TURN_ROUTER
+    // is not false. Lab stacks often set it false; without a stand-in, non-ack turns
+    // become CLARIFY or forced SINGLE_RETRIEVAL. DevelopmentHeuristicTurnRouter keeps
+    // greetings/unrelated chat on NO_RETRIEVAL and enterprise/doc questions on retrieval.
     useGatewayTurnRouter: env.USE_GATEWAY_TURN_ROUTER !== "false",
+    ...(env.USE_GATEWAY_TURN_ROUTER === "false" && parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "development"
+      ? { turnRouter: new DevelopmentHeuristicTurnRouter() }
+      : {}),
     modelArtifactDigest: env.MODEL_ARTIFACT_DIGEST as `sha256:${string}`,
     modelSelection: effectiveModelSelection,
     modelEligibility: effectiveModelEligibility,

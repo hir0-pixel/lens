@@ -291,6 +291,7 @@ export class ModelGateway {
         await this.attempts.markOutcomeUnknown(reservationId).catch(() => undefined);
       }
       if (signal.aborted || error instanceof Error && error.message === "CANCELLED") throw new ModelGatewayError("CANCELLED");
+      if (error instanceof Error && error.message === "OVERLOADED") throw new ModelGatewayError("OVERLOADED");
       if (error instanceof ModelGatewayError) throw error;
       throw new ModelGatewayError("DEPENDENCY_UNAVAILABLE");
     } finally {

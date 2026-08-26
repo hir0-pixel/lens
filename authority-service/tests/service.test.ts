@@ -305,7 +305,19 @@ describe("AuthorityService", () => {
     const wrongKeyService = new AuthorityService(store, new DefaultContentPolicy(), () => now, undefined, undefined, new OutputBlobCrypto(randomBytes(32)));
     expect((await wrongKeyService.verifyBlob({ outputRef: first.outputRef, outputDigest: first.outputDigest })).verified).toBe(false);
 
-    const ciphertext = String(firstRow.output_ciphertext);
+    const rotated = await wrongKeyService.putBlob({
+      requestId: "crypto-1-key-rotate",
+      turnId: "turn-crypto-1-key-rotate",
+      output: "sensitive output one",
+      outputDigest: digest("sensitive output one"),
+      classificationRef: "confidential",
+      guardReceipt: "guard-after-rotate",
+    });
+    expect(rotated.outputRef).toBe(first.outputRef);
+    expect((await wrongKeyService.verifyBlob({ outputRef: first.outputRef, outputDigest: first.outputDigest })).verified).toBe(true);
+    expect((await service.verifyBlob({ outputRef: first.outputRef, outputDigest: first.outputDigest })).verified).toBe(false);
+
+    const ciphertext = String((store.db.prepare("SELECT output_ciphertext FROM output_blobs WHERE output_ref = ?").get(first.outputRef) as Record<string, unknown>).output_ciphertext);
     const tampered = `${ciphertext[0] === "A" ? "B" : "A"}${ciphertext.slice(1)}`;
     store.db.prepare("UPDATE output_blobs SET output_ciphertext = ? WHERE output_ref = ?").run(tampered, first.outputRef);
     expect((await service.verifyBlob({ outputRef: first.outputRef, outputDigest: first.outputDigest })).verified).toBe(false);

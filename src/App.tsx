@@ -376,7 +376,9 @@ function AgentsApp() {
         ) {
           toast.error("Lens is at capacity.", {
             description:
-              "Too many governed RAG requests are active right now. Please retry shortly.",
+              error.code === "OVERLOADED"
+                ? "The model provider rate-limited this turn (often HTTP 429). Wait a minute and retry, or switch to gemini-3.6-flash / gemini-3.7-flash."
+                : "Too many governed RAG requests are active right now. Please retry shortly.",
           });
         } else if (error instanceof AuthClientError && error.code === "RAG_NOT_CONFIGURED") {
           toast.error("Governed RAG is not configured.", {

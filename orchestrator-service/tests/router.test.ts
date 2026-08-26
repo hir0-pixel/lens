@@ -254,3 +254,41 @@ describe("router: LLM-backed classification against the real Doc 004 §23 wire s
     expect(result.decision.clarifyQuestion).toBe("This is the policy-owned clarification text.");
   });
 });
+
+describe("DevelopmentHeuristicTurnRouter", () => {
+  it("routes enterprise/doc questions to SINGLE_RETRIEVAL and unrelated chat to NO_RETRIEVAL", async () => {
+    const { DevelopmentHeuristicTurnRouter, looksLikeEnterpriseKnowledgeQuery } = await import("../src/router");
+    expect(looksLikeEnterpriseKnowledgeQuery("What does the quarterly budget policy say?")).toBe(true);
+    expect(looksLikeEnterpriseKnowledgeQuery("What is the capital of France?")).toBe(false);
+    expect(looksLikeEnterpriseKnowledgeQuery("tell me a joke")).toBe(false);
+
+    const router = new DevelopmentHeuristicTurnRouter();
+    const knowledge = await router.classify({
+      text: "What does the quarterly budget policy say?",
+      history: [],
+      requestId: "r1",
+      turnId: "t1",
+      deadlineAt: Date.now() + 30_000,
+      routerModelRef: "default",
+    }, signal());
+    expect(knowledge).toMatchObject({ route: "SINGLE_RETRIEVAL", profile_selector: "default", reason_code: "knowledge_lookup" });
+
+    const chat = await router.classify({
+      text: "Write a short poem about coffee",
+      history: [],
+      requestId: "r2",
+      turnId: "t2",
+      deadlineAt: Date.now() + 30_000,
+      routerModelRef: "default",
+    }, signal());
+    expect(chat).toMatchObject({ route: "NO_RETRIEVAL", reason_code: "conversational_smalltalk" });
+
+    const viaClassify = await classifyTurn(
+      { text: "Write a short poem about coffee", history: [], requestId: "req-h", turnId: "turn-h", deadlineAt: Date.now() + 30_000 },
+      router,
+      policy({ groundingRequired: false }),
+      signal(),
+    );
+    expect(viaClassify.decision.route).toBe("GENERAL_CONVERSATION");
+  });
+});

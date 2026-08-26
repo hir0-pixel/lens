@@ -126,9 +126,9 @@ const companyRagProfile = {
   retrievalProfiles: { default: { corpusRef: "enterprise-docs", mode: "hybrid" } },
 };
 
-// groundingRequired true: with LENS_USE_GATEWAY_TURN_ROUTER=false the deterministic router
-// fallback uses SINGLE_RETRIEVAL + defaultProfileSelector for non-greeting turns; greetings/acks
-// still skip retrieval via the acknowledgement fast path.
+// groundingRequired false: greetings/acks/smalltalk may take NO_RETRIEVAL.
+// With LENS_USE_GATEWAY_TURN_ROUTER=false the development heuristic turn router
+// still routes enterprise/doc questions to SINGLE_RETRIEVAL + defaultProfileSelector.
 const routePolicy = {
   manifestRevision: 1,
   entries: [{
@@ -137,7 +137,7 @@ const routePolicy = {
     purposeRef: "assistant",
     requestClass: "enterprise-grounded",
     routePolicyRevision: 1,
-    groundingRequired: true,
+    groundingRequired: false,
     routerModelRef: "default",
     allowedProfileSelectors: ["default"],
     defaultProfileSelector: "default",
