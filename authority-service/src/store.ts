@@ -95,6 +95,7 @@ export interface AuthorityStorePort {
   revokeContextFence(requestId: string, turnId: string): Promise<number>;
   getOutputBlob(outputRef: string): Promise<OutputBlobRow | undefined>;
   insertOutputBlob(row: OutputBlobRow): Promise<void>;
+  deleteOutputBlob(outputRef: string): Promise<void>;
   getTerminalCommit(requestId: string, turnId: string): Promise<TerminalCommitRow | undefined>;
   insertTerminalCommit(row: TerminalCommitRow): Promise<void>;
   insertTurnFailure(row: TurnFailureRow): Promise<void>;
@@ -332,6 +333,10 @@ export class AuthorityStore implements AuthorityStorePort {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(output_ref) DO NOTHING`,
     ).run(row.outputRef, row.outputDigest, row.outputCiphertext, row.outputNonce, row.outputAuthTag, row.outputKeyVersion, row.classificationRef, row.guardReceipt, row.requestId, row.turnId, row.commitProof, row.createdAt);
+  }
+
+  async deleteOutputBlob(outputRef: string): Promise<void> {
+    this.db.prepare("DELETE FROM output_blobs WHERE output_ref = ?").run(outputRef);
   }
 
   // --- turn_state ---

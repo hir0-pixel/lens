@@ -2,6 +2,8 @@
 
 Status: **Code-complete for the remaining in-repo RAG/model execution authorities; still NOT physical-production-ready.** Prior passes fixed authorization-first ordering, signed route policy, typed receipts, durable Cost/Agent-run libraries, and fail-closed profiles. **This pass** added deployable internal HTTP services and production `main()` clients for Model-use, Cost, Agent-run (including the shared claim store), signed Scheduler leases, retrieval sub-envelope accounting, signed Doc 014 workflow profile digests, and the Doc 012 `RuntimeAttemptStore` on the Model Gateway → runtime-adapter sidecar path. Production Orchestrator `main()` constructs those HTTP clients from environment configuration and no longer requires programmatic injection. Physical production remains **NO-GO** until real infrastructure load, security, zero-egress, failover and recovery evidence in §4 passes.
 
+For the developer Task 10 verdict (implementation vs provider plug-and-play vs production GO/NO-GO) at a specific commit, see `docs/rag-final-provider-handoff-report.md`.
+
 ## 1. Canonical flow
 
 ```text

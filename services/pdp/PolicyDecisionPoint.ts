@@ -1,4 +1,4 @@
-export type PdpFailure = "BATCH_LIMIT_EXCEEDED" | "AUTHORITY_UNAVAILABLE" | "AUTHORIZATION_STATE_CHANGED" | "POLICY_HEAD_UNAVAILABLE" | "AUDIT_UNAVAILABLE" | "EVALUATOR_FAILURE" | "FENCE_INVALID";
+import { randomBytes } from "node:crypto";
 export class PdpError extends Error { constructor(readonly code: PdpFailure) { super(code); } }
 export interface SubjectFacts { revision: number; active: boolean; groups: readonly string[]; }
 export interface DeviceFacts { revision: number; compliant: boolean; }
@@ -12,7 +12,7 @@ export interface DecisionFenceSigner { sign(fence: Omit<DecisionFence, "signatur
 /** Sole authorization authority. Caller claims never participate in evaluation. */
 export class PolicyDecisionPoint {
   private active?: PolicyBundle; private readonly consumedFences = new Set<string>();
-  constructor(private readonly readers: FactReaders, private readonly audit: PdpAuditPort, private readonly signer: DecisionFenceSigner, private readonly now = () => Date.now(), private readonly nextFence = (() => { let value = 0; return () => `pdp-fence-${++value}`; })()) {}
+  constructor(private readonly readers: FactReaders, private readonly audit: PdpAuditPort, private readonly signer: DecisionFenceSigner, private readonly now = () => Date.now(), private readonly nextFence = () => `pdp-fence-${randomBytes(8).toString("hex")}`) {}
   activate(bundle: PolicyBundle, approval: { independent: boolean; auditAdmitted: boolean; compatibilityPassed: boolean }): void { if (!bundle.signed || !approval.independent || !approval.auditAdmitted || !approval.compatibilityPassed) throw new PdpError("POLICY_HEAD_UNAVAILABLE"); this.active = Object.freeze({ ...bundle }); }
   decideBatch(input: { requestId: string; callerWorkloadRef: string; subjectRef: string; deviceRef: string; action: string; resourceRefs: readonly string[]; normalizedContextDigest: string; useBoundary?: "operation" | "generation_start" | "tool_boundary"; deadlineAt: number }): { allowed: readonly string[]; fence?: DecisionFence } {
     if (!this.active) throw new PdpError("POLICY_HEAD_UNAVAILABLE"); if (input.resourceRefs.length === 0 || input.resourceRefs.length > 1000) throw new PdpError("BATCH_LIMIT_EXCEEDED"); if (input.deadlineAt <= this.now()) throw new PdpError("AUTHORITY_UNAVAILABLE");

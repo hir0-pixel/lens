@@ -63,6 +63,19 @@ Adapter process:
 
 Gemini remains `gemini-dev` and is rejected when `PROVIDER_PROFILE=sovereign`. There is no automatic external fallback.
 
+## Development demo (same adapter)
+
+Do not switch adapters when you rotate keys. Keep `adapterType=openai-compatible`.
+
+1. Set `PROVIDER_PROFILE=development` on the BFF (gitignored env only).
+2. In Settings → Providers, leave the adapter as `openai-compatible`.
+3. Paste the demo key into the form (not into git or this chat). Example Google OpenAI-compatible base URL: `https://generativelanguage.googleapis.com/v1beta/openai/` plus an allowlisted Gemini model id the catalog actually returns.
+4. When the company gateway exists, set `PROVIDER_PROFILE=sovereign` and register again with the internal/loopback base URL. Same adapter, different URL and key.
+
+Public Google/OpenAI hosts remain forbidden in sovereign mode. This demo is not Task 9 / production GO.
+
+Registering a development provider proves admin onboarding and the model catalog only. Employee **Ask** mode calls `POST /api/rag/ask`, which returns `DEPENDENCY_UNAVAILABLE` until `RAG_PROVIDER_MODE=internal`, `ORCHESTRATOR_URL`, `ORCHESTRATOR_TOKEN`, assertion keys, and a running Orchestrator are configured. That is a separate stack from the Google key demo.
+
 ## Employee flow
 
 1. UI `GET /api/models` and populate the existing selector (loading / empty / unavailable / error).

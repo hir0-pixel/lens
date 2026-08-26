@@ -126,7 +126,8 @@ describe("RetrievalService pipeline", () => {
     });
     const service = new RetrievalService(...Object.values(ports) as [RetrievalPdpPort, RetrievalIndexPort, AuthorizedContentPort, RetrievalAuditPort, PublicationPort, () => number]);
     const result = await service.retrieve(request);
-    expect(result.status).toBe("denied_policy");
+    expect(result).toEqual({ status: "denied_policy" });
+    expect(JSON.stringify(result)).not.toMatch(/version-a|chunk-a|doc-a|alpha|remote-work/);
   });
 
   it("returns no_context when no candidates are allowed", async () => {
@@ -135,7 +136,30 @@ describe("RetrievalService pipeline", () => {
     });
     const service = new RetrievalService(...Object.values(ports) as [RetrievalPdpPort, RetrievalIndexPort, AuthorizedContentPort, RetrievalAuditPort, PublicationPort, () => number]);
     const result = await service.retrieve(request);
-    expect(result.status).toBe("no_context");
+    expect(result).toEqual({ status: "no_context" });
+    expect(JSON.stringify(result)).not.toMatch(/version-a|chunk-a|doc-a|alpha|remote-work/);
+  });
+
+  it("hybrid fuse keeps the best rank per chunk and orders sources deterministically", async () => {
+    const lexicalWorse: RetrievalCandidate = { ...candidate("version-a", "chunk-a", 8), lane: "lexical" };
+    const vectorBetter: RetrievalCandidate = { ...candidate("version-a", "chunk-a", 1), lane: "vector" };
+    const other: RetrievalCandidate = { ...candidate("version-b", "chunk-b", 3), lane: "lexical" };
+    const ports = buildPorts({
+      indexes: {
+        search: (input) => ({
+          indexGeneration: input.indexGeneration,
+          visibilitySequence: input.visibilitySequence,
+          sourceRevisionDigest: input.sourceRevisionDigest,
+          candidates: [lexicalWorse, other, vectorBetter],
+        }),
+      },
+    });
+    const service = new RetrievalService(...Object.values(ports) as [RetrievalPdpPort, RetrievalIndexPort, AuthorizedContentPort, RetrievalAuditPort, PublicationPort, () => number]);
+    const result = await service.retrieve(request);
+    expect(result.status).toBe("context");
+    if (result.status !== "context") return;
+    expect(result.sources.map((source) => source.document_version_ref)).toEqual(["version-a", "version-b"]);
+    expect(result.manifest.sources.map((source) => source.document_version_ref)).toEqual(["version-a", "version-b"]);
   });
 
   it("returns no_context when fetched chunks do not match allowed candidates", async () => {

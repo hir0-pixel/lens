@@ -34,7 +34,7 @@ describe("router: deterministic acknowledgement fast path", () => {
   });
 
   it("treats bare acknowledgements as zero-retrieval ACKNOWLEDGEMENT", () => {
-    for (const text of ["okay", "Okay!", "thanks", "Thank you.", "got it", "ok"]) {
+    for (const text of ["okay", "Okay!", "thanks", "Thank you.", "got it", "ok", "yes"]) {
       expect(isUnambiguousAcknowledgement(text)).toBe(true);
     }
   });
@@ -48,6 +48,12 @@ describe("router: deterministic acknowledgement fast path", () => {
     expect(result.decision).toEqual({ route: "ACKNOWLEDGEMENT", queryText: "thanks" });
     expect(result.routeOutput).toBe("NO_RETRIEVAL");
     expect(result.enforcement).toBeUndefined();
+  });
+
+  it("does not force retrieval for a bare yes when grounding is not required", async () => {
+    const result = await classifyTurn({ text: "yes", history: [], requestId: "req-1", turnId: "turn-1", deadlineAt: Date.now() + 30_000 }, undefined, policy({ groundingRequired: false }), signal());
+    expect(result.decision.route).toBe("ACKNOWLEDGEMENT");
+    expect(result.routeOutput).toBe("NO_RETRIEVAL");
   });
 
   it("does NOT let an acknowledgement skip retrieval when the pre-resolved policy requires grounding — overrides to SINGLE_RETRIEVAL with the default selector and records enforcement provenance", async () => {
@@ -246,5 +252,43 @@ describe("router: LLM-backed classification against the real Doc 004 §23 wire s
     );
     expect(result.decision.route).toBe("CLARIFICATION_REQUIRED");
     expect(result.decision.clarifyQuestion).toBe("This is the policy-owned clarification text.");
+  });
+});
+
+describe("DevelopmentHeuristicTurnRouter", () => {
+  it("routes enterprise/doc questions to SINGLE_RETRIEVAL and unrelated chat to NO_RETRIEVAL", async () => {
+    const { DevelopmentHeuristicTurnRouter, looksLikeEnterpriseKnowledgeQuery } = await import("../src/router");
+    expect(looksLikeEnterpriseKnowledgeQuery("What does the quarterly budget policy say?")).toBe(true);
+    expect(looksLikeEnterpriseKnowledgeQuery("What is the capital of France?")).toBe(false);
+    expect(looksLikeEnterpriseKnowledgeQuery("tell me a joke")).toBe(false);
+
+    const router = new DevelopmentHeuristicTurnRouter();
+    const knowledge = await router.classify({
+      text: "What does the quarterly budget policy say?",
+      history: [],
+      requestId: "r1",
+      turnId: "t1",
+      deadlineAt: Date.now() + 30_000,
+      routerModelRef: "default",
+    }, signal());
+    expect(knowledge).toMatchObject({ route: "SINGLE_RETRIEVAL", profile_selector: "default", reason_code: "knowledge_lookup" });
+
+    const chat = await router.classify({
+      text: "Write a short poem about coffee",
+      history: [],
+      requestId: "r2",
+      turnId: "t2",
+      deadlineAt: Date.now() + 30_000,
+      routerModelRef: "default",
+    }, signal());
+    expect(chat).toMatchObject({ route: "NO_RETRIEVAL", reason_code: "conversational_smalltalk" });
+
+    const viaClassify = await classifyTurn(
+      { text: "Write a short poem about coffee", history: [], requestId: "req-h", turnId: "turn-h", deadlineAt: Date.now() + 30_000 },
+      router,
+      policy({ groundingRequired: false }),
+      signal(),
+    );
+    expect(viaClassify.decision.route).toBe("GENERAL_CONVERSATION");
   });
 });

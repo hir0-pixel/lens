@@ -151,6 +151,56 @@ export function isUnambiguousAcknowledgement(text: string): boolean {
 }
 
 /**
+ * Development-only turn router used when the gateway LLM router is disabled.
+ * Classifies enterprise/doc questions into SINGLE_RETRIEVAL and leaves greetings,
+ * acknowledgements (handled upstream), and unrelated chat as NO_RETRIEVAL so
+ * general conversation still works without forcing corpus grounding.
+ */
+export class DevelopmentHeuristicTurnRouter implements TurnRouterLLMPort {
+  async classify(
+    input: {
+      text: string;
+      history: readonly ConversationTurnRecord[];
+      requestId: string;
+      turnId: string;
+      deadlineAt: number;
+      routerModelRef: string;
+    },
+    _signal: AbortSignal,
+  ): Promise<unknown> {
+    const text = input.text.trim();
+    if (looksLikeEnterpriseKnowledgeQuery(text)) {
+      return {
+        route: "SINGLE_RETRIEVAL",
+        standalone_query: text.slice(0, MAX_ROUTER_QUERY_CHARS),
+        profile_selector: "default",
+        reason_code: "knowledge_lookup",
+        confidence_bucket: "MEDIUM",
+      };
+    }
+    return {
+      route: "NO_RETRIEVAL",
+      standalone_query: "",
+      reason_code: "conversational_smalltalk",
+      confidence_bucket: "MEDIUM",
+    };
+  }
+}
+
+/** Conservative: prefer retrieval for company/policy/doc phrasing; otherwise chat. */
+export function looksLikeEnterpriseKnowledgeQuery(text: string): boolean {
+  const lower = text.trim().toLowerCase();
+  if (lower.length < 6) return false;
+  if (/\b(policy|policies|handbook|procedure|budget|leave|expense|document|manual|guideline|spending|approval|approve|director|quarterly|stipend|remote.?work|corpus|ingested)\b/.test(lower)) {
+    return true;
+  }
+  if (/\b(what does|according to|in the (doc|policy|handbook)|from the (doc|policy|handbook)|our (company|corp|enterprise))\b/.test(lower)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Validates and narrows the router LLM's structured output against the
  * exact Doc 004 §23 wire schema, including that any returned
  * `profile_selector` is a member of the policy's pre-scoped allowed set.

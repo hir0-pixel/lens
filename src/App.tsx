@@ -50,6 +50,7 @@ import { AuthGate } from "./shared/bff-auth/AuthGate";
 import { AuthClientError, getBffAuthClient } from "./shared/bff-auth";
 import { useAuthStore } from "./shared/bff-auth/store";
 import { useModelCatalogStore } from "./stores/modelCatalogStore";
+import { pickPreferredRagModel, resolveAskModelId } from "./shared/rag/preferredModel";
 
 const ProjectListView = lazy(
   () => import("./components/projects/ProjectListView"),
@@ -154,12 +155,28 @@ function AgentsApp() {
       : projects[0]);
 
   const model: Model = session
-    ? (catalogModels.find((entry) => entry.id === session.modelId) ?? catalogModels[0] ?? getModel(session))
-    : (catalogModels[0] ?? MODELS[0]);
+    ? (catalogModels.find((entry) => entry.id === session.modelId)
+      ?? pickPreferredRagModel(catalogModels)
+      ?? getModel(session))
+    : (pickPreferredRagModel(catalogModels) ?? MODELS[0]);
 
   useEffect(() => {
     if (authStatus === "authenticated") void refreshCatalog();
   }, [authStatus, refreshCatalog]);
+
+  useEffect(() => {
+    if (catalogStatus !== "ready" || catalogModels.length === 0) return;
+    const preferred = pickPreferredRagModel(catalogModels);
+    if (!preferred) return;
+    const state = useSessionStore.getState();
+    const active = state.currentSession();
+    const resolved = resolveAskModelId(catalogModels, active?.modelId);
+    if (active && resolved && resolved !== active.modelId) {
+      state.setSessionModel(active.id, resolved);
+    } else if (state.defaultModelId !== preferred.id && !catalogModels.some((entry) => entry.id === state.defaultModelId)) {
+      state.setDefaultModel(preferred.id);
+    }
+  }, [catalogStatus, catalogModels]);
 
   const openProjects = useCallback(() => setView("projects"), []);
 
@@ -329,7 +346,16 @@ function AgentsApp() {
       const controller = new AbortController();
       requestAbort.current = controller;
       try {
-        const answer = await bffClient.askRag(text, { modelId: sess.modelId, conversationRef: sess.conversationRef, conversationCreationKey: sess.conversationCreationKey, signal: controller.signal });
+        const askModelId = resolveAskModelId(catalogModels, sess.modelId);
+        if (askModelId && askModelId !== sess.modelId) {
+          useSessionStore.getState().setSessionModel(sess.id, askModelId);
+        }
+        const answer = await bffClient.askRag(text, {
+          modelId: askModelId,
+          conversationRef: sess.conversationRef,
+          conversationCreationKey: sess.conversationCreationKey,
+          signal: controller.signal,
+        });
         setConversationRef(sess.id, answer.conversationRef);
         appendMessage(sess.id, {
           id: `a-${Date.now()}`,
@@ -350,7 +376,35 @@ function AgentsApp() {
         ) {
           toast.error("Lens is at capacity.", {
             description:
-              "Too many governed RAG requests are active right now. Please retry shortly.",
+              error.code === "OVERLOADED"
+                ? "The model provider rate-limited this turn (often HTTP 429). Wait a minute and retry, or switch to gemini-3.6-flash / gemini-3.7-flash."
+                : "Too many governed RAG requests are active right now. Please retry shortly.",
+          });
+        } else if (error instanceof AuthClientError && error.code === "RAG_NOT_CONFIGURED") {
+          toast.error("Governed RAG is not configured.", {
+            description:
+              "Ask mode needs RAG_PROVIDER_MODE=internal plus ORCHESTRATOR_URL/TOKEN in server/.env. Run: node scripts/dev/merge-bff-rag-env.mjs, then restart the BFF and RAG stack. Provider onboarding alone is not enough.",
+          });
+        } else if (error instanceof AuthClientError && error.code === "MODEL_NOT_ELIGIBLE") {
+          toast.error("Selected model cannot be used for Ask.", {
+            description:
+              error.detail ?? "Pick an approved Gemini 3.x model (e.g. gemini-3.6-flash) from the model menu.",
+          });
+        } else if (error instanceof AuthClientError && error.code === "FORBIDDEN") {
+          toast.error("Governed RAG turn was denied.", {
+            description:
+              error.detail ??
+              "The orchestrator rejected this request. Check the orchestrator terminal for [orchestrator deny] logs, or try gemini-3.6-flash.",
+          });
+        } else if (
+          error instanceof AuthClientError &&
+          (error.code === "RAG_UNAVAILABLE" || error.code === "DEPENDENCY_UNAVAILABLE")
+        ) {
+          toast.error("Governed RAG request failed.", {
+            description:
+              error.code === "DEPENDENCY_UNAVAILABLE"
+                ? "The orchestrator or runtime is unreachable or returned an error. Ensure authority, orchestrator (:8789), and runtime (:8793) are running."
+                : "The governed RAG service returned an unexpected response.",
           });
         } else if (!controller.signal.aborted) {
           toast.error("The governed RAG service is unavailable through the secure gateway.");

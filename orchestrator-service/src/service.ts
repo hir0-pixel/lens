@@ -236,6 +236,7 @@ export interface ApprovedEmployeeModel {
 export interface EmployeeApprovedCatalogPort {
   refresh(): Promise<void>;
   resolve(input: { modelRef: string; capability: string }): { artifactDigest: `sha256:${string}` };
+  digestApproved(input: { artifactDigest: string; capability: string }): boolean;
 }
 
 export class SnapshotEmployeeCatalog implements EmployeeApprovedCatalogPort {
@@ -259,6 +260,12 @@ export class SnapshotEmployeeCatalog implements EmployeeApprovedCatalogPort {
       throw new OrchestratorError("FORBIDDEN", "The requested model is not approved for this capability.");
     }
     return { artifactDigest: entry.artifactDigest };
+  }
+
+  digestApproved(input: { artifactDigest: string; capability: string }): boolean {
+    return this.models.some((model) =>
+      model.artifactDigest === input.artifactDigest && model.approvedCapabilities.includes(input.capability),
+    );
   }
 }
 
@@ -540,6 +547,57 @@ export class SingleDigestModelEligibility implements ModelEligibilityCheckPort {
   currentDenyEpoch(): number {
     return 0;
   }
+
+  capabilityApproved(input: { artifactDigest: string; capability: string }): boolean {
+    return input.artifactDigest === this.artifactDigest;
+  }
+}
+export class EmployeeCatalogModelEligibility implements ModelEligibilityCheckPort {
+  constructor(
+    private readonly catalog: EmployeeApprovedCatalogPort,
+    private readonly now: () => number = () => Date.now(),
+  ) {}
+
+  async resolveEndpoint(input: { capability: string; artifactDigest: string; denyEpoch: number }): Promise<{ endpointRef: string; snapshotExpiresAt: number; external: boolean }> {
+    if (!this.catalog.digestApproved(input)) {
+      throw new OrchestratorError("FORBIDDEN", "The model artifact is not approved in the employee catalog.");
+    }
+    return { endpointRef: `provider-model:${input.artifactDigest}`, snapshotExpiresAt: this.now() + 60_000, external: false };
+  }
+
+  currentDenyEpoch(): number {
+    return 0;
+  }
+
+  capabilityApproved(input: { artifactDigest: string; capability: string }): boolean {
+    return this.catalog.digestApproved(input);
+  }
+}
+
+/** Try delegates in order; used so route-policy "default" keeps the pinned digest while employee models use the catalog. */
+export class CompositeModelEligibility implements ModelEligibilityCheckPort {
+  constructor(private readonly delegates: readonly ModelEligibilityCheckPort[]) {}
+
+  async resolveEndpoint(input: { capability: string; artifactDigest: string; denyEpoch: number }): Promise<{ endpointRef: string; snapshotExpiresAt: number; external: boolean }> {
+    let lastError: unknown;
+    for (const delegate of this.delegates) {
+      try {
+        return await delegate.resolveEndpoint(input);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (lastError instanceof OrchestratorError) throw lastError;
+    throw new OrchestratorError("FORBIDDEN", "The model artifact is not approved.");
+  }
+
+  currentDenyEpoch(): number {
+    return this.delegates[0]?.currentDenyEpoch() ?? 0;
+  }
+
+  capabilityApproved(input: { artifactDigest: string; capability: string }): boolean {
+    return this.delegates.some((delegate) => delegate.capabilityApproved?.(input) ?? false);
+  }
 }
 
 function sha256(value: string): `sha256:${string}` {
@@ -799,7 +857,15 @@ export class ProductionOrchestratorService {
       return this.toResponse(request.requestId, result);
     } catch (error) {
       if (error instanceof OrchestratorError) {
-        return { status: "DENIED", requestId: request.requestId, error: error.code };
+        if (process.env.NODE_ENV === "development") {
+          console.error(`[orchestrator deny] ${request.requestId}: ${error.message}`);
+        }
+        return {
+          status: "DENIED",
+          requestId: request.requestId,
+          error: error.code,
+          ...(process.env.NODE_ENV === "development" ? { reason: error.message } : {}),
+        };
       }
       throw error;
     } finally {
@@ -1740,7 +1806,16 @@ export class ProductionOrchestratorService {
 
 function mapModelGatewayError(error: unknown): OrchestratorError {
   if (error instanceof OrchestratorError) return error;
-  if (!(error instanceof ModelGatewayError)) return new OrchestratorError("DEPENDENCY_UNAVAILABLE", "Model Gateway failed.");
+  if (!(error instanceof ModelGatewayError)) {
+    if (process.env.NODE_ENV === "development") {
+      const detail = error instanceof Error ? error.message : String(error);
+      console.error(`[model-gateway] non-gateway error: ${detail}`);
+    }
+    return new OrchestratorError("DEPENDENCY_UNAVAILABLE", "Model Gateway failed.");
+  }
+  if (process.env.NODE_ENV === "development") {
+    console.error(`[model-gateway] ${error.code}`);
+  }
   switch (error.code) {
     case "CANCELLED":
       return new OrchestratorError("CANCELLED", "Model generation was cancelled.");

@@ -1,5 +1,18 @@
 # Production RAG Evidence Ledger
 
+## Local / live-provider lab evidence (Track: Provider RAG developer tasks)
+
+| Field | Recorded value |
+| --- | --- |
+| Evidence date | 2026-08-26 |
+| Commit | `df17b02d48ae325835b30c71fec9404ba6ece201` |
+| Handoff report | `docs/rag-final-provider-handoff-report.md` |
+| Live smoke | `npm run smoke:task9` — PASS (0 failures) against local IdP/BFF/orchestrator/runtime |
+| Provider adapter | `openai-compatible` (`PROVIDER_PROFILE=development` lab) |
+| Physical production gates below | unchanged — still NOT RUN / NO-GO |
+
+---
+
 ## Evidence rules
 
 This file records observed evidence only. `PASS` means the listed command completed successfully in the stated environment. `NOT RUN` means no evidence was produced and the gate remains open. Unit/typecheck success does not establish hardware, security, load, HA, restore, DR, or production readiness.

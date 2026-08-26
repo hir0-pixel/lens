@@ -49,13 +49,11 @@ const configuration = {
     revocation: { enabled: true },
     userinfo: { enabled: true },
   },
-  async findAccount(_ctx, sub) {
-    // The dev interaction form accepts any login, so the submitted accountId is
-    // the sub. Map it back to the seeded dev identity for stable claims.
+  async findAccount(_ctx, _sub) {
     return {
-      accountId: sub,
-      async claims(use, scope, claims, rejected) {
-        return { ...devAccount, sub };
+      accountId: devAccount.sub,
+      async claims() {
+        return { ...devAccount };
       },
     };
   },
@@ -206,7 +204,7 @@ provider.use(async (ctx, next) => {
         const body = await readBody(ctx);
         const login = String(body.login ?? "").trim();
         if (!login) { ctx.status = 422; return; }
-        await provider.interactionFinished(ctx.req, ctx.res, { login: { accountId: login } }, { mergeWithLastSubmission: false });
+        await provider.interactionFinished(ctx.req, ctx.res, { login: { accountId: devAccount.sub } }, { mergeWithLastSubmission: false });
         return;
       }
       if (prompt.name === "consent") {

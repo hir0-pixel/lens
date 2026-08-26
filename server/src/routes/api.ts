@@ -53,7 +53,8 @@ export function createApiRouter(options: {
     const cookieValue = req.cookies?.[cfg.SESSION_COOKIE_NAME];
     const session = await options.auth.getSessionInfo(cookieValue);
     const administrator = Boolean(session.authenticated && session.subject && isAdministrator(session.subject));
-    res.json({ ...session, administrator });
+    const adminSubjectsConfigured = Boolean((process.env.ADMIN_SUBJECTS ?? getConfig().ADMIN_SUBJECTS ?? "").trim());
+    res.json({ ...session, administrator, adminSubjectsConfigured });
   });
 
   router.post("/rag/ask", rateLimiter, async (req, res) => {
@@ -81,16 +82,16 @@ export function createApiRouter(options: {
       const catalog = await options.onboarding.employeeCatalog();
       const listed = catalog.find((model) => model.modelRef === modelId && model.available);
       if (!listed) {
-        res.status(403).json({ error: "FORBIDDEN" });
+        res.status(403).json({ error: "MODEL_NOT_ELIGIBLE", reason: "The selected model is not in the approved employee catalog." });
         return;
       }
       if (options.ragProfile && !employeeModelDoesNotAffectRag(options.ragProfile, modelId)) {
-        res.status(403).json({ error: "FORBIDDEN" });
+        res.status(403).json({ error: "MODEL_NOT_ELIGIBLE", reason: "The selected model is not eligible for governed document RAG." });
         return;
       }
     }
     if (!options.ragHandler) {
-      res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE" });
+      res.status(503).json({ error: "RAG_NOT_CONFIGURED" });
       return;
     }
     const conversationCodec = options.conversationReferenceCodec;
@@ -112,7 +113,11 @@ export function createApiRouter(options: {
         conversationCodec.verify(suppliedConversationRef, session.subject);
         conversationRef = suppliedConversationRef;
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof ConversationReferenceError) {
+        res.status(403).json({ error: "CONVERSATION_REF_INVALID", reason: "The chat session reference is stale. Starting a fresh turn." });
+        return;
+      }
       res.status(403).json({ error: "FORBIDDEN" });
       return;
     }
@@ -154,8 +159,13 @@ export function createApiRouter(options: {
       res.json({ output: result.output, citations: result.citations, conversationRef });
     } catch (error) {
       if (!res.headersSent) {
-        if (error instanceof OrchestratorClientError && error.code === "FORBIDDEN") res.status(403).json({ error: "FORBIDDEN" });
-        else res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE" });
+        if (error instanceof OrchestratorClientError && error.code === "FORBIDDEN") {
+          res.status(403).json({ error: "FORBIDDEN", ...(error.reason ? { reason: error.reason } : {}) });
+        } else if (error instanceof OrchestratorClientError) {
+          res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE", ...(error.reason ? { reason: error.reason } : {}) });
+        } else {
+          res.status(503).json({ error: "DEPENDENCY_UNAVAILABLE" });
+        }
       }
     }
   });

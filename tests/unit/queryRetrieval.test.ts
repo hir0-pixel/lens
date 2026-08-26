@@ -32,6 +32,9 @@ describe("query-side lexical retrieval", () => {
     const result = await retrieval.service.retrieve(request("What must employees complete every twelve months?"));
     expect(result.status).toBe("context");
     if (result.status === "context") expect(result.sources.some((source) => source.text.includes(text))).toBe(true);
-    expect((await retrieval.service.retrieve(request("banana smoothie recipe"))).status).toBe("no_context");
+    const miss = await retrieval.service.retrieve(request("banana smoothie recipe"));
+    expect(miss.status).toBe("no_context");
+    expect(JSON.stringify(miss)).not.toContain("security-guide");
+    expect(JSON.stringify(miss)).not.toContain("security awareness");
   });
 });

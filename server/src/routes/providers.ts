@@ -11,10 +11,12 @@ import type { AdapterType } from "../../../services/model-provider/ProviderAdapt
 
 export function isAdministrator(subject: string): boolean {
   const cfg = getConfig();
-  const allowed = (cfg.ADMIN_SUBJECTS ?? "").split(",").map((value) => value.trim()).filter(Boolean);
+  const raw = process.env.ADMIN_SUBJECTS?.trim() || cfg.ADMIN_SUBJECTS || "";
+  const allowed = raw.split(",").map((value) => value.trim()).filter(Boolean);
+  const needle = subject.trim();
   return allowed.some((candidate) => {
     const a = Buffer.from(candidate);
-    const b = Buffer.from(subject);
+    const b = Buffer.from(needle);
     return a.length === b.length && a.length > 0 && timingSafeEqual(a, b);
   });
 }
@@ -101,6 +103,9 @@ export function createProviderRouter(options: {
         res.status(status).json({ error: error.code });
         return;
       }
+      const name = error instanceof Error ? error.name : "unknown";
+      // eslint-disable-next-line no-console
+      console.warn("provider onboard failed", name);
       res.status(503).json({ error: "PROVIDER_UNAVAILABLE" });
     }
   });

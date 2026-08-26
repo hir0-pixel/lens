@@ -125,8 +125,8 @@ export class PublicationAuthority implements PublicationAuthorityPort {
     const generation = this.generations.get(generationId);
     if (!generation || generation.state !== "building") throw new PublicationError("STALE_AUTHORITY", "The generation is not accepting candidates.");
     if (this.withdrawnVersions.has(candidateRef.versionRef)) throw new PublicationError("STALE_AUTHORITY", "A withdrawn version cannot be added to a generation.");
-    if (generation.candidateRefs.some((ref) => ref.chunkRef === candidateRef.chunkRef)) {
-      throw new PublicationError("CONFLICT", "A chunk was already added to this generation.");
+    if (generation.candidateRefs.some((ref) => ref.versionRef === candidateRef.versionRef && ref.chunkRef === candidateRef.chunkRef)) {
+      throw new PublicationError("CONFLICT", "This candidate was already added to the generation.");
     }
     const next = { ...generation, candidateRefs: [...generation.candidateRefs, candidateRef] };
     next.integrityDigest = computeCandidateRefsDigest(next.candidateRefs);

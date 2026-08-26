@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CURSOR } from "@/shared/design-system/cursorTokens";
 
-describe("Cursor Dark Modern tokens", () => {
+describe("Cursor workbench tokens", () => {
   it("matches VS Code ActivitybarPart dimensions", () => {
     expect(CURSOR.activityBarWidth).toBe(48);
     expect(CURSOR.activityBarActionHeight).toBe(48);
@@ -10,9 +10,9 @@ describe("Cursor Dark Modern tokens", () => {
     expect(CURSOR.titleBarHeight).toBe(35);
   });
 
-  it("uses Dark Modern sideBar / editor backgrounds", () => {
-    expect(CURSOR.colors.sideBarBg).toBe("#181818");
-    expect(CURSOR.colors.editorBg).toBe("#1F1F1F");
-    expect(CURSOR.colors.focusBorder).toBe("#0078D4");
+  it("uses DESIGN-cursor canvas / surface / focus colors", () => {
+    expect(CURSOR.colors.sideBarBg).toBe("#fafaf7");
+    expect(CURSOR.colors.editorBg).toBe("#f7f7f4");
+    expect(CURSOR.colors.focusBorder).toBe("#f54e00");
   });
 });

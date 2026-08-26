@@ -30,6 +30,42 @@ export function assertInternalProviderUrl(raw: string, profile: "sovereign" | "d
   return url;
 }
 
+/** Resolve OpenAI-style resources against the configured base URL without swapping adapters. */
+export function openAiCompatibleResourceUrl(origin: URL, resource: "models" | "chat/completions" | "embeddings"): URL {
+  const path = origin.pathname.replace(/\/$/, "");
+  if (path.endsWith("/v1") || path.endsWith("/openai")) {
+    return new URL(`${path}/${resource}`, origin);
+  }
+  return new URL(`/v1/${resource}`, origin);
+}
+
 export function modelAllowed(model: string, patterns: readonly string[]): boolean {
-  return patterns.some((pattern) => pattern === model || (pattern.endsWith("*") && model.startsWith(pattern.slice(0, -1))));
+  const needle = normalizeDiscoveredModelId(model);
+  return patterns.some((pattern) => {
+    const allow = normalizeDiscoveredModelId(pattern);
+    return allow === needle || (allow.endsWith("*") && needle.startsWith(allow.slice(0, -1)));
+  });
+}
+
+/** Gemini native list uses `models/{id}`; OpenAI-compat may put that string in `id`. */
+export function normalizeDiscoveredModelId(id: string): string {
+  const trimmed = id.trim().toLowerCase();
+  return trimmed.startsWith("models/") ? trimmed.slice("models/".length) : trimmed;
+}
+
+export function parseOpenAiCompatibleModelCatalog(body: unknown): string[] {
+  const ids: string[] = [];
+  if (!body || typeof body !== "object") return ids;
+  const record = body as { data?: unknown; models?: unknown };
+  const rows = [
+    ...(Array.isArray(record.data) ? record.data : []),
+    ...(Array.isArray(record.models) ? record.models : []),
+  ];
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const item = row as { id?: unknown; name?: unknown };
+    if (typeof item.id === "string") ids.push(normalizeDiscoveredModelId(item.id));
+    else if (typeof item.name === "string") ids.push(normalizeDiscoveredModelId(item.name));
+  }
+  return [...new Set(ids.filter(Boolean))];
 }

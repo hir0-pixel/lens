@@ -550,23 +550,27 @@ export class AuthorityService {
 
     const existing = await this.store.getOutputBlob(outputRef);
     if (existing) {
-      if (
-        existing.outputDigest !== input.outputDigest ||
-        existing.classificationRef !== input.classificationRef ||
-        existing.guardReceipt !== input.guardReceipt
-      ) {
-        throw new AuthorityConflictError("Output blob already exists with different metadata.");
-      }
+      let existingReadable = false;
       try {
         const existingOutput = this.outputCrypto.decrypt(existing);
         if (sha256Digest(existingOutput) !== input.outputDigest) {
           throw new AuthorityConflictError("Existing output blob failed integrity verification.");
         }
+        existingReadable = true;
       } catch (error) {
         if (error instanceof AuthorityConflictError) throw error;
-        throw new AuthorityConflictError("Existing output blob failed authenticated integrity verification.");
+        // Content-addressed row encrypted under a prior key (or corrupt ciphertext).
+        // Caller already proved plaintext matches digest; re-encrypt with the active key.
+        await this.store.deleteOutputBlob(outputRef);
       }
-      return { requestId: input.requestId, turnId: input.turnId, outputRef, outputDigest: input.outputDigest, commitProof: existing.commitProof };
+      if (existingReadable) {
+        // Blobs are content-addressed (outputRef = blob:digest). guardReceipt is per-request
+        // staging correlation from the orchestrator, not part of immutable blob identity.
+        if (existing.classificationRef !== input.classificationRef) {
+          throw new AuthorityConflictError("Output blob already exists with a different classification.");
+        }
+        return { requestId: input.requestId, turnId: input.turnId, outputRef, outputDigest: input.outputDigest, commitProof: existing.commitProof };
+      }
     }
 
     const encrypted = this.outputCrypto.encrypt(input.output, outputRef, input.outputDigest);

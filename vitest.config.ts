@@ -18,6 +18,8 @@ export default defineConfig({
       "tests/contract/**/*.{test,spec}.{ts,tsx}",
       "tests/integration/**/*.{test,spec}.{ts,tsx}",
       "tests/security/**/*.{test,spec}.{ts,tsx}",
+      "services/rag-profile/**/*.test.ts",
+      "tests/e2e/**/*.{test,spec}.ts",
     ],
     css: false,
   },

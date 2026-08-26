@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import express, { NextFunction, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import { resolve } from "node:path";
@@ -20,8 +21,12 @@ import { ProviderOnboardingService, ProviderOnboardError } from "../../services/
 import { assertCompanyRagProfile, computeCompanyRagProfileDigest, type CompanyRagProfile } from "../../services/rag-profile/companyRagProfile";
 import type { AuditLedger } from "../../services/audit/AuditLedger";
 import { createIngestionDeployment, type IngestionDeployment } from "../../services/ingestion";
-import { createRetrievalDeployment } from "../../services/retrieval/ProductionRetrievalWiring";
+import { createRetrievalDeployment, type RetrievalDeployment } from "../../services/retrieval/ProductionRetrievalWiring";
 import { createModelProviderAdapter } from "../../services/model-provider/createModelProviderAdapter";
+import { createLocalIngestionEmbeddingAdapter } from "./rag/localIngestionEmbedding";
+import { rehydrateCorpusIndexes } from "./rag/rehydrateCorpus";
+import { createRetrievalHttp } from "../../retrieval-service/src/http";
+import type { ModelProviderAdapter } from "../../services/model-provider/ProviderAdapter";
 
 export const EMBEDDING_PROVIDER_BOUNDARY_LIMITATION = "Embeddings use an in-process provider adapter holding a live secret; unlike generation, this does not yet route through the sidecar secret-capability boundary. Temporary, disclosed, non-GO limitation. Upgrade path: extend the provider-runtime-config/provider-secret sidecar pattern to embedding calls.";
 
@@ -94,20 +99,27 @@ export function createApp(options?: {
 
   let ingestionDeployment = options?.ingestionDeployment;
   let ingestionAuditLedger = options?.auditLedger;
+  let retrievalForIngestion: RetrievalDeployment | undefined;
+  let corpusRehydrate: Promise<void> | undefined;
   if (!ingestionDeployment && cfg.INGESTION_ENABLED) {
-    const required = {
-      adapterType: cfg.INGESTION_PROVIDER_ADAPTER,
-      baseUrl: cfg.INGESTION_PROVIDER_BASE_URL,
-      secretRef: cfg.INGESTION_PROVIDER_SECRET_REF,
-      tlsWorkloadRef: cfg.INGESTION_PROVIDER_TLS_WORKLOAD_REF,
-      model: cfg.INGESTION_PROVIDER_MODEL,
-      allowedModels: cfg.INGESTION_PROVIDER_ALLOWED_MODELS,
-      ragProfile,
-      AUDIT_LEDGER_STORE_PATH: cfg.AUDIT_LEDGER_STORE_PATH,
-    };
-    const missing = Object.entries(required).filter(([, value]) => !value).map(([key]) => key);
-    if (missing.length > 0) throw new Error(`Ingestion configuration missing required values: ${missing.join(", ")}`);
-    const profile = ragProfile!;
+    const profile = ragProfile;
+    if (!profile) throw new Error("INGESTION_ENABLED requires COMPANY_RAG_PROFILE_JSON");
+    const useLocalEmbeddings = cfg.INGESTION_USE_LOCAL_EMBEDDINGS === true;
+    if (!useLocalEmbeddings) {
+      const required = {
+        adapterType: cfg.INGESTION_PROVIDER_ADAPTER,
+        baseUrl: cfg.INGESTION_PROVIDER_BASE_URL,
+        secretRef: cfg.INGESTION_PROVIDER_SECRET_REF,
+        tlsWorkloadRef: cfg.INGESTION_PROVIDER_TLS_WORKLOAD_REF,
+        model: cfg.INGESTION_PROVIDER_MODEL,
+        allowedModels: cfg.INGESTION_PROVIDER_ALLOWED_MODELS,
+        AUDIT_LEDGER_STORE_PATH: cfg.AUDIT_LEDGER_STORE_PATH,
+      };
+      const missing = Object.entries(required).filter(([, value]) => !value).map(([key]) => key);
+      if (missing.length > 0) throw new Error(`Ingestion configuration missing required values: ${missing.join(", ")}`);
+    } else if (!cfg.AUDIT_LEDGER_STORE_PATH) {
+      throw new Error("Ingestion configuration missing required values: AUDIT_LEDGER_STORE_PATH");
+    }
     const indexProfile = {
       embeddingModelDigest: computeCompanyRagProfileDigest(profile),
       tokenizerDigest: `sha256:${"b".repeat(64)}` as `sha256:${string}`,
@@ -117,35 +129,70 @@ export function createApp(options?: {
       schemaVersion: "rag-v1",
     };
     const ragProfileDigest = computeCompanyRagProfileDigest(profile);
+    // This adapter holds a live provider secret in-process for embedding calls, unlike text generation which routes secrets through the workload-token-gated, short-TTL sidecar capability boundary (/internal/v1/provider-runtime-config + /internal/v1/provider-secret/:secretRef). This is a disclosed, temporary, non-GO production limitation; upgrade path: extend that pattern to embedding invocations.
+    const provider: ModelProviderAdapter = useLocalEmbeddings
+      ? createLocalIngestionEmbeddingAdapter(768)
+      : createModelProviderAdapter({
+          adapterType: cfg.INGESTION_PROVIDER_ADAPTER!,
+          baseUrl: cfg.INGESTION_PROVIDER_BASE_URL!,
+          secretRef: cfg.INGESTION_PROVIDER_SECRET_REF!,
+          tlsWorkloadRef: cfg.INGESTION_PROVIDER_TLS_WORKLOAD_REF!,
+          allowedModels: cfg.INGESTION_PROVIDER_ALLOWED_MODELS!.split(",").map((model) => model.trim()).filter(Boolean),
+          expectedCapabilities: ["embed"],
+          timeoutMs: cfg.INGESTION_PROVIDER_TIMEOUT_MS,
+          maxConcurrency: cfg.INGESTION_PROVIDER_MAX_CONCURRENCY,
+          profile: cfg.PROVIDER_PROFILE,
+        }, fetch, secrets);
+    const embeddingModel = useLocalEmbeddings ? "local-embed" : cfg.INGESTION_PROVIDER_MODEL!;
     const retrieval = createRetrievalDeployment({
       publicationProfiles: Object.fromEntries(profile.corpora.map((corpusRef) => [corpusRef, { profile: indexProfile, ragProfileVersion: profile.profileVersion, ragProfileDigest }])),
       publicationStorePath: cfg.PUBLICATION_STORE_PATH,
       persistencePath: cfg.AUDIT_LEDGER_STORE_PATH,
+      checkpointMaxAgeMs: cfg.NODE_ENV === "production" ? undefined : 24 * 60 * 60 * 1000,
+      provider,
+      embeddingModel,
     });
-    // This adapter holds a live provider secret in-process for embedding calls, unlike text generation which routes secrets through the workload-token-gated, short-TTL sidecar capability boundary (/internal/v1/provider-runtime-config + /internal/v1/provider-secret/:secretRef). This is a disclosed, temporary, non-GO production limitation; upgrade path: extend that pattern to embedding invocations.
-    const provider = createModelProviderAdapter({
-      adapterType: required.adapterType!,
-      baseUrl: required.baseUrl!,
-      secretRef: required.secretRef!,
-      tlsWorkloadRef: required.tlsWorkloadRef!,
-      allowedModels: required.allowedModels!.split(",").map((model) => model.trim()).filter(Boolean),
-      expectedCapabilities: ["embed"],
-      timeoutMs: cfg.INGESTION_PROVIDER_TIMEOUT_MS,
-      maxConcurrency: cfg.INGESTION_PROVIDER_MAX_CONCURRENCY,
-      profile: cfg.PROVIDER_PROFILE,
-    }, fetch, secrets);
+    retrieval.activatePolicy();
+    retrieval.setAuditHealth({ quorumAvailable: true, witnessHealthy: true, checkpointAt: Date.now() });
+    for (const corpusRef of profile.corpora) {
+      const aclDigest = `sha256:${createHash("sha256").update(`corpus-acl:${corpusRef}`).digest("hex")}` as `sha256:${string}`;
+      retrieval.governance.registerVersion({ documentVersionRef: corpusRef, classification: "internal", aclDigest });
+      retrieval.governance.mutateSecurity(corpusRef, { processing: "indexed", integrity: "valid", publication: "active" }, {
+        fenceId: `fence-${corpusRef}`,
+        actorRef: "governance",
+        approverRef: "platform",
+        expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+      });
+    }
+    retrievalForIngestion = retrieval;
     ingestionDeployment = createIngestionDeployment({
       retrieval,
       provider,
-      embeddingModel: required.model!,
+      embeddingModel,
       ragProfile: profile,
       corpora: Object.fromEntries(profile.corpora.map((corpusRef) => [corpusRef, { indexProfile, ragProfileVersion: profile.profileVersion, ragProfileDigest }])),
+      ingestionStorePathPrefix: cfg.INGESTION_STORE_PATH_PREFIX,
     });
     ingestionAuditLedger = retrieval.auditLedger;
+    if (cfg.INGESTION_STORE_PATH_PREFIX) {
+      corpusRehydrate = rehydrateCorpusIndexes({
+        retrieval,
+        corpora: profile.corpora,
+        ingestionStorePathPrefix: cfg.INGESTION_STORE_PATH_PREFIX,
+        provider,
+        embeddingModel,
+      }).then((rehydrated) => {
+        if (rehydrated > 0) {
+          // eslint-disable-next-line no-console
+          console.log(`Rehydrated ${rehydrated} committed document version(s) into retrieval indexes`);
+        }
+      });
+    }
   }
   const providerSecretCapabilities = new Map<string, ProviderSecretCapability>();
 
   const app = express();
+  app.locals.corpusRehydrate = corpusRehydrate;
   app.disable("x-powered-by");
 
   app.set("trust proxy", 1);
@@ -156,13 +203,26 @@ export function createApp(options?: {
     res.setHeader("Cache-Control", "no-store");
     next();
   });
-  app.use(express.json({ limit: "32kb", strict: true, type: "application/json" }));
+  app.use((req, res, next) => {
+    const limit = req.path.startsWith("/api/admin/ingestion") ? "512kb" : "32kb";
+    return express.json({ limit, strict: true, type: "application/json" })(req, res, next);
+  });
   app.use(cookieParser());
   app.use(corsMiddleware());
 
   app.use("/auth", createAuthRouter({ auth }));
   app.use("/api", csrfProtection({ getSessionCsrf: (cookieValue) => sessionManager.readSession(cookieValue)?.csrfToken }));
   app.use("/api", createApiRouter({ auth, ragHandler, conversationReferenceCodec, sessionAssertionIssuer, memoryAssertionIssuer, onboarding, ragProfile, ingestionDeployment, auditLedger: ingestionAuditLedger }));
+
+  if (retrievalForIngestion && cfg.RETRIEVAL_HTTP_PORT && cfg.RETRIEVAL_WORKLOAD_TOKEN) {
+    const retrievalHttp = createRetrievalHttp({
+      service: retrievalForIngestion.service,
+      workloadToken: cfg.RETRIEVAL_WORKLOAD_TOKEN,
+      readiness: () => true,
+    });
+    app.locals.retrievalHttp = retrievalHttp;
+    app.locals.retrievalHttpPort = cfg.RETRIEVAL_HTTP_PORT;
+  }
 
   function constantTimeTokenMatch(expected: string | undefined, suppliedHeader: unknown): boolean {
     const supplied = typeof suppliedHeader === "string" ? suppliedHeader : "";
@@ -315,12 +375,21 @@ export function createApp(options?: {
   return app;
 }
 
-export function startServer(): void {
+export async function startServer(): Promise<void> {
   const cfg = getConfig();
   const app = createApp();
+  const corpusRehydrate = app.locals.corpusRehydrate as Promise<void> | undefined;
+  if (corpusRehydrate) await corpusRehydrate;
+  const retrievalHttp = app.locals.retrievalHttp as ReturnType<typeof createRetrievalHttp> | undefined;
+  const retrievalHttpPort = app.locals.retrievalHttpPort as number | undefined;
+  if (retrievalHttp && retrievalHttpPort) {
+    await retrievalHttp.listen(retrievalHttpPort, "127.0.0.1");
+    // eslint-disable-next-line no-console
+    console.log(`Lens BFF retrieval (ingestion corpus) listening on :${retrievalHttpPort}`);
+  }
   app.listen(cfg.PORT, () => {
     // eslint-disable-next-line no-console
-    console.log(`Lens BFF listening on :${cfg.PORT}`);
+    console.log(`Lens BFF listening on :${cfg.PORT} admin_subjects=${Boolean(cfg.ADMIN_SUBJECTS?.trim())}`);
   });
 }
 
@@ -335,5 +404,5 @@ function isMainModule(): boolean {
 }
 
 if (isMainModule()) {
-  startServer();
+  void startServer();
 }

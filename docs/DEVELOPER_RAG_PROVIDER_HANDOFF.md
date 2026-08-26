@@ -20,6 +20,7 @@ An admin should be able to onboard a provider or internal model gateway, discove
 
 - `docs/PROVIDER_KEY_SETUP.md` - detailed provider onboarding and environment reference.
 - `docs/PROVIDER_AND_RAG_PROFILE.md` - provider adapter and company RAG profile design.
+- `docs/rag-final-provider-handoff-report.md` - Task 10 final verdict (implementation vs production GO/NO-GO).
 - `docs/RAG_PRODUCTION_IMPLEMENTATION_REPORT.md` - current implementation status and remaining production gates.
 - `server/src/routes/providers.ts` - admin provider onboarding routes.
 - `server/src/routes/api.ts` - BFF API composition, including model catalog and RAG routes.
@@ -60,6 +61,8 @@ PostgreSQL stores shared durable backend state: provider catalog metadata, RAG c
 Provider API keys should live in a secrets manager or encrypted server-side secret store. PostgreSQL should normally store only a `secret_ref`, not the plaintext key.
 
 For local/demo testing, SQLite/local files are acceptable. For multi-user or multi-replica testing, use PostgreSQL or an equivalent shared durable store so every BFF, Orchestrator, Retrieval, Authority, and ingestion replica sees the same state.
+
+Task 8 live PostgreSQL integration (`tests/unit/pgPool.test.ts`, env `LENS_TEST_DATABASE_URL`): **NOT RUN ENVIRONMENT** — no internal Postgres URL was set in this workspace. Local/demo coverage uses SQLite (`:memory:` or durable files) and production config rejects `:memory:` persistence paths plus missing `SECRET_STORE_KEY`.
 
 Recommended database test progression:
 

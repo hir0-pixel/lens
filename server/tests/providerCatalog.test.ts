@@ -44,6 +44,7 @@ function baseEnv(overrides: Record<string, string> = {}) {
     AUDIT_LEDGER_STORE_PATH: "./audit.sqlite",
     CATALOG_WORKLOAD_TOKEN: CATALOG_TOKEN,
     PROVIDER_SECRET_WORKLOAD_TOKEN: PROVIDER_SECRET_TOKEN,
+    SECRET_STORE_KEY: "k".repeat(32),
     ...overrides,
   };
 }

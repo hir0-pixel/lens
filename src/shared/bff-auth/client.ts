@@ -7,6 +7,7 @@ export interface AuthSessionInfo {
   preferredUsername?: string;
   expiresAt?: number;
   administrator?: boolean;
+  adminSubjectsConfigured?: boolean;
 }
 
 export interface EmployeeModel {
@@ -23,6 +24,10 @@ export type AuthClientErrorCode =
   | "SESSION_INVALID"
   | "GENERATION_UNAVAILABLE"
   | "RAG_UNAVAILABLE"
+  | "RAG_NOT_CONFIGURED"
+  | "FORBIDDEN"
+  | "MODEL_NOT_ELIGIBLE"
+  | "CONVERSATION_REF_INVALID"
   | "OVERLOADED"
   | "CAPACITY_UNAVAILABLE"
   | "DEPENDENCY_UNAVAILABLE"
@@ -31,12 +36,14 @@ export type AuthClientErrorCode =
 export class AuthClientError extends Error {
   readonly code: AuthClientErrorCode;
   readonly status?: number;
+  readonly detail?: string;
 
-  constructor(code: AuthClientErrorCode, status?: number) {
+  constructor(code: AuthClientErrorCode, status?: number, detail?: string) {
     super(code);
     this.name = "AuthClientError";
     this.code = code;
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -53,6 +60,7 @@ export interface AuthClientOptions {
   ragEndpoint?: string;
   modelsEndpoint?: string;
   adminProvidersEndpoint?: string;
+  adminIngestionEndpoint?: string;
   loginPath?: string;
   logoutPath?: string;
   csrfCookieName?: string;
@@ -60,6 +68,20 @@ export interface AuthClientOptions {
   fetcher?: typeof fetch;
   /** When true, login is opened in the system browser (Tauri desktop). */
   openExternal?: (url: string) => void;
+}
+
+export interface IngestionMeta {
+  corpora: string[];
+  ragProfileVersion: number;
+  ragProfileDigest: `sha256:${string}`;
+  chunking: { maxTokens: number; overlapTokens: number };
+}
+
+export interface IngestionJobResult {
+  jobId: string;
+  state: string;
+  stage: string;
+  generation?: string;
 }
 
 function sameOriginBase(baseUrl: string): string {
@@ -71,6 +93,14 @@ function readErrorCode(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object") return undefined;
   const error = (payload as { error?: unknown }).error;
   return typeof error === "string" ? error : undefined;
+}
+
+function readErrorReason(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const body = payload as { reason?: unknown; detail?: unknown };
+  if (typeof body.reason === "string" && body.reason.trim()) return body.reason.trim();
+  if (typeof body.detail === "string" && body.detail.trim()) return body.detail.trim();
+  return undefined;
 }
 
 function classifyEndpointError(
@@ -99,7 +129,19 @@ function classifyEndpointError(
   if (errorCode === "DEPENDENCY_UNAVAILABLE") {
     return new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
   }
-  return new AuthClientError(fallback, response.status);
+  if (errorCode === "RAG_NOT_CONFIGURED") {
+    return new AuthClientError("RAG_NOT_CONFIGURED", response.status);
+  }
+  if (errorCode === "CONVERSATION_REF_INVALID") {
+    return new AuthClientError("CONVERSATION_REF_INVALID", response.status, readErrorReason(payload));
+  }
+  if (errorCode === "MODEL_NOT_ELIGIBLE") {
+    return new AuthClientError("MODEL_NOT_ELIGIBLE", response.status, readErrorReason(payload));
+  }
+  if (response.status === 403 || errorCode === "FORBIDDEN") {
+    return new AuthClientError("FORBIDDEN", response.status, readErrorReason(payload));
+  }
+  return new AuthClientError(fallback, response.status, readErrorReason(payload));
 }
 
 async function readJsonPayload(response: Response): Promise<unknown | undefined> {
@@ -117,6 +159,7 @@ export function createAuthClient(options: AuthClientOptions) {
   const ragEndpoint = options.ragEndpoint ?? "/api/rag/ask";
   const modelsEndpoint = options.modelsEndpoint ?? "/api/models";
   const adminProvidersEndpoint = options.adminProvidersEndpoint ?? "/api/admin/providers";
+  const adminIngestionEndpoint = options.adminIngestionEndpoint ?? "/api/admin/ingestion";
   const loginPath = options.loginPath ?? "/auth/login";
   const logoutPath = options.logoutPath ?? "/auth/logout";
   const csrfCookieName = options.csrfCookieName ?? "lens_csrf";
@@ -235,17 +278,37 @@ export function createAuthClient(options: AuthClientOptions) {
 
   async function askRag(query: string, options?: { modelId?: string; conversationRef?: string; conversationCreationKey?: string; signal?: AbortSignal }): Promise<RagAnswer> {
     const signal = options?.signal;
-    const modelId = options?.modelId;
     const session = await getSession(signal);
     if (!session.authenticated) throw new AuthClientError("AUTH_REQUIRED");
-    const response = await fetcher(`${baseUrl}${ragEndpoint}`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "content-type": "application/json", accept: "application/json", ...csrfHeaders() },
-      body: JSON.stringify({ query, ...(modelId ? { modelId } : {}), ...(options?.conversationRef ? { conversationRef: options.conversationRef } : {}), ...(options?.conversationCreationKey ? { conversationCreationKey: options.conversationCreationKey } : {}) }),
-      signal,
-    });
-    const payload = await readJsonPayload(response);
+
+    async function postAsk(askOptions: typeof options) {
+      const modelId = askOptions?.modelId;
+      const response = await fetcher(`${baseUrl}${ragEndpoint}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json", accept: "application/json", ...csrfHeaders() },
+        body: JSON.stringify({
+          query,
+          ...(modelId ? { modelId } : {}),
+          ...(askOptions?.conversationRef ? { conversationRef: askOptions.conversationRef } : {}),
+          ...(askOptions?.conversationCreationKey ? { conversationCreationKey: askOptions.conversationCreationKey } : {}),
+        }),
+        signal,
+      });
+      const payload = await readJsonPayload(response);
+      return { response, payload };
+    }
+
+    let { response, payload } = await postAsk(options);
+    if (!response.ok) {
+      const errorCode = readErrorCode(payload);
+      const staleConversation =
+        options?.conversationRef &&
+        (errorCode === "CONVERSATION_REF_INVALID" || errorCode === "FORBIDDEN");
+      if (response.status === 403 && staleConversation) {
+        ({ response, payload } = await postAsk({ ...options, conversationRef: undefined }));
+      }
+    }
     if (!response.ok) {
       throw classifyEndpointError(response, payload, "RAG_UNAVAILABLE");
     }
@@ -306,7 +369,9 @@ export function createAuthClient(options: AuthClientOptions) {
       body: JSON.stringify({ ...input, adapterType: input.adapterType ?? "openai-compatible" }),
     });
     const payload = await readJsonPayload(response);
-    if (!response.ok) throw classifyEndpointError(response, payload, "DEPENDENCY_UNAVAILABLE");
+    if (!response.ok) {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status, readErrorCode(payload));
+    }
     if (!payload || typeof payload !== "object" || typeof (payload as { id?: unknown }).id !== "string") {
       throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
     }
@@ -317,6 +382,66 @@ export function createAuthClient(options: AuthClientOptions) {
     return { id: String(body.id), status: String(body.status ?? "") };
   }
 
+  async function getIngestionMeta(signal?: AbortSignal): Promise<IngestionMeta> {
+    const session = await getSession(signal);
+    if (!session.authenticated) throw new AuthClientError("AUTH_REQUIRED");
+    const response = await fetcher(`${baseUrl}${adminIngestionEndpoint}/meta`, {
+      method: "GET",
+      credentials: "include",
+      headers: { accept: "application/json" },
+      signal,
+    });
+    const payload = await readJsonPayload(response);
+    if (!response.ok) {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status, readErrorCode(payload));
+    }
+    if (!payload || typeof payload !== "object") {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
+    }
+    const body = payload as Record<string, unknown>;
+    if (!Array.isArray(body.corpora) || typeof body.ragProfileVersion !== "number" || typeof body.ragProfileDigest !== "string") {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
+    }
+    const chunking = body.chunking && typeof body.chunking === "object" ? body.chunking as { maxTokens?: unknown; overlapTokens?: unknown } : {};
+    return {
+      corpora: body.corpora.filter((value): value is string => typeof value === "string"),
+      ragProfileVersion: body.ragProfileVersion,
+      ragProfileDigest: body.ragProfileDigest as `sha256:${string}`,
+      chunking: {
+        maxTokens: typeof chunking.maxTokens === "number" ? chunking.maxTokens : 400,
+        overlapTokens: typeof chunking.overlapTokens === "number" ? chunking.overlapTokens : 40,
+      },
+    };
+  }
+
+  async function submitIngestionJob(
+    corpusRef: string,
+    body: Record<string, unknown>,
+  ): Promise<IngestionJobResult> {
+    const session = await getSession();
+    if (!session.authenticated) throw new AuthClientError("AUTH_REQUIRED");
+    const response = await fetcher(`${baseUrl}${adminIngestionEndpoint}/corpora/${encodeURIComponent(corpusRef)}/jobs`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json", accept: "application/json", ...csrfHeaders() },
+      body: JSON.stringify(body),
+    });
+    const payload = await readJsonPayload(response);
+    if (!response.ok) {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status, readErrorReason(payload));
+    }
+    if (!payload || typeof payload !== "object" || typeof (payload as { jobId?: unknown }).jobId !== "string") {
+      throw new AuthClientError("DEPENDENCY_UNAVAILABLE", response.status);
+    }
+    const result = payload as Record<string, unknown>;
+    return {
+      jobId: String(result.jobId),
+      state: String(result.state ?? ""),
+      stage: String(result.stage ?? ""),
+      generation: typeof result.generation === "string" ? result.generation : undefined,
+    };
+  }
+
   return {
     getSession,
     beginLogin,
@@ -325,6 +450,8 @@ export function createAuthClient(options: AuthClientOptions) {
     askRag,
     listModels,
     onboardProvider,
+    getIngestionMeta,
+    submitIngestionJob,
   };
 }
 

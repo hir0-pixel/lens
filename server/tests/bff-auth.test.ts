@@ -40,6 +40,7 @@ function baseEnv(overrides: Record<string, string> = {}) {
     PUBLICATION_STORE_PATH: "./publication.sqlite",
     INGESTION_STORE_PATH_PREFIX: "./ingestion",
     AUDIT_LEDGER_STORE_PATH: "./audit.sqlite",
+    SECRET_STORE_KEY: "k".repeat(32),
     ...overrides,
   };
 }
