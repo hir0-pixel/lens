@@ -9,7 +9,7 @@ describe("desktop development stack supervision", () => {
     const [frontend, bff, identity] = serviceDefinitions();
     assert.deepEqual(await probeService(frontend, async () => response("<title>Lens</title>")), { state: "healthy" });
     assert.deepEqual(await probeService(bff, async () => response('{"ok":true}')), { state: "healthy" });
-    assert.deepEqual(await probeService(identity, async () => response('{"issuer":"http://localhost:3005"}')), { state: "healthy" });
+    assert.deepEqual(await probeService(identity, async () => response('{"issuer":"http://127.0.0.1:3005"}')), { state: "healthy" });
   });
 
   it("does not treat an occupied unexpected endpoint as a missing service", async () => {

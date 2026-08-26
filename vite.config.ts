@@ -51,7 +51,10 @@ export default defineConfig(async ({ mode }) => {
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
+    // Bind IPv4 loopback explicitly. On Windows, Vite's default `localhost`
+    // often listens on ::1 only, while Tauri's Rust readiness check resolves
+    // localhost to 127.0.0.1 and waits forever.
+    host: host || "127.0.0.1",
     hmr: host
       ? {
           protocol: "ws",
@@ -64,11 +67,11 @@ export default defineConfig(async ({ mode }) => {
     },
     proxy: {
       "/auth": {
-        target: "http://localhost:3001",
+        target: "http://127.0.0.1:3001",
         changeOrigin: false,
       },
       "/api": {
-        target: "http://localhost:3001",
+        target: "http://127.0.0.1:3001",
         changeOrigin: false,
       },
     },

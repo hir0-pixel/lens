@@ -135,6 +135,31 @@ describe("Lens BFF authentication", () => {
     expect(location).toContain("state=");
   });
 
+  it("GET /auth/login returns authorizationUrl JSON when x-lens-login=1", async () => {
+    makeEnv();
+    const app = createApp({ generateHandler: async () => "x" });
+    const res = await request(app).get("/auth/login").set("x-lens-login", "1");
+    expect(res.status).toBe(200);
+    expect(res.body.authorizationUrl).toContain("protocol/openid-connect/auth");
+    expect(res.body.authorizationUrl).toContain("state=");
+    expect(res.header["set-cookie"]?.some((cookie: string) => cookie.startsWith("lens_oidc_binding="))).toBe(true);
+  });
+
+  it("accepts a callback without a binding cookie when OIDC_FIXED_BROWSER_BINDING is set", async () => {
+    makeEnv({ OIDC_FIXED_BROWSER_BINDING: "lens-desktop-dev-oidc-browser-binding-v1" });
+    const app = createApp({ generateHandler: async () => "x" });
+    const login = await request(app).get("/auth/login");
+    const authorization = new URL(login.header.location);
+    const state = authorization.searchParams.get("state") ?? "";
+    activeNonce = authorization.searchParams.get("nonce") ?? "";
+    expect(login.header["set-cookie"]?.some((cookie: string) => cookie.startsWith("lens_oidc_binding="))).toBeFalsy();
+
+    const callback = await request(app).get(`/auth/callback?state=${encodeURIComponent(state)}&code=codeABC`);
+    expect(callback.status).toBe(302);
+    expect(callback.header.location).toBe("http://localhost:1420/");
+    expect(callback.header["set-cookie"]?.some((cookie: string) => cookie.startsWith("lens_session="))).toBe(true);
+  });
+
   it("GET /auth/callback fails closed on invalid OIDC state", async () => {
     makeEnv();
     const app = createApp({ generateHandler: async () => "x" });

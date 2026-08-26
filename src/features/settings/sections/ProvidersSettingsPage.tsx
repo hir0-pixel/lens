@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -102,6 +102,7 @@ export function ProvidersSettingsPage() {
   const administrator = useAuthStore((state) => state.session?.administrator === true);
   const subject = useAuthStore((state) => state.session?.subject);
   const adminSubjectsConfigured = useAuthStore((state) => state.session?.adminSubjectsConfigured === true);
+  const checkAuth = useAuthStore((state) => state.check);
   const refreshCatalog = useModelCatalogStore((state) => state.refresh);
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -112,8 +113,8 @@ export function ProvidersSettingsPage() {
   const [message, setMessage] = useState<string>();
 
   useEffect(() => {
-    void useAuthStore.getState().check();
-  }, []);
+    void checkAuth?.();
+  }, [checkAuth]);
 
   async function submitOnboard() {
     const client = getBffAuthClient();

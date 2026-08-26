@@ -1,4 +1,13 @@
 import { randomBytes } from "node:crypto";
+export type PdpFailure =
+  | "POLICY_HEAD_UNAVAILABLE"
+  | "BATCH_LIMIT_EXCEEDED"
+  | "AUTHORITY_UNAVAILABLE"
+  | "AUTHORIZATION_STATE_CHANGED"
+  | "EVALUATOR_FAILURE"
+  | "AUDIT_UNAVAILABLE"
+  | "FENCE_INVALID";
+
 export class PdpError extends Error { constructor(readonly code: PdpFailure) { super(code); } }
 export interface SubjectFacts { revision: number; active: boolean; groups: readonly string[]; }
 export interface DeviceFacts { revision: number; compliant: boolean; }

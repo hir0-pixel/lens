@@ -72,6 +72,11 @@ const envSchema = z.object({
   OIDC_NONCE_LENGTH: z.coerce.number().default(32),
   OIDC_PENDING_TTL_MS: z.coerce.number().default(5 * 60 * 1000),
   OIDC_BROWSER_BINDING_COOKIE_NAME: z.string().min(1).max(128).default("lens_oidc_binding"),
+  // When set (desktop/dev), seal/open pending OIDC state with this fixed
+  // binding and skip the binding cookie. WebView2 often drops Path=/ cookies
+  // across the IdP port hop, which otherwise causes OIDC state mismatch and
+  // dumps the user back on Sign In.
+  OIDC_FIXED_BROWSER_BINDING: z.string().min(32).max(256).optional(),
   OIDC_TOKEN_INTROSPECTION_ENDPOINT: z.string().url().optional(),
   OIDC_REVOCATION_ENDPOINT: z.string().url().optional(),
   OIDC_USERINFO_ENDPOINT: z.string().url().optional(),

@@ -15,7 +15,7 @@ export type BrandId =
   | "ollama"
   | "copilot";
 
-type MarkProps = SVGProps<SVGSVGElement>;
+type MarkProps = SVGProps<SVGSVGElement> & { title?: string };
 
 /** GitHub — https://svgl.app/library/github_light.svg (monochrome → currentColor) */
 function GithubMark(props: MarkProps) {

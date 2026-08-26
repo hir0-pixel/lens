@@ -40,3 +40,5 @@ PROJECT_HANDOFF.md
 
 # Local SQLite development state
 server/providers.sqlite
+server/providers.sqlite.secrets
+*.secrets

@@ -1,8 +1,8 @@
 import Provider from "oidc-provider";
 
-const ISSUER = process.env.LENS_DEV_IDP_ISSUER ?? "http://localhost:3005";
+const ISSUER = process.env.LENS_DEV_IDP_ISSUER ?? "http://127.0.0.1:3005";
 const PORT = Number(process.env.LENS_DEV_IDP_PORT ?? 3005);
-const APP_ORIGIN = process.env.LENS_APP_ORIGIN ?? "http://localhost:1420";
+const APP_ORIGIN = process.env.LENS_APP_ORIGIN ?? "http://127.0.0.1:1420";
 
 const devAccount = {
   sub: "dev-user-1",
@@ -16,8 +16,9 @@ const clients = [
   {
     client_id: "lens-bff",
     client_secret: "dev-client-secret",
-    redirect_uris: ["http://localhost:3001/auth/callback"],
-    post_logout_redirect_uris: ["http://localhost:1420"],
+    // App origin hosts /auth/* via the Vite proxy in desktop/dev.
+    redirect_uris: [`${APP_ORIGIN.replace(/\/$/, "")}/auth/callback`],
+    post_logout_redirect_uris: [APP_ORIGIN.replace(/\/$/, "")],
     token_endpoint_auth_method: "client_secret_basic",
     grant_types: ["authorization_code", "refresh_token"],
     response_types: ["code"],
@@ -34,6 +35,22 @@ const configuration = {
     openid: ["sub"],
     email: ["email", "email_verified"],
     profile: ["name", "preferred_username"],
+  },
+  // Skip the Authorize consent screen in local dev — after login, issue a
+  // grant for the requested scopes so Continue cannot loop forever.
+  async loadExistingGrant(ctx) {
+    const clientId = ctx.oidc.client.clientId;
+    const accountId = ctx.oidc.session?.accountId;
+    if (!accountId) return undefined;
+    const existingId = ctx.oidc.session.grantIdFor(clientId);
+    if (existingId) {
+      const existing = await provider.Grant.find(existingId);
+      if (existing && !existing.isExpired) return existing;
+    }
+    const grant = new provider.Grant({ clientId, accountId });
+    if (ctx.oidc.params?.scope) grant.addOIDCScope(String(ctx.oidc.params.scope));
+    await grant.save();
+    return grant;
   },
   features: {
     devInteractions: { enabled: false },
@@ -162,11 +179,12 @@ const consentPage = (action, scopes) => page({
   icon: "&#10003;",
   title: "Authorize Lens",
   sub: "Lens wants to access the following from your account.",
-  body: `<form method="post" action="${action}">
+  body: `<form id="consent" method="post" action="${action}">
     <div class="scopes">${scopes.map(s => `<span class="scope">${s}</span>`).join("")}</div>
     <button type="submit">Continue</button>
   </form>
-  <a class="cancel" href="${action}?cancel=1">Cancel</a>`,
+  <a class="cancel" href="${action}?cancel=1">Cancel</a>
+  <script>document.getElementById('consent').submit();</script>`,
 });
 
 function readBody(ctx) {
@@ -217,6 +235,7 @@ provider.use(async (ctx, next) => {
         else grant = new provider.Grant({ accountId: session.accountId, clientId: params.client_id });
         const missing = details.prompt?.details?.missingOIDCScope;
         if (missing?.length) grant.addOIDCScope(missing.join(" "));
+        else if (params?.scope) grant.addOIDCScope(String(params.scope));
         const savedId = await grant.save();
         await provider.interactionFinished(ctx.req, ctx.res, { consent: { grantId: savedId } }, { mergeWithLastSubmission: false });
         return;
@@ -234,7 +253,8 @@ provider.use(async (ctx, next) => {
   return next();
 });
 
-provider.listen(PORT, () => {
+const listenHost = process.env.LENS_DEV_IDP_HOST ?? "127.0.0.1";
+provider.listen(PORT, listenHost, () => {
   // eslint-disable-next-line no-console
   console.log(`Lens dev IdP listening on ${ISSUER}`);
 });

@@ -201,13 +201,16 @@ export function createAuthService(options: {
     }
     try {
       const body = new URLSearchParams({ token, token_type_hint: "access_token" });
+      const headers: Record<string, string> = {
+        "content-type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+      };
+      if (cfg.OIDC_CLIENT_SECRET) {
+        headers.authorization = `Basic ${Buffer.from(`${cfg.OIDC_CLIENT_ID}:${cfg.OIDC_CLIENT_SECRET}`).toString("base64")}`;
+      }
       const response = await fetcher(endpoint, {
         method: "POST",
-        headers: {
-          authorization: `Basic ${Buffer.from(`${cfg.OIDC_CLIENT_ID}:${cfg.OIDC_CLIENT_SECRET}`).toString("base64")}`,
-          "content-type": "application/x-www-form-urlencoded",
-          accept: "application/json",
-        },
+        headers,
         body,
       });
       if (!response.ok) return false;

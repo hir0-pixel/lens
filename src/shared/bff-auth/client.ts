@@ -204,9 +204,6 @@ export function createAuthClient(options: AuthClientOptions) {
       options.openExternal(url);
       return;
     }
-    // Probe the login endpoint without following the redirect. A healthy BFF
-    // replies 302 to the IdP; a misconfigured/unreachable one replies an
-    // error, and we surface it instead of hard-navigating to an error page.
     try {
       const response = await fetcher(url, {
         method: "GET",
@@ -214,7 +211,11 @@ export function createAuthClient(options: AuthClientOptions) {
         redirect: "manual",
         headers: { accept: "application/json" },
       });
-      if (response.type === "opaqueredirect" || response.status >= 300 && response.status < 400) {
+      if (
+        response.type === "opaqueredirect" ||
+        (response.status >= 300 && response.status < 400) ||
+        response.ok
+      ) {
         window.location.assign(url);
         return;
       }

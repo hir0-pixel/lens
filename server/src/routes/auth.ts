@@ -37,21 +37,25 @@ export function createAuthRouter(options: {
     }
     const created = createPendingFlow();
     let flow = created;
+    const fixedBinding = cfg.OIDC_FIXED_BROWSER_BINDING;
     if (pendingFlowStore) {
       pendingFlowStore.put(created);
     } else {
       const existingBinding = req.cookies?.[cfg.OIDC_BROWSER_BINDING_COOKIE_NAME];
-      const browserBinding = typeof existingBinding === "string" && /^[A-Za-z0-9_-]{32,256}$/.test(existingBinding)
-        ? existingBinding
-        : randomBase64Url(32);
+      const browserBinding = fixedBinding
+        ?? (typeof existingBinding === "string" && /^[A-Za-z0-9_-]{32,256}$/.test(existingBinding)
+          ? existingBinding
+          : randomBase64Url(32));
       flow = statelessFlow.seal(created, browserBinding);
-      res.cookie(cfg.OIDC_BROWSER_BINDING_COOKIE_NAME, browserBinding, {
-        httpOnly: true,
-        secure: cfg.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: cfg.OIDC_PENDING_TTL_MS,
-        path: "/auth",
-      });
+      if (!fixedBinding) {
+        res.cookie(cfg.OIDC_BROWSER_BINDING_COOKIE_NAME, browserBinding, {
+          httpOnly: true,
+          secure: cfg.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: cfg.OIDC_PENDING_TTL_MS,
+          path: "/",
+        });
+      }
     }
     const url = buildAuthorizationUrl({
       codeChallenge: buildCodeChallenge(flow.verifier),
@@ -59,15 +63,21 @@ export function createAuthRouter(options: {
       state: flow.state,
       nonce: flow.nonce,
     });
+    if (String(req.headers["x-lens-login"] ?? "") === "1") {
+      res.status(200).json({ authorizationUrl: url });
+      return;
+    }
     res.redirect(302, url);
   });
 
   router.get("/callback", rateLimiter, async (req, res) => {
     const state = typeof req.query.state === "string" ? req.query.state : undefined;
     const code = typeof req.query.code === "string" ? req.query.code : undefined;
+    const binding = cfg.OIDC_FIXED_BROWSER_BINDING
+      ?? req.cookies?.[cfg.OIDC_BROWSER_BINDING_COOKIE_NAME];
     const flow = pendingFlowStore
       ? pendingFlowStore.take(state)
-      : statelessFlow.open(state, req.cookies?.[cfg.OIDC_BROWSER_BINDING_COOKIE_NAME]);
+      : statelessFlow.open(state, binding);
     try {
       await discoverProviderConfig();
       const result = await options.auth.completeLogin(state, code, flow);
@@ -85,13 +95,51 @@ export function createAuthRouter(options: {
         maxAge: cfg.SESSION_TTL_MS,
         path: "/",
       });
-      res.redirect(302, `${cfg.APP_ORIGIN}/`);
+      const targetOrigin = (() => {
+        if (cfg.NODE_ENV !== "production") {
+          const host = (req.headers["x-forwarded-host"] ?? req.headers.host) as string | undefined;
+          const proto = (req.headers["x-forwarded-proto"] ?? req.protocol ?? "http") as string;
+          if (typeof host === "string" && host.trim()) {
+            const candidate = `${proto}://${host.trim()}`.replace(/\/$/, "");
+            if (
+              candidate === "http://127.0.0.1:1420" ||
+              candidate === "http://localhost:1420"
+            ) {
+              return candidate;
+            }
+          }
+        }
+        return cfg.APP_ORIGIN.replace(/\/$/, "");
+      })();
+      res.redirect(302, `${targetOrigin}/`);
     } catch (error) {
+      const hasBinding = Boolean(binding);
+      console.error(
+        "[auth/callback] login completion failed:",
+        error instanceof Error ? error.message : error,
+        { hasBinding, hasState: Boolean(state), hasCode: Boolean(code), hasFlow: Boolean(flow), fixedBinding: Boolean(cfg.OIDC_FIXED_BROWSER_BINDING) },
+      );
+      const targetOrigin = (() => {
+        if (cfg.NODE_ENV !== "production") {
+          const host = (req.headers["x-forwarded-host"] ?? req.headers.host) as string | undefined;
+          const proto = (req.headers["x-forwarded-proto"] ?? req.protocol ?? "http") as string;
+          if (typeof host === "string" && host.trim()) {
+            const candidate = `${proto}://${host.trim()}`.replace(/\/$/, "");
+            if (
+              candidate === "http://127.0.0.1:1420" ||
+              candidate === "http://localhost:1420"
+            ) {
+              return candidate;
+            }
+          }
+        }
+        return cfg.APP_ORIGIN.replace(/\/$/, "");
+      })();
       if (error instanceof OIDCProviderError) {
-        res.status(302).redirect(`${cfg.APP_ORIGIN}/?auth=error`);
+        res.status(302).redirect(`${targetOrigin}/?auth=error`);
         return;
       }
-      res.status(302).redirect(`${cfg.APP_ORIGIN}/?auth=error`);
+      res.status(302).redirect(`${targetOrigin}/?auth=error`);
     }
   });
 
