@@ -80,22 +80,22 @@ export default function FileEditorWindowApp() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-[#111111] text-[#e8e8e8] font-sans antialiased">
+    <div className="flex h-screen flex-col bg-[#171717] text-[#ebebeb] font-sans antialiased">
       {/* Title / Header Bar - Clean header without Save button or sync text */}
-      <header className="flex h-10 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#161616] px-4">
+      <header className="flex h-10 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#171717] px-4">
         <div className="flex items-center gap-2 min-w-0">
           <FileCode className="h-4 w-4 text-blue-400 shrink-0" strokeWidth={1.5} />
-          <span className="type-caption font-semibold text-[#f0f0f0] truncate">
+          <span className="type-caption font-semibold text-[#ffffff] truncate">
             {fileName}
           </span>
-          <span className="type-code text-[#777] truncate hidden sm:inline">
+          <span className="type-code text-[#888888] truncate hidden sm:inline">
             {filePath}
           </span>
         </div>
       </header>
 
       {/* Editor Surface with Git-style Inline Diff (Added = Green, Deleted = Red) */}
-      <div className="min-h-0 flex-1 relative bg-[#111111]">
+      <div className="min-h-0 flex-1 relative bg-[#171717]">
         <DiffEditor
           height="100%"
           language={languageForPath(filePath)}
@@ -118,7 +118,7 @@ export default function FileEditorWindowApp() {
           }}
           theme="vs-dark"
           loading={
-            <div className="flex h-full items-center justify-center type-caption text-[#777]">
+            <div className="flex h-full items-center justify-center type-caption text-[#888888]">
               Loading editor…
             </div>
           }

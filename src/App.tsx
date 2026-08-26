@@ -150,7 +150,7 @@ function AgentsApp() {
           branch: "main",
           deployStatus: "idle",
           updatedAt: "now",
-          color: "#f54e00",
+          color: "#0070f3",
         }
       : projects[0]);
 

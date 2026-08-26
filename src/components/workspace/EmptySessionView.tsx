@@ -967,7 +967,7 @@ export function EmptySessionView({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 hover:text-[#9a9a9a]"
+                        className="inline-flex items-center gap-1.5 hover:text-[#888888]"
                       >
                         <Folder className="h-3.5 w-3.5" strokeWidth={1.5} />
                         <span className="max-w-[160px] truncate">
@@ -1010,7 +1010,7 @@ export function EmptySessionView({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 hover:text-[#9a9a9a]"
+                        className="inline-flex items-center gap-1.5 hover:text-[#888888]"
                       >
                         {location === "this-pc" ? (
                           <Monitor className="h-3 w-3" strokeWidth={1.5} />

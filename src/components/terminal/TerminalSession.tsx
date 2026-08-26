@@ -194,7 +194,7 @@ function TerminalSessionComponent({
   return (
     <div
       className={cn(
-        "h-full w-full overflow-hidden bg-[#0c0c0c] font-mono",
+        "h-full w-full overflow-hidden bg-[#171717] font-mono",
         !isActive && "opacity-95",
         className,
       )}
