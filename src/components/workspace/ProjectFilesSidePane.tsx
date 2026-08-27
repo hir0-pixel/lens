@@ -3,7 +3,6 @@ import {
   FileCode,
   FileText,
   LayoutGrid,
-  MinusSquare,
   Search,
   ExternalLink,
 } from "lucide-react";
@@ -12,6 +11,7 @@ import { openFileWindow } from "@/features/windows/openAppWindow";
 import { subscribeFileChanges } from "@/features/files/fileSync";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { LayoutToolbar } from "@/components/TitleBar";
 
 interface ProjectFilesSidePaneProps {
   onClose: () => void;
@@ -78,23 +78,18 @@ export function ProjectFilesSidePane({
       aria-label="Project Files"
     >
       {/* Panel Top Header Bar */}
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-3">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] pl-3">
+        <div className="flex items-center gap-2 min-w-0 mr-2">
           <LayoutGrid className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.5} />
-          <span className="truncate type-caption-uppercase text-[var(--text-primary)]">
+          <span className="truncate type-caption-uppercase text-[var(--text-primary)] font-medium">
             {projectName}
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-          aria-label="Collapse panel"
-          title="Collapse panel"
-        >
-          <MinusSquare className="h-4 w-4" strokeWidth={1.5} />
-        </button>
+        <LayoutToolbar
+          sidePaneOpen={true}
+          onToggleSidePane={onClose}
+        />
       </div>
 
       {/* Search Input (if files exist) */}

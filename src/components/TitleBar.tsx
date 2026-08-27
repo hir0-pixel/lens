@@ -88,80 +88,15 @@ export default function TitleBar({
       )}
 
       <div className="titlebar-no-drag relative z-[1] ml-auto flex items-stretch">
-        {isAgents ? (
-          <>
-            <WorkspaceLauncher />
-            <ServersPopover />
-            <button
-              type="button"
-              aria-label="Toggle layout"
-              title="Toggle layout"
-              className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("lens:open-agents-tab", { detail: { kind: "review" } }));
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <rect x="1.5" y="2" width="13" height="12" rx="1.8" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M8 2.5v11" stroke="currentColor" strokeWidth="1.3" />
-              </svg>
-            </button>
-          </>
-        ) : (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="mx-1 h-full type-caption"
-            aria-label="Agents Window"
-            title="Switch to Agents Window"
-            onClick={() => {
-              if (onAgentsWindow) onAgentsWindow();
-              else void openAgentsWindow();
-            }}
-          >
-            Agents Window
-            <SquareArrowOutUpRight className="h-3 w-3" strokeWidth={1.5} />
-          </Button>
+        {!sidePaneOpen && (
+          <LayoutToolbar
+            sidePaneOpen={sidePaneOpen}
+            onToggleSidePane={onToggleSidePane}
+            onOpenTerminal={onOpenTerminal}
+            onAgentsWindow={onAgentsWindow}
+            variant={variant}
+          />
         )}
-
-<button
-          type="button"
-          aria-label="Open terminal"
-          title="Terminal"
-          className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-          onClick={() => {
-            if (onOpenTerminal) {
-              onOpenTerminal();
-              return;
-            }
-            window.dispatchEvent(
-              new CustomEvent(
-                isAgents ? "lens:open-terminal" : "lens:toggle-panel",
-              ),
-            );
-          }}
-        >
-          <SquareTerminal className="h-4 w-4" strokeWidth={1.6} />
-        </button>
-        {isAgents && (
-          <button
-            type="button"
-            aria-label="Toggle side pane"
-            title="Side pane"
-            className={cn(
-              "flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-              sidePaneOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
-            )}
-            onClick={() => {
-              if (onToggleSidePane) onToggleSidePane();
-              else window.dispatchEvent(new CustomEvent("lens:toggle-agents-dock"));
-            }}
-          >
-            <SidePaneGlyph active={sidePaneOpen} />
-          </button>
-        )}
-        <TitleBarOverflowMenu />
 
         {!isAgents && (
           <Button
@@ -449,3 +384,102 @@ function SidePaneGlyph({ active }: { active: boolean }) {
     </svg>
   );
 }
+
+export interface LayoutToolbarProps {
+  sidePaneOpen: boolean;
+  onToggleSidePane?: () => void;
+  onOpenTerminal?: () => void;
+  onAgentsWindow?: () => void;
+  variant?: "agents" | "ide";
+  className?: string;
+}
+
+export function LayoutToolbar({
+  sidePaneOpen,
+  onToggleSidePane,
+  onOpenTerminal,
+  onAgentsWindow,
+  variant = "agents",
+  className,
+}: LayoutToolbarProps) {
+  const isAgents = variant === "agents";
+  return (
+    <div className={cn("flex items-stretch h-full", className)}>
+      {isAgents ? (
+        <>
+          <WorkspaceLauncher />
+          <ServersPopover />
+          <button
+            type="button"
+            aria-label="Toggle layout"
+            title="Toggle layout"
+            className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("lens:open-agents-tab", { detail: { kind: "review" } }));
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <rect x="1.5" y="2" width="13" height="12" rx="1.8" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M8 2.5v11" stroke="currentColor" strokeWidth="1.3" />
+            </svg>
+          </button>
+        </>
+      ) : (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="mx-1 h-full type-caption"
+          aria-label="Agents Window"
+          title="Switch to Agents Window"
+          onClick={() => {
+            if (onAgentsWindow) onAgentsWindow();
+            else void openAgentsWindow();
+          }}
+        >
+          Agents Window
+          <SquareArrowOutUpRight className="h-3 w-3" strokeWidth={1.5} />
+        </Button>
+      )}
+
+      <button
+        type="button"
+        aria-label="Open terminal"
+        title="Terminal"
+        className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+        onClick={() => {
+          if (onOpenTerminal) {
+            onOpenTerminal();
+            return;
+          }
+          window.dispatchEvent(
+            new CustomEvent(
+              isAgents ? "lens:open-terminal" : "lens:toggle-panel",
+            ),
+          );
+        }}
+      >
+        <SquareTerminal className="h-4 w-4" strokeWidth={1.6} />
+      </button>
+      {isAgents && (
+        <button
+          type="button"
+          aria-label="Toggle side pane"
+          title="Side pane"
+          className={cn(
+            "flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+            sidePaneOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
+          )}
+          onClick={() => {
+            if (onToggleSidePane) onToggleSidePane();
+            else window.dispatchEvent(new CustomEvent("lens:toggle-agents-dock"));
+          }}
+        >
+          <SidePaneGlyph active={sidePaneOpen} />
+        </button>
+      )}
+      <TitleBarOverflowMenu />
+    </div>
+  );
+}
+

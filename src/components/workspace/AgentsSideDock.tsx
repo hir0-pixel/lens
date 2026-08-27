@@ -9,13 +9,13 @@ import {
   Plus,
   Search,
   SquareTerminal,
-  X,
 } from "lucide-react";
 import TerminalView from "@/components/output/TerminalView";
 import BrowserView from "@/components/output/BrowserView";
 import { useGitStore } from "@/stores/gitStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { cn } from "@/lib/utils";
+import { LayoutToolbar } from "@/components/TitleBar";
 
 export type AgentsDockKind =
   | "picker"
@@ -118,68 +118,68 @@ export function AgentsSideDock({
         className="absolute left-0 top-0 z-10 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-[var(--accent-primary)]/40"
       />
 
-      {kind === "picker" ? (
-        <div className="flex min-h-0 flex-1 flex-col px-8 pt-16">
-          <h2 className="type-display-sm text-[var(--text-primary)]">
-            Open tab
-          </h2>
-          <p className="mt-1.5 type-caption text-[var(--text-tertiary)]">
-            Choose a tab to open in the side pane.
-          </p>
-          <div className="mt-8 grid grid-cols-2 gap-3">
-            {TAB_OPTIONS.map(({ kind: tab, label, icon: Icon }) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => pick(tab)}
-                className="flex h-[92px] flex-col items-start justify-center gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-5 text-left hover:bg-[var(--bg-hover)]"
-              >
-                <Icon className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={1.5} />
-                <span className="type-body-sm text-[var(--text-primary)]">{label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Tab strip */}
-          <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-subtle)] px-1">
-            <span className="inline-flex h-7 items-center rounded-md bg-[var(--bg-hover)] px-2.5 type-caption font-medium text-[var(--text-primary)]">
-              {kind === "review" ? (
-                <>
-                  <FilePlus2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
-                  Files Changed {changes.length || ""}
-                </>
-              ) : (
-                tabLabel(kind)
-              )}
-            </span>
-            {kind === "terminal" && cwd && (
-              <span className="ml-1 max-w-[200px] truncate type-code text-[var(--text-tertiary)]" title={cwd}>
-                {cwd}
-              </span>
-            )}
-            <button
-              type="button"
-              className="ml-1 flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              aria-label="New tab"
-              title="New tab"
-              onClick={() => pick("review")}
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              className="ml-auto flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              aria-label="Close panel"
-              title="Close"
-              onClick={onClose}
-            >
-              <X className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </button>
-          </div>
+      {/* Tab strip */}
+      <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-subtle)] pl-3 pr-0.5">
+        <span className="inline-flex h-7 items-center rounded-md bg-[var(--bg-hover)] px-2.5 type-caption font-medium text-[var(--text-primary)]">
+          {kind === "review" ? (
+            <>
+              <FilePlus2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+              Files Changed {changes.length || ""}
+            </>
+          ) : (
+            tabLabel(kind)
+          )}
+        </span>
+        {kind === "terminal" && cwd && (
+          <span className="ml-1 max-w-[200px] truncate type-code text-[var(--text-tertiary)]" title={cwd}>
+            {cwd}
+          </span>
+        )}
+        {kind !== "picker" && (
+          <button
+            type="button"
+            className="ml-1 flex h-7 w-7 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+            aria-label="New tab"
+            title="New tab"
+            onClick={() => pick("review")}
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+        )}
 
-          <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="ml-auto flex items-center h-full">
+          <LayoutToolbar
+            sidePaneOpen={true}
+            onToggleSidePane={onClose}
+          />
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {kind === "picker" ? (
+          <div className="flex min-h-0 flex-1 flex-col px-8 pt-16">
+            <h2 className="type-display-sm text-[var(--text-primary)]">
+              Open tab
+            </h2>
+            <p className="mt-1.5 type-caption text-[var(--text-tertiary)]">
+              Choose a tab to open in the side pane.
+            </p>
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              {TAB_OPTIONS.map(({ kind: tab, label, icon: Icon }) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => pick(tab)}
+                  className="flex h-[92px] flex-col items-start justify-center gap-3 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-5 text-left hover:bg-[var(--bg-hover)]"
+                >
+                  <Icon className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={1.5} />
+                  <span className="type-body-sm text-[var(--text-primary)]">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
             {kind === "terminal" && <TerminalView cwd={cwd} />}
             {kind === "browser" && (
               <BrowserView
@@ -197,9 +197,9 @@ export function AgentsSideDock({
                 </p>
               </div>
             )}
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </aside>
   );
 }

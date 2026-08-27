@@ -1,6 +1,4 @@
 import {
-  ArrowLeft,
-  ArrowRight,
   Bot,
   Boxes,
   ChevronDown,
@@ -34,6 +32,7 @@ import { AgentChatComposer } from "@/components/ai/AgentChatComposer";
 import TerminalPanel from "@/components/output/TerminalPanel";
 import { UserAccountMenu } from "@/shared/bff-auth/UserAccountMenu";
 import { revealInFolder } from "@/features/projects/revealInFolder";
+import { LayoutToolbar } from "@/components/TitleBar";
 import { useGitStore } from "@/stores/gitStore";
 import { GitBranchPicker } from "@/components/workspace/GitBranchPicker";
 import {
@@ -84,6 +83,9 @@ interface EmptySessionViewProps {
   onCloseTerminal?: () => void;
   catalogStatus?: "idle" | "loading" | "ready" | "empty" | "error";
   catalogError?: string;
+  agentsDock?: string | null;
+  onToggleSidePane?: () => void;
+  onOpenTerminal?: () => void;
 }
 
 /**
@@ -108,6 +110,9 @@ export function EmptySessionView({
   onCloseTerminal,
   catalogStatus,
   catalogError,
+  agentsDock = null,
+  onToggleSidePane,
+  onOpenTerminal,
 }: EmptySessionViewProps) {
   const repositories = useSessionStore((s) => s.repositories);
   const sessions = useSessionStore((s) => s.sessions);
@@ -122,10 +127,6 @@ export function EmptySessionView({
   const renameRepository = useSessionStore((s) => s.renameRepository);
   const removeRepository = useSessionStore((s) => s.removeRepository);
   const createSession = useSessionStore((s) => s.createSession);
-  const historyIndex = useSessionStore((s) => s.historyIndex);
-  const historyLen = useSessionStore((s) => s.historyStack.length);
-  const goBack = useSessionStore((s) => s.goBack);
-  const goForward = useSessionStore((s) => s.goForward);
 
   const session = currentSessionId ? sessions[currentSessionId] : null;
   const activeModel =
@@ -374,8 +375,6 @@ export function EmptySessionView({
 
   const hasMessages = messages && messages.length > 0;
   const branchName = currentBranch?.name ?? "main";
-  const canGoBack = historyIndex > 0;
-  const canGoForward = historyIndex >= 0 && historyIndex < historyLen - 1;
 
   function renderComposer() {
     return (
@@ -658,48 +657,14 @@ export function EmptySessionView({
   return (
     <div className="flex min-h-0 flex-1 bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       <aside
-        className="flex w-[244px] shrink-0 flex-col border-r border-[var(--border-default)] bg-[var(--bg-surface)]"
+        className="flex w-[220px] shrink-0 flex-col border-r border-[var(--border-default)] bg-[var(--bg-surface)]"
         aria-label="Session navigator"
       >
-        <div className="flex items-center gap-1 px-3.5 pt-3 pb-1">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--bg-hover)] type-caption font-semibold text-[var(--text-primary)]">
-            L
-          </span>
-          <button
-            type="button"
-            aria-label="Back"
-            disabled={!canGoBack}
-            onClick={() => goBack()}
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md",
-              canGoBack
-                ? "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                : "cursor-not-allowed text-[var(--text-disabled)]",
-            )}
-          >
-            <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
-          </button>
-          <button
-            type="button"
-            aria-label="Forward"
-            disabled={!canGoForward}
-            onClick={() => goForward()}
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md",
-              canGoForward
-                ? "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                : "cursor-not-allowed text-[var(--text-disabled)]",
-            )}
-          >
-            <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
-          </button>
-        </div>
-
         {/* Scrollable Sidebar Body */}
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col pb-2">
             {/* Top Navigation Actions */}
-            <div className="flex flex-col gap-0.5 px-2">
+            <div className="flex flex-col gap-0.5 px-2 pt-3">
               <button
                 type="button"
                 onClick={() => {
@@ -958,132 +923,12 @@ export function EmptySessionView({
           renderComingSoon(activeTab)
         ) : (
         <div className="relative flex min-h-0 flex-1 flex-col">
-          {!hasMessages ? (
-          <>
-            <div className="flex flex-1 flex-col items-center justify-center px-6">
-              <div className="w-full max-w-[720px]">
-                <div className="mb-3 flex flex-wrap items-center gap-3 type-caption text-[var(--text-tertiary)]">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
-                      >
-                        <Folder className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        <span className="max-w-[160px] truncate">
-                          {activeRepo?.name ?? "No project"}
-                        </span>
-                        <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          const sess = ensureSession();
-                          setSessionRepo(sess.id, null);
-                        }}
-                      >
-                        No project
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      {repositories.map((p) => (
-                        <DropdownMenuItem
-                          key={p.id}
-                          onClick={() => {
-                            const sess = ensureSession();
-                            setSessionRepo(sess.id, p.id);
-                          }}
-                        >
-                          <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                          {p.name}
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => onAddFolder?.()}>
-                        <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                        Open folder…
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
-                      >
-                        {location === "this-pc" ? (
-                          <Monitor className="h-3 w-3" strokeWidth={1.5} />
-                        ) : (
-                          <Cloud className="h-3 w-3" strokeWidth={1.5} />
-                        )}
-                        <span>
-                          {location === "this-pc" ? "This PC" : "Cloud Agents"}
-                        </span>
-                        <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-48">
-                      <DropdownMenuItem onClick={() => setLocation("this-pc")}>
-                        <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                        This PC
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled
-                        className="cursor-not-allowed opacity-50"
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                        Cloud Agents
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {renderComposer()}
-
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={planNewIdea}
-                    className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                  >
-                    Plan New Idea
-                    <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
-                      ⇧Tab
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onMultitask}
-                    className="inline-flex h-8 items-center rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                  >
-                    Multitask
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-center px-6 pb-6">
-              <button
-                type="button"
-                onClick={onImport}
-                className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 type-caption text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              >
-                <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                <span>
-                  Import conversations — sync chats and continue them here
-                </span>
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="lens-chat-session-header flex min-h-12 shrink-0 items-start gap-2 px-4 pb-2 pt-2">
-              <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
-                <span className="max-w-[220px] truncate type-caption font-medium leading-8 text-[var(--text-primary)]">
-                  {session?.title ?? "New chat"}
-                </span>
+          {/* Header Bar */}
+          <div className="lens-chat-session-header flex min-h-12 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-2 bg-[var(--bg-surface)]">
+            <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
+              <span className="max-w-[220px] truncate type-caption font-medium text-[var(--text-primary)]">
+                {session?.title ?? "New chat"}
+              </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -1123,75 +968,208 @@ export function EmptySessionView({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Popover open={headerBranchOpen} onOpenChange={setHeaderBranchOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex h-7 items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  >
-                    <GitBranch className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.5} />
-                    <span>{branchName}</span>
-                    <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-[280px] rounded-xl border-[var(--border-default)] bg-[var(--bg-overlay)] p-0"
-                >
-                  <GitBranchPicker onClose={() => setHeaderBranchOpen(false)} />
-                </PopoverContent>
-              </Popover>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                    aria-label="Chat options"
-                  >
-                    <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-44">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (!session) return;
-                      const name = window.prompt("Rename chat", session.title);
-                      if (name?.trim()) renameSession(session.id, name.trim());
-                    }}
-                  >
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (session) closeSessionTab(session.id);
-                    }}
-                  >
-                    Close chat
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              </div>
+              {activeRepo && (
+                <>
+                  <Popover open={headerBranchOpen} onOpenChange={setHeaderBranchOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-7 items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                      >
+                        <GitBranch className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.5} />
+                        <span>{branchName}</span>
+                        <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="w-[280px] rounded-xl border-[var(--border-default)] bg-[var(--bg-overlay)] p-0"
+                    >
+                      <GitBranchPicker onClose={() => setHeaderBranchOpen(false)} />
+                    </PopoverContent>
+                  </Popover>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                        aria-label="Chat options"
+                      >
+                        <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-44">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (!session) return;
+                          const name = window.prompt("Rename chat", session.title);
+                          if (name?.trim()) renameSession(session.id, name.trim());
+                        }}
+                      >
+                        Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (session) closeSessionTab(session.id);
+                        }}
+                      >
+                        Close chat
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
             </div>
 
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-              <ChatWindow
-                messages={messages}
-                sending={sending}
-                restoringId={restoringId}
-                onRestoreCheckpoint={onRestoreCheckpoint ?? (() => {})}
-                onPromptSelect={(prompt) => setText(prompt)}
-                streamingContent=""
-                pendingToolCalls={undefined}
+            <div className="flex items-center h-full">
+              <LayoutToolbar
+                sidePaneOpen={agentsDock !== null}
+                onToggleSidePane={onToggleSidePane}
+                onOpenTerminal={onOpenTerminal}
               />
             </div>
+          </div>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--bg-canvas)] via-[var(--bg-canvas)]/90 to-transparent px-6 pb-6 pt-10">
-              <div className="pointer-events-auto mx-auto w-full max-w-[760px]">
-                {renderComposer()}
+          {!hasMessages ? (
+            <>
+              <div className="flex flex-1 flex-col items-center justify-center px-6">
+                <div className="w-full max-w-[720px]">
+                  <div className="mb-3 flex flex-wrap items-center justify-center gap-3 type-caption text-[var(--text-tertiary)]">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
+                        >
+                          <Folder className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          <span className="max-w-[160px] truncate">
+                            {activeRepo?.name ?? "No project"}
+                          </span>
+                          <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const sess = ensureSession();
+                            setSessionRepo(sess.id, null);
+                          }}
+                        >
+                          No project
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {repositories.map((p) => (
+                          <DropdownMenuItem
+                            key={p.id}
+                            onClick={() => {
+                              const sess = ensureSession();
+                              setSessionRepo(sess.id, p.id);
+                            }}
+                          >
+                            <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                            {p.name}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onAddFolder?.()}>
+                          <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                          Open folder…
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
+                        >
+                          {location === "this-pc" ? (
+                            <Monitor className="h-3 w-3" strokeWidth={1.5} />
+                          ) : (
+                            <Cloud className="h-3 w-3" strokeWidth={1.5} />
+                          )}
+                          <span>
+                            {location === "this-pc" ? "This PC" : "Cloud Agents"}
+                          </span>
+                          <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-48">
+                        <DropdownMenuItem onClick={() => setLocation("this-pc")}>
+                          <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                          This PC
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled
+                          className="cursor-not-allowed opacity-50"
+                          onSelect={(e) => e.preventDefault()}
+                        >
+                          <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                          Cloud Agents
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {renderComposer()}
+
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={planNewIdea}
+                      className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                    >
+                      Plan New Idea
+                      <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
+                        ⇧Tab
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onMultitask}
+                      className="inline-flex h-8 items-center rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                    >
+                      Multitask
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </>
-        )}
+
+              <div className="flex shrink-0 items-center justify-center px-6 pb-6">
+                <button
+                  type="button"
+                  onClick={onImport}
+                  className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 type-caption text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                >
+                  <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                  <span>
+                    Import conversations — sync chats and continue them here
+                  </span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+                <ChatWindow
+                  messages={messages}
+                  sending={sending}
+                  restoringId={restoringId}
+                  onRestoreCheckpoint={onRestoreCheckpoint ?? (() => {})}
+                  onPromptSelect={(prompt) => setText(prompt)}
+                  streamingContent=""
+                  pendingToolCalls={undefined}
+                />
+              </div>
+
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--bg-canvas)] via-[var(--bg-canvas)]/90 to-transparent px-6 pb-6 pt-10">
+                <div className="pointer-events-auto mx-auto w-full max-w-[760px]">
+                  {renderComposer()}
+                </div>
+              </div>
+            </>
+          )}
         </div>
         )}
         {terminalOpen && (

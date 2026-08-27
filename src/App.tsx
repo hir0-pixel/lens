@@ -567,6 +567,11 @@ function AgentsApp() {
         terminalOpen={bottomTerminal}
         onCloseTerminal={() => setBottomTerminal(false)}
         onImport={() => setImportOpen(true)}
+        agentsDock={agentsDock}
+        onToggleSidePane={() =>
+          setAgentsDock((k) => (k ? null : "project-files"))
+        }
+        onOpenTerminal={() => setBottomTerminal((v) => !v)}
       />
     </ErrorBoundary>
   ) : (
