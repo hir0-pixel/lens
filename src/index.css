@@ -1272,6 +1272,37 @@
 }
 
 @layer base {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 180ms;
+    animation-timing-function: var(--ease-standard);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: lens-theme-fade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: lens-theme-fade-in;
+  }
+
+  @keyframes lens-theme-fade-out {
+    to { opacity: 0; }
+  }
+
+  @keyframes lens-theme-fade-in {
+    from { opacity: 0; }
+  }
+
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition-property: background-color, background, color, border-color, outline-color, fill, stroke, box-shadow;
+    transition-duration: 180ms;
+    transition-timing-function: var(--ease-standard);
+  }
+
   .reduce-motion *,
   .reduce-motion *::before,
   .reduce-motion *::after {

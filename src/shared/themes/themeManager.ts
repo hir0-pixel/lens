@@ -48,6 +48,13 @@ export const DEFAULT_APPEARANCE: AppearanceSettings = {
   highContrast: false,
 };
 
+let themeTransitionTimer: number | undefined;
+let applyingViewTransition = false;
+
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (update: () => void) => unknown;
+};
+
 export function resolveThemeMode(mode: ThemeMode): "dark" | "light" {
   if (mode === "system") {
     if (typeof window === "undefined") return "dark";
@@ -62,6 +69,41 @@ export function resolveThemeMode(mode: ThemeMode): "dark" | "light" {
 export function applyAppearance(settings: AppearanceSettings): void {
   const root = document.documentElement;
   const resolved = resolveThemeMode(settings.themeMode);
+  const currentTheme = root.classList.contains("dark")
+    ? "dark"
+    : root.classList.contains("light")
+      ? "light"
+      : null;
+  const shouldAnimateThemeChange =
+    !settings.reducedMotion &&
+    !applyingViewTransition &&
+    currentTheme !== null &&
+    currentTheme !== resolved;
+
+  const transitionDocument = document as ViewTransitionDocument;
+  if (shouldAnimateThemeChange && transitionDocument.startViewTransition) {
+    try {
+      transitionDocument.startViewTransition(() => {
+        applyingViewTransition = true;
+        try {
+          applyAppearance(settings);
+        } finally {
+          applyingViewTransition = false;
+        }
+      });
+      return;
+    } catch {
+      // Older webviews can expose the API without supporting a new transition.
+      // Fall through to the CSS-based transition below.
+    }
+  }
+
+  if (shouldAnimateThemeChange) {
+    root.classList.add("theme-transition");
+    // Ensure the transition rule is computed before the token values change.
+    void root.offsetWidth;
+  }
+
   root.classList.toggle("dark", resolved === "dark");
   root.classList.toggle("light", resolved === "light");
   root.style.colorScheme = resolved;
@@ -218,4 +260,14 @@ export function applyAppearance(settings: AppearanceSettings): void {
   root.dataset.density = settings.density;
   root.dataset.iconTheme = settings.iconTheme;
   root.dataset.transparency = settings.transparency ? "on" : "off";
+
+  if (shouldAnimateThemeChange) {
+    if (themeTransitionTimer !== undefined) {
+      window.clearTimeout(themeTransitionTimer);
+    }
+    themeTransitionTimer = window.setTimeout(() => {
+      root.classList.remove("theme-transition");
+      themeTransitionTimer = undefined;
+    }, 220);
+  }
 }

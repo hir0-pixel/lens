@@ -129,9 +129,44 @@ function AgentsApp() {
   const [credits, setCredits] = useState(2_000_000);
   const [, setSessionCredits] = useState(348_120);
   const [agentsDock, setAgentsDock] = useState<string | null>(null);
+  const [rightDockClosing, setRightDockClosing] = useState(false);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [bottomTerminal, setBottomTerminal] = useState(false);
+  const [bottomTerminalClosing, setBottomTerminalClosing] = useState(false);
   const requestAbort = useRef<AbortController | null>(null);
+
+  const closeRightDock = useCallback(() => {
+    if (agentsDock !== null) setRightDockClosing(true);
+  }, [agentsDock]);
+
+  const finishClosingRightDock = useCallback(() => {
+    setAgentsDock(null);
+    setRightDockClosing(false);
+  }, []);
+
+  const openRightDock = useCallback((kind: string) => {
+    setRightDockClosing(false);
+    setAgentsDock(kind);
+  }, []);
+
+  const openBottomTerminal = useCallback(() => {
+    setBottomTerminalClosing(false);
+    setBottomTerminal(true);
+  }, []);
+
+  const closeBottomTerminal = useCallback(() => {
+    if (bottomTerminal) setBottomTerminalClosing(true);
+  }, [bottomTerminal]);
+
+  const toggleBottomTerminal = useCallback(() => {
+    if (bottomTerminal) closeBottomTerminal();
+    else openBottomTerminal();
+  }, [bottomTerminal, closeBottomTerminal, openBottomTerminal]);
+
+  const finishClosingBottomTerminal = useCallback(() => {
+    setBottomTerminal(false);
+    setBottomTerminalClosing(false);
+  }, []);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
@@ -244,7 +279,7 @@ function AgentsApp() {
           repos.find((r) => r.id === activeId)?.path ?? term.defaultCwd;
         term.createSession({ cwd });
       }
-      setBottomTerminal((v) => !v);
+      toggleBottomTerminal();
       setView("workspace");
     }
     function onOpenBrowser() {
@@ -304,7 +339,7 @@ function AgentsApp() {
       window.removeEventListener("lens:show-welcome", onShowWelcome);
       window.removeEventListener("lens:project-opened", onProjectOpened);
     };
-  }, [newChat, closeWorkspace]);
+  }, [newChat, closeWorkspace, toggleBottomTerminal]);
 
   const showWorkspace =
     !showWelcome &&
@@ -571,7 +606,9 @@ function AgentsApp() {
           });
         }}
         terminalOpen={bottomTerminal}
-        onCloseTerminal={() => setBottomTerminal(false)}
+        terminalClosing={bottomTerminalClosing}
+        onCloseTerminal={closeBottomTerminal}
+        onTerminalExited={finishClosingBottomTerminal}
         onImport={() => setImportOpen(true)}
         leftSidebarOpen={leftSidebarOpen}
       />
@@ -601,7 +638,7 @@ function AgentsApp() {
         onOpenSettings={() => openSettings()}
         variant="agents"
         onIdeWindow={() => void openIdeWindow()}
-        onOpenTerminal={() => setBottomTerminal((v) => !v)}
+        onOpenTerminal={toggleBottomTerminal}
         sidePaneOpen={leftSidebarOpen}
         onToggleSidePane={() =>
           setLeftSidebarOpen((open) => !open)
@@ -616,14 +653,21 @@ function AgentsApp() {
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">{mainContent}</div>
         {agentsDock === "project-files" ? (
-          <ProjectFilesSidePane />
+          <ProjectFilesSidePane closing={rightDockClosing} onExited={finishClosingRightDock} />
         ) : agentsDock !== null ? (
           <AgentsSideDock
             kind={agentsDock as AgentsDockKind}
+            repositoryPath={
+              (session?.repoId
+                ? repositories.find((repository) => repository.id === session.repoId)?.path
+                : undefined) ?? activeRepo?.path
+            }
+            closing={rightDockClosing}
+            onExited={finishClosingRightDock}
             onOpenTab={(tab) => {
               if (tab === "terminal") {
                 setAgentsDock(null);
-                setBottomTerminal(true);
+                openBottomTerminal();
                 return;
               }
               window.dispatchEvent(
@@ -638,10 +682,11 @@ function AgentsApp() {
         <div className="pointer-events-auto bg-transparent">
           <LayoutToolbar
             sidePaneOpen={agentsDock !== null}
-            onToggleSidePane={() =>
-              setAgentsDock((dock) => (dock ? null : "project-files"))
-            }
-            onOpenTerminal={() => setBottomTerminal((open) => !open)}
+            onToggleSidePane={() => {
+              if (agentsDock) closeRightDock();
+              else openRightDock("project-files");
+            }}
+            onOpenTerminal={toggleBottomTerminal}
           />
         </div>
       </div>

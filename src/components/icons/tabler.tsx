@@ -40,7 +40,7 @@ import {
   IconCloudUp as CloudUpload,
   IconCode as Code2,
   IconCoin as Coins,
-  IconColumns as Columns2,
+  IconColumns2 as Columns2,
   IconCommand as Command,
   IconComponents as Component,
   IconCopy as Copy,

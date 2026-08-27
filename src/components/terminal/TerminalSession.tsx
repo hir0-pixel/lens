@@ -7,7 +7,7 @@ import { SearchAddon } from "@xterm/addon-search";
 import { WebglAddon } from "@xterm/addon-webgl";
 import "@xterm/xterm/css/xterm.css";
 import { useTerminalStore } from "@/stores/terminalStore";
-import { TERMINAL_OPTIONS } from "@/components/terminal/utils/terminalTheme";
+import { getTerminalTheme, TERMINAL_OPTIONS } from "@/components/terminal/utils/terminalTheme";
 import {
   registerTerminal,
   unregisterTerminal,
@@ -50,12 +50,25 @@ function TerminalSessionComponent({
   useEffect(() => {
     if (!containerRef.current || !session) return;
 
-    const term = new Terminal(TERMINAL_OPTIONS);
+    const term = new Terminal({
+      ...TERMINAL_OPTIONS,
+      theme: getTerminalTheme(document.documentElement.classList.contains("dark")),
+    });
     const fit = new FitAddon();
     const search = new SearchAddon();
     term.loadAddon(fit);
     term.loadAddon(search);
     term.open(containerRef.current);
+
+    const applyTheme = () => {
+      term.options.theme = getTerminalTheme(document.documentElement.classList.contains("dark"));
+      term.refresh(0, term.rows - 1);
+    };
+    const themeObserver = new MutationObserver(applyTheme);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
     try {
       const webgl = new WebglAddon();
@@ -168,6 +181,7 @@ function TerminalSessionComponent({
       onData.dispose();
       unlisten?.();
       resizeObserver?.disconnect();
+      themeObserver.disconnect();
       window.removeEventListener("resize", resizePty);
       unregisterTerminal(sessionId);
       if (isTauri()) {
@@ -194,7 +208,7 @@ function TerminalSessionComponent({
   return (
     <div
       className={cn(
-        "h-full w-full overflow-hidden bg-[#171717] font-mono",
+        "h-full w-full overflow-hidden bg-[var(--bg-canvas)] font-mono",
         !isActive && "opacity-95",
         className,
       )}
@@ -205,7 +219,9 @@ function TerminalSessionComponent({
       role="tabpanel"
       aria-label={`Terminal session ${session?.title ?? sessionId}`}
     >
-      <div ref={containerRef} className="h-full w-full" />
+      <div className="h-full w-full p-3">
+        <div ref={containerRef} className="h-full w-full" />
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -53,6 +53,280 @@ struct CloseTerminalArgs {
 struct TerminalData {
     session_id: String,
     data: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProjectTreeEntry {
+    name: String,
+    path: String,
+    is_dir: bool,
+    children: Vec<ProjectTreeEntry>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GitProjectChange {
+    path: String,
+    status: String,
+    additions: u32,
+    deletions: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GitProjectDiff {
+    patch: String,
+}
+
+const MAX_PROJECT_TREE_DEPTH: usize = 8;
+const MAX_PROJECT_TREE_ENTRIES: usize = 5_000;
+
+fn should_skip_project_entry(name: &str) -> bool {
+    matches!(
+        name,
+        ".git" | "node_modules" | "target" | "dist" | "build" | "coverage" | ".next"
+    )
+}
+
+fn read_project_tree(
+    path: &Path,
+    depth: usize,
+    remaining: &mut usize,
+) -> Result<ProjectTreeEntry, String> {
+    let metadata = std::fs::symlink_metadata(path).map_err(|error| error.to_string())?;
+    let is_dir = metadata.is_dir();
+    let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_else(|| path.to_str().unwrap_or("Project"))
+        .to_string();
+
+    let mut children = Vec::new();
+    if is_dir && depth < MAX_PROJECT_TREE_DEPTH && *remaining > 0 {
+        let mut entries: Vec<(String, PathBuf, bool)> = std::fs::read_dir(path)
+            .map_err(|error| error.to_string())?
+            .filter_map(Result::ok)
+            .filter_map(|entry| {
+                let entry_name = entry.file_name().to_string_lossy().into_owned();
+                if should_skip_project_entry(&entry_name) {
+                    return None;
+                }
+                let is_directory = entry.file_type().map(|kind| kind.is_dir()).unwrap_or(false);
+                Some((entry_name, entry.path(), is_directory))
+            })
+            .collect();
+
+        entries.sort_by(|left, right| {
+            right
+                .2
+                .cmp(&left.2)
+                .then_with(|| left.0.to_lowercase().cmp(&right.0.to_lowercase()))
+        });
+
+        for (_, entry_path, _) in entries {
+            if *remaining == 0 {
+                break;
+            }
+            *remaining -= 1;
+            if let Ok(entry) = read_project_tree(&entry_path, depth + 1, remaining) {
+                children.push(entry);
+            }
+        }
+    }
+
+    Ok(ProjectTreeEntry {
+        name,
+        path: path.to_string_lossy().into_owned(),
+        is_dir,
+        children,
+    })
+}
+
+#[tauri::command]
+fn project_file_tree(root: String) -> Result<ProjectTreeEntry, String> {
+    let root_path = PathBuf::from(root);
+    if !root_path.is_dir() {
+        return Err("The selected project folder is unavailable.".to_string());
+    }
+    let mut remaining = MAX_PROJECT_TREE_ENTRIES;
+    read_project_tree(&root_path, 0, &mut remaining)
+}
+
+fn git_change_status(index_status: char, worktree_status: char) -> &'static str {
+    if index_status == '?' && worktree_status == '?' {
+        "untracked"
+    } else if index_status == 'U'
+        || worktree_status == 'U'
+        || (index_status == 'A' && worktree_status == 'A')
+        || (index_status == 'D' && worktree_status == 'D')
+    {
+        "conflict"
+    } else if index_status == 'A' || worktree_status == 'A' {
+        "added"
+    } else if index_status == 'D' || worktree_status == 'D' {
+        "deleted"
+    } else if index_status == 'R' || worktree_status == 'R' || index_status == 'C' || worktree_status == 'C' {
+        "renamed"
+    } else {
+        "modified"
+    }
+}
+
+fn count_file_lines(path: &Path) -> u32 {
+    let Ok(contents) = std::fs::read(path) else {
+        return 0;
+    };
+    if contents.is_empty() {
+        return 0;
+    }
+    let lines = contents.iter().filter(|byte| **byte == b'\n').count() as u32;
+    if contents.last() == Some(&b'\n') { lines } else { lines + 1 }
+}
+
+/// Resolve the repository worktree because Git porcelain paths are emitted relative
+/// to it, even when Lens was opened on a nested project folder.
+fn git_worktree_root(root: &Path) -> Result<PathBuf, String> {
+    let output = Command::new("git")
+        .current_dir(root)
+        .args(["rev-parse", "--show-toplevel"])
+        .output()
+        .map_err(|error| format!("Unable to locate the Git worktree: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    let worktree = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let path = PathBuf::from(worktree);
+    if path.is_dir() {
+        Ok(path)
+    } else {
+        Err("The selected project is not inside an available Git worktree.".to_string())
+    }
+}
+
+#[tauri::command]
+fn git_project_changes(root: String) -> Result<Vec<GitProjectChange>, String> {
+    let root_path = PathBuf::from(&root);
+    if !root_path.is_dir() {
+        return Err("The selected project folder is unavailable.".to_string());
+    }
+
+    let worktree_root = git_worktree_root(&root_path)?;
+    let status_output = Command::new("git")
+        .current_dir(&worktree_root)
+        .args(["status", "--porcelain=v1", "-z", "--untracked-files=all"])
+        .output()
+        .map_err(|error| format!("Unable to run Git: {error}"))?;
+    if !status_output.status.success() {
+        return Err(String::from_utf8_lossy(&status_output.stderr).trim().to_string());
+    }
+
+    let mut diff_stats: HashMap<String, (u32, u32)> = HashMap::new();
+    let diff_output = Command::new("git")
+        .current_dir(&worktree_root)
+        .args(["diff", "--numstat", "HEAD", "--"])
+        .output()
+        .map_err(|error| format!("Unable to read Git diff: {error}"))?;
+    if diff_output.status.success() {
+        for line in String::from_utf8_lossy(&diff_output.stdout).lines() {
+            let mut fields = line.splitn(3, '\t');
+            let additions = fields.next().and_then(|value| value.parse().ok()).unwrap_or(0);
+            let deletions = fields.next().and_then(|value| value.parse().ok()).unwrap_or(0);
+            if let Some(path) = fields.next() {
+                diff_stats.insert(path.to_string(), (additions, deletions));
+            }
+        }
+    }
+
+    let records: Vec<&[u8]> = status_output
+        .stdout
+        .split(|byte| *byte == 0)
+        .filter(|record| !record.is_empty())
+        .collect();
+    let mut changes = Vec::new();
+    let mut index = 0;
+    while index < records.len() {
+        let record = records[index];
+        if record.len() < 4 {
+            index += 1;
+            continue;
+        }
+        let index_status = record[0] as char;
+        let worktree_status = record[1] as char;
+        let path = String::from_utf8_lossy(&record[3..]).into_owned();
+        let status = git_change_status(index_status, worktree_status);
+        let (mut additions, deletions) = diff_stats.get(&path).copied().unwrap_or((0, 0));
+        if status == "untracked" {
+            additions = count_file_lines(&worktree_root.join(&path));
+        }
+
+        // A mode-only, binary, or empty-file status has no textual patch to review.
+        // Keep this list aligned with the diff viewer: only show files with line changes.
+        if additions > 0 || deletions > 0 {
+            changes.push(GitProjectChange {
+                path,
+                status: status.to_string(),
+                additions,
+                deletions,
+            });
+        }
+
+        // Rename/copy records contain an additional NUL-delimited original path.
+        index += if matches!(index_status, 'R' | 'C') || matches!(worktree_status, 'R' | 'C') {
+            2
+        } else {
+            1
+        };
+    }
+    changes.sort_by(|left, right| left.path.to_lowercase().cmp(&right.path.to_lowercase()));
+    Ok(changes)
+}
+
+#[tauri::command]
+fn git_project_diff(root: String, path: String) -> Result<GitProjectDiff, String> {
+    let root_path = PathBuf::from(&root);
+    if !root_path.is_dir() {
+        return Err("The selected project folder is unavailable.".to_string());
+    }
+
+    let worktree_root = git_worktree_root(&root_path)?;
+    // Porcelain status paths are relative to the Git worktree, not necessarily to
+    // the Lens project folder. Run the diff from that same root.
+    let tracked_diff = Command::new("git")
+        .current_dir(&worktree_root)
+        .args(["diff", "--no-ext-diff", "--unified=3", "HEAD", "--", &path])
+        .output()
+        .map_err(|error| format!("Unable to read Git diff: {error}"))?;
+    if tracked_diff.status.success() && !tracked_diff.stdout.is_empty() {
+        return Ok(GitProjectDiff {
+            patch: String::from_utf8_lossy(&tracked_diff.stdout).into_owned(),
+        });
+    }
+
+    // Untracked files are absent from `git diff HEAD`; compare them to /dev/null.
+    let absolute_path = worktree_root.join(&path);
+    if absolute_path.is_file() {
+        let untracked_diff = Command::new("git")
+            .args([
+                "diff",
+                "--no-index",
+                "--no-ext-diff",
+                "--unified=3",
+                "--",
+                "/dev/null",
+                absolute_path.to_string_lossy().as_ref(),
+            ])
+            .output()
+            .map_err(|error| format!("Unable to read untracked file diff: {error}"))?;
+        // `git diff --no-index` returns 1 when differences are present.
+        if untracked_diff.status.success() || untracked_diff.status.code() == Some(1) {
+            return Ok(GitProjectDiff {
+                patch: String::from_utf8_lossy(&untracked_diff.stdout).into_owned(),
+            });
+        }
+    }
+
+    Ok(GitProjectDiff { patch: String::new() })
 }
 
 fn clamp_size(cols: u16, rows: u16) -> PtySize {
@@ -219,6 +493,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             path_exists,
+            project_file_tree,
+            git_project_changes,
+            git_project_diff,
             git_clone,
             port_is_open,
             terminal_spawn,

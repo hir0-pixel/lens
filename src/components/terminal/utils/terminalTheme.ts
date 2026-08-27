@@ -1,11 +1,11 @@
 import type { ITerminalOptions } from "@xterm/xterm";
 
 /** Windows console palette used by Cursor's PowerShell terminal on Windows. */
-export const TERMINAL_THEME: NonNullable<ITerminalOptions["theme"]> = {
-  background: "#171717",
+export const DARK_TERMINAL_THEME: NonNullable<ITerminalOptions["theme"]> = {
+  background: "#0a0a0a",
   foreground: "#ffffff",
   cursor: "#ffffff",
-  cursorAccent: "#171717",
+  cursorAccent: "#0a0a0a",
   selectionBackground: "color-mix(in srgb, #0070f3 35%, transparent)",
   black: "#171717",
   red: "#ee0000",
@@ -26,6 +26,34 @@ export const TERMINAL_THEME: NonNullable<ITerminalOptions["theme"]> = {
   brightWhite: "#ffffff",
 };
 
+export const LIGHT_TERMINAL_THEME: NonNullable<ITerminalOptions["theme"]> = {
+  background: "#fafafa",
+  foreground: "#171717",
+  cursor: "#171717",
+  cursorAccent: "#fafafa",
+  selectionBackground: "#d3e5ff",
+  black: "#171717",
+  red: "#ee0000",
+  green: "#0761d1",
+  yellow: "#ab570a",
+  blue: "#0761d1",
+  magenta: "#7928ca",
+  cyan: "#0070f3",
+  white: "#4d4d4d",
+  brightBlack: "#8f8f8f",
+  brightRed: "#ff4d4d",
+  brightGreen: "#0070f3",
+  brightYellow: "#f5a623",
+  brightBlue: "#007cf0",
+  brightMagenta: "#ff0080",
+  brightCyan: "#00a6a6",
+  brightWhite: "#171717",
+};
+
+export function getTerminalTheme(isDark: boolean): NonNullable<ITerminalOptions["theme"]> {
+  return isDark ? DARK_TERMINAL_THEME : LIGHT_TERMINAL_THEME;
+}
+
 export const TERMINAL_OPTIONS: ITerminalOptions = {
   fontFamily:
     'Consolas, "Cascadia Mono", "Cascadia Code", "Courier New", monospace',
@@ -33,7 +61,7 @@ export const TERMINAL_OPTIONS: ITerminalOptions = {
   fontWeight: 400,
   lineHeight: 1,
   letterSpacing: 0,
-  theme: TERMINAL_THEME,
+  theme: DARK_TERMINAL_THEME,
   cursorBlink: true,
   cursorStyle: "bar",
   cursorWidth: 2,

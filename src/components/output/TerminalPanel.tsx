@@ -9,6 +9,8 @@ interface TerminalPanelProps {
   cwd?: string;
   projectName?: string;
   onClose?: () => void;
+  closing?: boolean;
+  onExited?: () => void;
 }
 
 /**
@@ -22,12 +24,20 @@ export default function TerminalPanel({
   cwd,
   projectName,
   onClose,
+  closing = false,
+  onExited,
 }: TerminalPanelProps) {
   const sessions = useTerminalStore((s) => s.sessions);
   const activeSessionId = useTerminalStore((s) => s.activeSessionId);
   const setActiveSession = useTerminalStore((s) => s.setActiveSession);
   const [height, setHeight] = useState(240);
   const [isResizing, setIsResizing] = useState(false);
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const stopResizing = useCallback(() => setIsResizing(false), []);
 
@@ -61,8 +71,15 @@ export default function TerminalPanel({
 
   return (
     <div
-      className="relative flex shrink-0 flex-col border-t border-white/[0.08] bg-[#171717]"
-      style={{ height }}
+      className={`relative flex shrink-0 flex-col overflow-hidden border-t border-[var(--border-default)] bg-[var(--bg-canvas)] ${
+        isResizing
+          ? "transition-none"
+          : "transition-[height,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)]"
+      }`}
+      style={{ height: entered && !closing ? height : 0, opacity: entered && !closing ? 1 : 0 }}
+      onTransitionEnd={(event) => {
+        if (closing && event.propertyName === "height") onExited?.();
+      }}
     >
       <div
         className="absolute inset-x-0 -top-1 z-10 h-2 cursor-row-resize touch-none"
@@ -87,11 +104,11 @@ export default function TerminalPanel({
           }
         }}
       />
-      <div className="flex h-[34px] shrink-0 items-center gap-1 border-b border-white/[0.08] bg-[#171717] px-2">
-        <span className="px-2 py-1 type-caption font-semibold text-white">
+      <div className="flex h-[34px] shrink-0 items-center gap-1 border-b border-[var(--border-default)] bg-[var(--bg-surface)] px-2">
+        <span className="px-2 py-1 type-caption font-semibold text-[var(--text-primary)]">
           {title}
         </span>
-        <span className="px-2 py-1 type-caption text-[#4d4d4d]">{subtitle}</span>
+        <span className="px-2 py-1 type-caption text-[var(--text-tertiary)]">{subtitle}</span>
         {sessions.map((session) => (
           <button
             key={session.id}
@@ -100,19 +117,19 @@ export default function TerminalPanel({
             title={session.cwd}
             className={`flex h-full max-w-[240px] items-center gap-1.5 px-2.5 type-caption ${
               session.id === activeSessionId
-                ? "bg-[#222222] font-medium text-white"
-                : "text-[#777777] hover:bg-[#1d1d1d] hover:text-[#c7c7c7]"
+                ? "bg-[var(--bg-active)] font-medium text-[var(--text-primary)]"
+                : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             }`}
           >
             <span className="truncate">{session.title}</span>
-            <span className="truncate text-[#777777]">{session.cwd}</span>
+            <span className="truncate text-[var(--text-tertiary)]">{session.cwd}</span>
           </button>
         ))}
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
             onClick={onNew}
-            className="flex h-6 w-6 items-center justify-center rounded text-[#4d4d4d] hover:bg-white/[0.06] hover:text-white"
+            className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             title="New terminal"
             aria-label="New terminal"
           >
@@ -121,7 +138,7 @@ export default function TerminalPanel({
           <button
             type="button"
             onClick={close}
-            className="flex h-6 w-6 items-center justify-center rounded text-[#4d4d4d] hover:bg-white/[0.06] hover:text-white"
+            className="flex h-6 w-6 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             title="Close panel"
             aria-label="Close panel"
           >

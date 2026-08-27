@@ -1,152 +1,263 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ChevronDown,
+  ChevronRight,
   FileCode,
   FileText,
+  Folder,
+  FolderOpen,
   LayoutGrid,
+  Loader2,
+  RefreshCw,
   Search,
-  ExternalLink,
 } from "@/components/icons/tabler";
 import { useSessionStore } from "@/stores/sessionStore";
 import { openFileWindow } from "@/features/windows/openAppWindow";
-import { subscribeFileChanges } from "@/features/files/fileSync";
+import { isTauri } from "@/features/projects/platform";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 
 interface ProjectFilesSidePaneProps {
   widthPx?: number;
+  closing?: boolean;
+  onExited?: () => void;
 }
 
-const DEFAULT_PROJECT_FILES = [
-  { path: "src/App.tsx", name: "App.tsx", type: "code" },
-  { path: "src/main.tsx", name: "main.tsx", type: "code" },
-  { path: "src/components/Sidebar.tsx", name: "Sidebar.tsx", type: "code" },
-  { path: "package.json", name: "package.json", type: "code" },
-  { path: "README.md", name: "README.md", type: "doc" },
-];
+interface ProjectTreeEntry {
+  name: string;
+  path: string;
+  isDir: boolean;
+  children: ProjectTreeEntry[];
+}
+
+function isCodeFile(name: string): boolean {
+  return /\.(?:[cm]?[jt]sx?|json|css|html?|rs|py|go|java|php|rb|sh|sql|ya?ml)$/i.test(name);
+}
+
+function treeMatches(entry: ProjectTreeEntry, query: string): boolean {
+  if (!query) return true;
+  if (entry.name.toLowerCase().includes(query)) return true;
+  return entry.children.some((child) => treeMatches(child, query));
+}
+
+function TreeRow({
+  entry,
+  depth,
+  query,
+  expandedPaths,
+  onToggle,
+  onOpenFile,
+}: {
+  entry: ProjectTreeEntry;
+  depth: number;
+  query: string;
+  expandedPaths: ReadonlySet<string>;
+  onToggle: (path: string) => void;
+  onOpenFile: (path: string) => void;
+}) {
+  const isExpanded = expandedPaths.has(entry.path) || Boolean(query);
+  const hasChildren = entry.isDir && entry.children.length > 0;
+
+  if (!treeMatches(entry, query)) return null;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => (entry.isDir ? onToggle(entry.path) : onOpenFile(entry.path))}
+        className="group flex h-7 w-full items-center gap-1.5 rounded-md pr-2 text-left transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]"
+        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        title={entry.isDir ? entry.path : `Open ${entry.path}`}
+      >
+        {entry.isDir ? (
+          hasChildren ? (
+            isExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.5} />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.5} />
+            )
+          ) : (
+            <span className="h-3.5 w-3.5 shrink-0" />
+          )
+        ) : (
+          <span className="h-3.5 w-3.5 shrink-0" />
+        )}
+
+        {entry.isDir ? (
+          isExpanded ? (
+            <FolderOpen className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
+          ) : (
+            <Folder className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
+          )
+        ) : isCodeFile(entry.name) ? (
+          <FileCode className="h-4 w-4 shrink-0 text-blue-400" strokeWidth={1.5} />
+        ) : (
+          <FileText className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
+        )}
+
+        <span className="min-w-0 flex-1 truncate type-caption text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+          {entry.name}
+        </span>
+      </button>
+
+      {entry.isDir && isExpanded && entry.children.map((child) => (
+        <TreeRow
+          key={child.path}
+          entry={child}
+          depth={depth + 1}
+          query={query}
+          expandedPaths={expandedPaths}
+          onToggle={onToggle}
+          onOpenFile={onOpenFile}
+        />
+      ))}
+    </div>
+  );
+}
 
 /**
- * Project files side pane — matches screenshot layout.
- * Shows each file in active folder. Clicking opens in a separate editor window with 2-way live sync.
+ * Project files side pane backed by the active repository's native filesystem.
+ * The selected project folder is always rendered as the visible tree root.
  */
 export function ProjectFilesSidePane({
   widthPx = 420,
+  closing = false,
+  onExited,
 }: ProjectFilesSidePaneProps) {
-  const repositories = useSessionStore((s) => s.repositories);
-  const activeRepositoryId = useSessionStore((s) => s.activeRepositoryId);
-  const activeRepo = repositories.find((r) => r.id === activeRepositoryId);
-
+  const repositories = useSessionStore((state) => state.repositories);
+  const activeRepositoryId = useSessionStore((state) => state.activeRepositoryId);
+  const activeRepo = repositories.find((repo) => repo.id === activeRepositoryId);
   const [search, setSearch] = useState("");
-  const [updatedPaths, setUpdatedPaths] = useState<Record<string, number>>({});
+  const [tree, setTree] = useState<ProjectTreeEntry | null>(null);
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [entered, setEntered] = useState(false);
 
-  // Sync state when files change in separate windows
   useEffect(() => {
-    const unsubscribe = subscribeFileChanges((path) => {
-      setUpdatedPaths((prev) => ({ ...prev, [path]: Date.now() }));
-    });
-    return () => unsubscribe();
+    const frame = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  const projectName = (activeRepo?.name || "DEFAULT PROJECT").toUpperCase();
+  const loadTree = useCallback(async () => {
+    if (!activeRepo?.path) {
+      setTree(null);
+      setError("Choose a project to browse its files.");
+      return;
+    }
 
-  const files = useMemo(() => {
-    // Collect files from open repository or default project files
-    const base = DEFAULT_PROJECT_FILES;
-    if (!search.trim()) return base;
-    return base.filter(
-      (f) =>
-        f.name.toLowerCase().includes(search.toLowerCase()) ||
-        f.path.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [search]);
+    if (!isTauri()) {
+      setTree(null);
+      setError("Project files are available in the Lens desktop app.");
+      return;
+    }
 
-  function handleFileClick(path: string) {
-    void openFileWindow(path);
-    toast.message(`Opened ${path.split("/").pop()} in separate window`, {
-      description: "Edits in the separate window live-sync here automatically",
+    setLoading(true);
+    setError(null);
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const nextTree = await invoke<ProjectTreeEntry>("project_file_tree", {
+        root: activeRepo.path,
+      });
+      setTree(nextTree);
+      setExpandedPaths(new Set([nextTree.path]));
+    } catch (cause) {
+      setTree(null);
+      setError(cause instanceof Error ? cause.message : "Unable to read project files.");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeRepo?.path]);
+
+  useEffect(() => {
+    void loadTree();
+  }, [loadTree]);
+
+  const query = search.trim().toLowerCase();
+  const hasVisibleFiles = useMemo(() => Boolean(tree && treeMatches(tree, query)), [tree, query]);
+
+  function toggleDirectory(path: string) {
+    setExpandedPaths((current) => {
+      const next = new Set(current);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
     });
   }
 
-  const isEmpty = files.length === 0;
+  function openFile(path: string) {
+    void openFileWindow(path);
+    toast.message(`Opened ${path.split(/[\\/]/).pop()} in separate window`);
+  }
+
+  const projectName = activeRepo?.name ?? "PROJECT FILES";
 
   return (
     <aside
-      className="relative flex h-full shrink-0 flex-col border-l border-[var(--border-default)] bg-[var(--bg-surface)] animate-in slide-in-from-right duration-[var(--duration-base)] ease-[var(--ease-enter)]"
-      style={{ width: widthPx }}
+      className="relative flex h-full shrink-0 flex-col overflow-hidden border-l border-[var(--border-default)] bg-[var(--bg-surface)] transition-[width,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)]"
+      style={{ width: entered && !closing ? widthPx : 0, opacity: entered && !closing ? 1 : 0 }}
+      onTransitionEnd={(event) => {
+        if (closing && event.propertyName === "width") onExited?.();
+      }}
       aria-label="Project Files"
     >
-      {/* Panel Top Header Bar */}
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] pl-3">
-        <div className="flex items-center gap-2 min-w-0 mr-2">
-          <LayoutGrid className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.5} />
-          <span className="truncate type-caption-uppercase text-[var(--text-primary)] font-medium">
+      <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] pl-3 pr-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <LayoutGrid className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.5} />
+          <span className="truncate type-caption-uppercase font-medium text-[var(--text-primary)]">
             {projectName}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={() => void loadTree()}
+          disabled={loading}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
+          title="Refresh project files"
+          aria-label="Refresh project files"
+        >
+          <RefreshCw className={loading ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} strokeWidth={1.5} />
+        </button>
       </div>
 
-      {/* Search Input (if files exist) */}
-      {!isEmpty && (
-        <div className="p-2 border-b border-[var(--border-subtle)]">
-          <div className="relative flex items-center">
-            <Search className="absolute left-2.5 h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.5} />
-            <input
-              type="text"
-              placeholder="Search files..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus:outline focus:outline-1 focus:outline-[var(--border-focus)]"
-            />
-          </div>
+      <div className="border-b border-[var(--border-subtle)] p-2">
+        <div className="relative flex items-center">
+          <Search className="absolute left-2.5 h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.5} />
+          <input
+            type="text"
+            placeholder="Search files..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus:outline focus:outline-1 focus:outline-[var(--border-focus)]"
+          />
         </div>
-      )}
+      </div>
 
-      {/* Panel Content Body */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {isEmpty ? (
-          /* Exact Empty State matching uploaded screenshot */
-          <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-            <h3 className="type-caption font-semibold tracking-widest text-[var(--text-tertiary)] uppercase">
-              EMPTY
-            </h3>
-            <p className="mt-1 type-caption text-[var(--text-tertiary)]">
-              This folder is empty.
-            </p>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {loading ? (
+          <div className="flex h-full items-center justify-center gap-2 type-caption text-[var(--text-tertiary)]">
+            <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
+            Reading project files…
           </div>
-        ) : (
-          <ScrollArea className="flex-1 p-2">
-            <div className="flex flex-col gap-0.5">
-              {files.map((file) => {
-                const isRecentlyUpdated =
-                  updatedPaths[file.path] &&
-                  Date.now() - updatedPaths[file.path] < 10000;
-
-                return (
-                  <button
-                    key={file.path}
-                    type="button"
-                    onClick={() => handleFileClick(file.path)}
-                    className="group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] hover:bg-[var(--bg-hover)]"
-                    title={`Click to open ${file.path} in a separate window`}
-                  >
-                    {file.type === "code" ? (
-                      <FileCode className="h-4 w-4 text-blue-400 shrink-0" strokeWidth={1.5} />
-                    ) : (
-                      <FileText className="h-4 w-4 text-emerald-400 shrink-0" strokeWidth={1.5} />
-                    )}
-                    <span className="min-w-0 flex-1 truncate type-caption text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
-                      {file.name}
-                    </span>
-
-                    {isRecentlyUpdated && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)] shrink-0 animate-pulse" title="Edited in separate window" />
-                    )}
-
-                    <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-tertiary)] opacity-0 transition-opacity duration-[var(--duration-instant)] ease-[var(--ease-standard)] group-hover:opacity-100" strokeWidth={1.5} />
-                  </button>
-                );
-              })}
-            </div>
+        ) : error ? (
+          <div className="flex h-full items-center justify-center px-6 text-center type-caption text-[var(--text-tertiary)]">
+            {error}
+          </div>
+        ) : tree && hasVisibleFiles ? (
+          <ScrollArea className="h-full p-2">
+            <TreeRow
+              entry={tree}
+              depth={0}
+              query={query}
+              expandedPaths={expandedPaths}
+              onToggle={toggleDirectory}
+              onOpenFile={openFile}
+            />
           </ScrollArea>
+        ) : (
+          <div className="flex h-full items-center justify-center px-6 text-center type-caption text-[var(--text-tertiary)]">
+            No matching files.
+          </div>
         )}
       </div>
     </aside>

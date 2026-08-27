@@ -79,7 +79,9 @@ interface EmptySessionViewProps {
   onImport?: () => void;
   onMultitask?: () => void;
   terminalOpen?: boolean;
+  terminalClosing?: boolean;
   onCloseTerminal?: () => void;
+  onTerminalExited?: () => void;
   catalogStatus?: "idle" | "loading" | "ready" | "empty" | "error";
   catalogError?: string;
   leftSidebarOpen?: boolean;
@@ -104,7 +106,9 @@ export function EmptySessionView({
   onImport,
   onMultitask,
   terminalOpen = false,
+  terminalClosing = false,
   onCloseTerminal,
+  onTerminalExited,
   catalogStatus,
   catalogError,
   leftSidebarOpen = true,
@@ -1166,6 +1170,8 @@ export function EmptySessionView({
             cwd={activeRepo?.path}
             projectName={activeRepo?.name}
             onClose={onCloseTerminal}
+            closing={terminalClosing}
+            onExited={onTerminalExited}
           />
         )}
       </div>
