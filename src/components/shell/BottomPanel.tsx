@@ -1,10 +1,11 @@
 import {
+  AnimatedIcon,
   ChevronUp,
   Maximize2,
   Minimize2,
   PanelBottomClose,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -126,7 +127,7 @@ export default function BottomPanel() {
                 label="Expand panel"
                 onClick={() => setBottomPanelSlim(false)}
               >
-                <ChevronUp className="h-3.5 w-3.5" strokeWidth={1.5} />
+                <AnimatedIcon icon={ChevronUp} className="h-3.5 w-3.5" strokeWidth={1.5} />
               </PanelIconBtn>
             ) : (
               <>
@@ -134,7 +135,7 @@ export default function BottomPanel() {
                   label="Collapse to bar"
                   onClick={() => setBottomPanelSlim(true)}
                 >
-                  <PanelBottomClose className="h-4 w-4" strokeWidth={1.5} />
+                  <AnimatedIcon icon={PanelBottomClose} className="h-4 w-4" strokeWidth={1.5} />
                 </PanelIconBtn>
                 <PanelIconBtn
                   label={
@@ -145,16 +146,16 @@ export default function BottomPanel() {
                   onClick={toggleBottomPanelMaximized}
                 >
                   {bottomPanelMaximized ? (
-                    <Minimize2 className="h-4 w-4" strokeWidth={1.5} />
+                    <AnimatedIcon icon={Minimize2} interaction="pulse" className="h-4 w-4" strokeWidth={1.5} />
                   ) : (
-                    <Maximize2 className="h-4 w-4" strokeWidth={1.5} />
+                    <AnimatedIcon icon={Maximize2} interaction="pulse" className="h-4 w-4" strokeWidth={1.5} />
                   )}
                 </PanelIconBtn>
                 <PanelIconBtn label="Close Panel" onClick={closeBottomPanel}>
-                  <X className="h-4 w-4" strokeWidth={1.5} />
+                  <AnimatedIcon icon={X} interaction="pulse" className="h-4 w-4" strokeWidth={1.5} />
                 </PanelIconBtn>
                 <PanelIconBtn label="Hide Panel" onClick={hideBottomPanel}>
-                  <PanelBottomClose className="h-4 w-4" strokeWidth={1.5} />
+                  <AnimatedIcon icon={PanelBottomClose} className="h-4 w-4" strokeWidth={1.5} />
                 </PanelIconBtn>
               </>
             )}
@@ -222,7 +223,7 @@ function PanelIconBtn({
           type="button"
           aria-label={label}
           onClick={onClick}
-          className="flex h-[28px] w-[28px] items-center justify-center text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          className="group flex h-[28px] w-[28px] items-center justify-center text-[var(--text-tertiary)] transition-colors duration-[var(--duration-instant)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         >
           {children}
         </button>

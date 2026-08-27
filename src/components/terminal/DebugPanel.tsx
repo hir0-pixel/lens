@@ -1,4 +1,4 @@
-import { Bug, Play } from "lucide-react";
+import { Bug, Play } from "@/components/icons/tabler";
 
 /**
  * Debug console — Start Debugging disabled until a debug adapter is wired.

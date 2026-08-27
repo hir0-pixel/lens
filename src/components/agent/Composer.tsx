@@ -6,7 +6,7 @@ import {
   Paperclip,
   Square,
   Video,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import type { Attachment, Model } from "../../lib/types";
 

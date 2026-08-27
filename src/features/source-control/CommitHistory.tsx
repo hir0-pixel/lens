@@ -1,5 +1,5 @@
-﻿import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, X } from "@/components/icons/tabler";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

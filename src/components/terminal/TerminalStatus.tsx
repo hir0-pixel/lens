@@ -1,4 +1,4 @@
-import { FolderOpen, Terminal } from "lucide-react";
+import { FolderOpen, Terminal } from "@/components/icons/tabler";
 import { useTerminalStore } from "@/stores/terminalStore";
 
 export function TerminalStatus() {

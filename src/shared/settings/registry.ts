@@ -12,8 +12,8 @@ import {
   Sparkles,
   Terminal,
   Type,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/icons/tabler";
+import type { LucideIcon } from "@/components/icons/tabler";
 import type { SettingsSectionId } from "./defaults";
 
 export interface SettingsNavItem {

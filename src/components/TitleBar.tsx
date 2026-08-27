@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Check, Plus, Search, SquareArrowOutUpRight, SquareTerminal, X } from "lucide-react";
+import { AnimatedIcon, ArrowLeft, ArrowRight, Check, Columns2, Database, PanelLeft, PanelRight, Plus, Search, SquareArrowOutUpRight, SquareTerminal, X } from "@/components/icons/tabler";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { MenuBar } from "@/features/menu-bar/MenuBar";
 import { TitleBarOverflowMenu } from "@/features/shell/TitleBarOverflowMenu";
@@ -23,6 +23,10 @@ interface TitleBarProps {
   onOpenTerminal?: () => void;
   sidePaneOpen?: boolean;
   onToggleSidePane?: () => void;
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+  onGoBack?: () => void;
+  onGoForward?: () => void;
 }
 
 const AGENT_MENUS = MENU_BAR.filter((m) =>
@@ -33,13 +37,14 @@ const AGENT_MENUS = MENU_BAR.filter((m) =>
  * Minimal title bar. IDE button opens a separate OS window.
  */
 export default function TitleBar({
-  projectName = "",
-  onOpenSettings,
   variant = "agents",
   onAgentsWindow: _onAgentsWindow,
   onOpenTerminal: _onOpenTerminal,
-  sidePaneOpen: _sidePaneOpen,
   onToggleSidePane: _onToggleSidePane,
+  canGoBack = false,
+  canGoForward = false,
+  onGoBack,
+  onGoForward,
 }: TitleBarProps) {
   const isAgents = variant === "agents";
 
@@ -47,61 +52,42 @@ export default function TitleBar({
     <>
       <div
         data-tauri-drag-region
-        className="lens-window-caption titlebar-drag flex h-8 shrink-0 items-stretch select-none"
+        className="lens-window-caption titlebar-drag flex h-8 shrink-0 items-stretch select-none bg-[var(--bg-surface)]"
+        onDoubleClick={() => {
+          void (async () => {
+            try {
+              const w = getCurrentWindow();
+              if (await w.isMaximized()) await w.unmaximize();
+              else await w.maximize();
+            } catch {
+              /* browser */
+            }
+          })();
+        }}
       >
-        <div className="pointer-events-none flex items-center px-1.5">
-          <LensWordmark size="titlebar" />
+      <div className="pointer-events-none relative top-px flex items-center gap-3 px-1.5">
+          <LensWordmark size="titlebar" showMark={false} />
+        <div className="pointer-events-auto titlebar-no-drag flex h-full items-stretch">
+          <MenuBar menus={isAgents ? AGENT_MENUS : MENU_BAR} />
         </div>
-        <div className="titlebar-no-drag ml-auto flex items-stretch">
+        {isAgents && (
+          <div className="pointer-events-auto titlebar-no-drag flex h-full items-stretch pl-1">
+            <button type="button" aria-label="Toggle sidebar" title="Toggle sidebar" onClick={_onToggleSidePane} className="group flex w-7 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
+              <AnimatedIcon icon={PanelLeft} className="h-3.5 w-3.5" strokeWidth={1.6} />
+            </button>
+            <button type="button" aria-label="Undo" title="Undo" disabled={!canGoBack} onClick={onGoBack} className="group flex w-7 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:hover:bg-transparent">
+              <AnimatedIcon icon={ArrowLeft} interaction="nudge" className="h-3.5 w-3.5" strokeWidth={1.6} />
+            </button>
+            <button type="button" aria-label="Redo" title="Redo" disabled={!canGoForward} onClick={onGoForward} className="group flex w-7 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:hover:bg-transparent">
+              <AnimatedIcon icon={ArrowRight} interaction="nudge" className="h-3.5 w-3.5" strokeWidth={1.6} />
+            </button>
+          </div>
+        )}
+        </div>
+        <div className="titlebar-no-drag relative top-px ml-auto flex items-stretch">
           <WindowControls />
         </div>
       </div>
-    <header
-      data-tauri-drag-region
-      className="cursor-titlebar titlebar-drag relative z-sticky flex h-8 shrink-0 select-none items-stretch"
-      role="banner"
-      onDoubleClick={() => {
-        void (async () => {
-          try {
-            const w = getCurrentWindow();
-            if (await w.isMaximized()) await w.unmaximize();
-            else await w.maximize();
-          } catch {
-            /* browser */
-          }
-        })();
-      }}
-    >
-      <div className="titlebar-no-drag relative z-[1] flex items-center pl-2">
-        <MenuBar menus={isAgents ? AGENT_MENUS : MENU_BAR} />
-      </div>
-
-      {!isAgents && projectName && (
-        <div
-          data-tauri-drag-region
-          className="pointer-events-none absolute left-1/2 top-0 flex h-full max-w-[40%] -translate-x-1/2 items-center px-4"
-        >
-          <span className="truncate type-caption text-[var(--text-tertiary)]">
-            {projectName}
-          </span>
-        </div>
-      )}
-
-      <div className="titlebar-no-drag relative z-[1] ml-auto flex items-stretch">
-        {!isAgents && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-full rounded-none px-3 type-caption"
-            onClick={onOpenSettings}
-            aria-label="Open Settings"
-          >
-            Settings
-          </Button>
-        )}
-      </div>
-    </header>
     </>
   );
 }
@@ -121,14 +107,9 @@ function ServersPopover() {
           type="button"
           aria-label="Servers"
           title="Servers"
-          className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          className="group flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <rect x="2" y="2" width="12" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.2" />
-            <rect x="2" y="9" width="12" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.2" />
-            <circle cx="5" cy="4.5" r="0.9" fill="currentColor" />
-            <circle cx="5" cy="11.5" r="0.9" fill="currentColor" />
-          </svg>
+          <AnimatedIcon icon={Database} interaction="pulse" className="h-[17px] w-[17px]" strokeWidth={1.5} />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -344,37 +325,6 @@ function McpEntry() {
   );
 }
 
-function SidePaneGlyph({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      className={active ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}
-      aria-hidden
-    >
-      <rect
-        x="1.5"
-        y="1.5"
-        width="13"
-        height="13"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <path d="M5.5 2v12" stroke="currentColor" strokeWidth="1.4" />
-      <path
-        d="M10.2 8.7 8.5 8l1.7-.7"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export interface LayoutToolbarProps {
   sidePaneOpen: boolean;
   onToggleSidePane?: () => void;
@@ -403,15 +353,16 @@ export function LayoutToolbar({
             type="button"
             aria-label="Toggle layout"
             title="Toggle layout"
-            className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          className="group flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             onClick={() => {
-              window.dispatchEvent(new CustomEvent("lens:open-agents-tab", { detail: { kind: "review" } }));
+              if (sidePaneOpen) {
+                onToggleSidePane?.();
+              } else {
+                window.dispatchEvent(new CustomEvent("lens:open-agents-tab", { detail: { kind: "review" } }));
+              }
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <rect x="1.5" y="2" width="13" height="12" rx="1.8" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M8 2.5v11" stroke="currentColor" strokeWidth="1.3" />
-            </svg>
+            <AnimatedIcon icon={Columns2} className="h-[17px] w-[17px]" strokeWidth={1.5} />
           </button>
         </>
       ) : (
@@ -432,11 +383,11 @@ export function LayoutToolbar({
         </Button>
       )}
 
-      <button
-        type="button"
-        aria-label="Open terminal"
-        title="Terminal"
-        className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+        <button
+          type="button"
+          aria-label="Open terminal"
+          title="Terminal"
+          className="group flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         onClick={() => {
           if (onOpenTerminal) {
             onOpenTerminal();
@@ -449,7 +400,7 @@ export function LayoutToolbar({
           );
         }}
       >
-        <SquareTerminal className="h-4 w-4" strokeWidth={1.6} />
+          <AnimatedIcon icon={SquareTerminal} className="h-[17px] w-[17px]" strokeWidth={1.6} />
       </button>
       {isAgents && (
         <button
@@ -457,7 +408,7 @@ export function LayoutToolbar({
           aria-label="Toggle side pane"
           title="Side pane"
           className={cn(
-            "flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+            "group flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
             sidePaneOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
           )}
           onClick={() => {
@@ -465,7 +416,7 @@ export function LayoutToolbar({
             else window.dispatchEvent(new CustomEvent("lens:toggle-agents-dock"));
           }}
         >
-          <SidePaneGlyph active={sidePaneOpen} />
+          <AnimatedIcon icon={PanelRight} className="h-[17px] w-[17px]" strokeWidth={1.5} />
         </button>
       )}
       <TitleBarOverflowMenu />

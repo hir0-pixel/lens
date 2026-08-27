@@ -1,5 +1,6 @@
 import TerminalView from "@/components/output/TerminalView";
 import { useCallback, useEffect, useState } from "react";
+import { useTerminalStore } from "@/stores/terminalStore";
 
 interface TerminalPanelProps {
   title?: string;
@@ -18,11 +19,13 @@ interface TerminalPanelProps {
 export default function TerminalPanel({
   title = "Terminal",
   subtitle = "PowerShell",
-  name,
   cwd,
   projectName,
   onClose,
 }: TerminalPanelProps) {
+  const sessions = useTerminalStore((s) => s.sessions);
+  const activeSessionId = useTerminalStore((s) => s.activeSessionId);
+  const setActiveSession = useTerminalStore((s) => s.setActiveSession);
   const [height, setHeight] = useState(240);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -89,12 +92,22 @@ export default function TerminalPanel({
           {title}
         </span>
         <span className="px-2 py-1 type-caption text-[#4d4d4d]">{subtitle}</span>
-        <span className="flex items-center gap-1.5 rounded bg-[#171717] px-2.5 py-1 type-caption font-medium text-white">
-          {name ?? "shell"}
-          <span className="type-code text-[var(--text-tertiary)]" title={cwd}>
-            {projectName ?? ""}
-          </span>
-        </span>
+        {sessions.map((session) => (
+          <button
+            key={session.id}
+            type="button"
+            onClick={() => setActiveSession(session.id)}
+            title={session.cwd}
+            className={`flex h-full max-w-[240px] items-center gap-1.5 px-2.5 type-caption ${
+              session.id === activeSessionId
+                ? "bg-[#222222] font-medium text-white"
+                : "text-[#777777] hover:bg-[#1d1d1d] hover:text-[#c7c7c7]"
+            }`}
+          >
+            <span className="truncate">{session.title}</span>
+            <span className="truncate text-[#777777]">{session.cwd}</span>
+          </button>
+        ))}
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"

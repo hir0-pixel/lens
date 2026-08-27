@@ -11,7 +11,7 @@ import {
   Skull,
   ClipboardPaste,
   SquareStack,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

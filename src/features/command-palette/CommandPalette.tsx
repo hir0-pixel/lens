@@ -12,7 +12,7 @@ import {
   Pin,
   Type,
   Variable,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import {
   Command,
   CommandEmpty,

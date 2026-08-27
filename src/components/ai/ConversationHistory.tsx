@@ -6,7 +6,7 @@ import {
   Pencil,
   Search,
   Trash2,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import type { Conversation } from "../../lib/types";
 import { Button } from "../ui/button";

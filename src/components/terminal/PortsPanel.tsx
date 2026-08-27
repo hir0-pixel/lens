@@ -1,4 +1,4 @@
-import { ExternalLink, Radio } from "lucide-react";
+import { ExternalLink, Radio } from "@/components/icons/tabler";
 
 const MOCK_PORTS = [
   { port: 1420, process: "vite", label: "Lens Dev Server" },

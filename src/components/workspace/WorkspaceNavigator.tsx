@@ -1,4 +1,4 @@
-import { Pin, Plus, Search } from "lucide-react";
+import { Pin, Plus, Search } from "@/components/icons/tabler";
 import { type NavView, useLayoutStore } from "@/stores/layoutStore";
 import { INITIAL_PROJECTS } from "@/lib/mock-data";
 import { MOCK_CONVERSATIONS } from "@/components/ai/mock-data";

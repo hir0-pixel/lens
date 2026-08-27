@@ -31,7 +31,7 @@ export function MenuBar({
               role="menuitem"
               aria-haspopup="menu"
               className={cn(
-                "type-nav px-2 text-[var(--cursor-title-fg)] outline-none",
+                "px-1.5 text-[12px] font-medium leading-[1.4] text-[var(--cursor-title-fg)] outline-none",
                 "transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
                 "hover:bg-[var(--cursor-list-hover)]",
                 "focus-visible:bg-[var(--cursor-list-hover)]",

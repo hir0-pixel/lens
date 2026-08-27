@@ -6,7 +6,7 @@ import {
   Moon,
   Rocket,
   Sun,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn, formatCredits } from "@/lib/utils";
 import type { Model, Project, Theme } from "@/lib/types";
 

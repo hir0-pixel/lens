@@ -9,7 +9,7 @@ import {
   Terminal,
   GitBranch,
   AlertCircle,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { sanitizeUrl } from "@/shared/security/sanitize";

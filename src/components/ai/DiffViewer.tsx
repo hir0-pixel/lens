@@ -5,7 +5,7 @@ import {
   FileCode2,
   GitCompareArrows,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import type { DiffFileChange, FileEdit } from "../../lib/types";
 import { Button } from "../ui/button";

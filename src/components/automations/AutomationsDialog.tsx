@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Workflow } from "lucide-react";
+import { Plus, Trash2, Workflow } from "@/components/icons/tabler";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";

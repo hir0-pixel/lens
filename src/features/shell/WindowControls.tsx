@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Copy, Minus, X } from "lucide-react";
+import { Copy, Minus, X } from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 
 async function withWindow(

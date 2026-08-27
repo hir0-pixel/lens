@@ -7,7 +7,7 @@ import {
   MousePointer2,
   Terminal,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 import type { ContextChip, ContextChipKind } from "@/lib/types";
 import {

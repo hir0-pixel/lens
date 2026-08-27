@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FolderGit2, FolderOpen, Settings } from "lucide-react";
+import { FolderGit2, FolderOpen, Settings } from "@/components/icons/tabler";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/stores/sessionStore";

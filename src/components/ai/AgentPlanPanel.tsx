@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, Circle, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Circle, Loader2 } from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 
 export type PlanStepStatus = "done" | "in_progress" | "pending";

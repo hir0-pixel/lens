@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { AlertTriangle, ChevronDown, Home, RefreshCw } from "lucide-react";
+import { AlertTriangle, ChevronDown, Home, RefreshCw } from "@/components/icons/tabler";
 import { logger } from "@/shared/diagnostics/logger";
 
 interface Props {

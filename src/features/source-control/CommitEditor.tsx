@@ -1,5 +1,5 @@
-﻿import { useRef } from "react";
-import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { useRef } from "react";
+import { Check, ChevronDown, Loader2 } from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";

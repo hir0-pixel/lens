@@ -1,4 +1,5 @@
 import {
+  AnimatedIcon,
   BookOpen,
   Brain,
   FolderGit2,
@@ -12,8 +13,8 @@ import {
   Layers,
   Workflow,
   FileText,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/icons/tabler";
+import type { LucideIcon } from "@/components/icons/tabler";
 import {
   Tooltip,
   TooltipContent,
@@ -69,14 +70,13 @@ export function WorkspaceNavRail({
       >
         <NavAction
           label="New Agent"
-          shortcut="Ctrl+N"
           onClick={() => {
             setNavView("agents");
             onNewAgent?.();
             window.dispatchEvent(new CustomEvent("lens:new-agent"));
           }}
         >
-          <MessageSquarePlus size={18} strokeWidth={1.75} />
+          <AnimatedIcon icon={MessageSquarePlus} interaction="pulse" size={18} strokeWidth={1.75} />
         </NavAction>
 
         <div className="mx-2 my-1 h-px bg-[var(--border-subtle)]" />
@@ -92,7 +92,7 @@ export function WorkspaceNavRail({
               if (id === "search") useCommandStore.getState().openSearch();
             }}
           >
-            <Icon size={18} strokeWidth={1.75} className="shrink-0" />
+            <AnimatedIcon icon={Icon} size={18} strokeWidth={1.75} className="shrink-0" />
           </NavAction>
         ))}
 
@@ -103,7 +103,7 @@ export function WorkspaceNavRail({
             pressed={toolsOpen}
             onClick={toggleTools}
           >
-            <Layers size={18} strokeWidth={1.75} />
+            <AnimatedIcon icon={Layers} size={18} strokeWidth={1.75} />
           </NavAction>
           <NavAction
             label="Settings"
@@ -112,7 +112,7 @@ export function WorkspaceNavRail({
               onOpenSettings?.();
             }}
           >
-            <Settings size={18} strokeWidth={1.75} />
+            <AnimatedIcon icon={Settings} interaction="spin" size={18} strokeWidth={1.75} />
           </NavAction>
         </div>
       </aside>
@@ -142,7 +142,7 @@ function NavAction({
           aria-pressed={pressed}
           onClick={onClick}
           className={cn(
-            "relative flex h-12 w-12 items-center justify-center text-[var(--text-tertiary)]",
+            "group relative flex h-12 w-12 items-center justify-center text-[var(--text-tertiary)]",
             "transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)]",
             "hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
             "focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--border-focus)]",

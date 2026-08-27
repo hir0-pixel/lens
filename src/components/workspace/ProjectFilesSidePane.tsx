@@ -5,16 +5,14 @@ import {
   LayoutGrid,
   Search,
   ExternalLink,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { useSessionStore } from "@/stores/sessionStore";
 import { openFileWindow } from "@/features/windows/openAppWindow";
 import { subscribeFileChanges } from "@/features/files/fileSync";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { LayoutToolbar } from "@/components/TitleBar";
 
 interface ProjectFilesSidePaneProps {
-  onClose: () => void;
   widthPx?: number;
 }
 
@@ -31,8 +29,7 @@ const DEFAULT_PROJECT_FILES = [
  * Shows each file in active folder. Clicking opens in a separate editor window with 2-way live sync.
  */
 export function ProjectFilesSidePane({
-  onClose,
-  widthPx = 300,
+  widthPx = 420,
 }: ProjectFilesSidePaneProps) {
   const repositories = useSessionStore((s) => s.repositories);
   const activeRepositoryId = useSessionStore((s) => s.activeRepositoryId);
@@ -85,11 +82,6 @@ export function ProjectFilesSidePane({
             {projectName}
           </span>
         </div>
-
-        <LayoutToolbar
-          sidePaneOpen={true}
-          onToggleSidePane={onClose}
-        />
       </div>
 
       {/* Search Input (if files exist) */}

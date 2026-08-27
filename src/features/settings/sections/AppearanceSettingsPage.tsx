@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check } from "@/components/icons/tabler";
 import { Toggle } from "@/components/ui/toggle";
 import {
   SettingsGroup,

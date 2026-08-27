@@ -12,7 +12,7 @@ import {
   Plus,
   RotateCcw,
   Minus,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,7 +36,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useGitStore } from "@/stores/gitStore";
 import type { GitChange, GitFileStatus } from "./types";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "@/components/icons/tabler";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 

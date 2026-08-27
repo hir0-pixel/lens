@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "@/components/icons/tabler";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -144,7 +144,7 @@ export function WorkspaceLauncher() {
           type="button"
           aria-label="Open workspace"
           title="Open workspace"
-          className="mx-1 inline-flex h-[22px] items-center gap-0.5 self-center rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-1.5 leading-none hover:bg-[var(--bg-hover)]"
+          className="mx-1 inline-flex h-6 items-center gap-0.5 self-center rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-1.5 leading-none hover:bg-[var(--bg-hover)]"
         >
           <ExplorerGlyph className="block" />
           <ChevronDown

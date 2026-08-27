@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut } from "@/components/icons/tabler";
 import { useAuthStore } from "./store";
 import { Button } from "@/components/ui/button";
 import {

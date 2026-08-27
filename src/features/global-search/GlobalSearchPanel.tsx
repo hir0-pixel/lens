@@ -10,7 +10,7 @@ import {
   WholeWord,
   X,
   History,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -184,7 +184,7 @@ export function GlobalSearchPanel() {
   function handleReplaceAll() {
     if (!query.trim()) return;
     setReplaceCount(totalMatches);
-    // Mock replace — dispatches event for future editor integration
+    // Mock replace ï¿½ dispatches event for future editor integration
     window.dispatchEvent(
       new CustomEvent("lens:replace-all", {
         detail: { query, replace, options },
@@ -342,7 +342,7 @@ export function GlobalSearchPanel() {
 
         <div className="flex h-7 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3 type-caption text-[var(--text-tertiary)]">
           {pending ? (
-            <span className="animate-pulse">Searching…</span>
+            <span className="animate-pulse">Searchingï¿½</span>
           ) : query.trim() ? (
             <span>
               {totalMatches} result{totalMatches !== 1 ? "s" : ""} in {results.length} file
@@ -370,7 +370,7 @@ export function GlobalSearchPanel() {
               <div className="px-4 py-12 text-center">
                 <p className="type-caption text-foreground/80">Search the workspace</p>
                 <p className="mt-1 type-caption text-muted-foreground">
-                  Use match options below · <kbd className="wb-kbd">Enter</kbd> to search
+                  Use match options below ï¿½ <kbd className="wb-kbd">Enter</kbd> to search
                 </p>
               </div>
             )}

@@ -8,7 +8,7 @@ import {
   Folder,
   FolderOpen,
   RefreshCw,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 import { getWorkspaceFiles } from "@/shared/search/workspaceIndex";
 import { CURSOR_MOTION } from "@/shared/design-system/cursorMotion";

@@ -1,4 +1,4 @@
-﻿import { ArrowLeftRight, Check, GitMerge, X } from "lucide-react";
+import { ArrowLeftRight, Check, GitMerge, X } from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";

@@ -21,7 +21,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Timer,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AIMode, Attachment, Model, ChatMessage } from "@/lib/types";
@@ -32,7 +32,6 @@ import { AgentChatComposer } from "@/components/ai/AgentChatComposer";
 import TerminalPanel from "@/components/output/TerminalPanel";
 import { UserAccountMenu } from "@/shared/bff-auth/UserAccountMenu";
 import { revealInFolder } from "@/features/projects/revealInFolder";
-import { LayoutToolbar } from "@/components/TitleBar";
 import { useGitStore } from "@/stores/gitStore";
 import { GitBranchPicker } from "@/components/workspace/GitBranchPicker";
 import {
@@ -83,9 +82,7 @@ interface EmptySessionViewProps {
   onCloseTerminal?: () => void;
   catalogStatus?: "idle" | "loading" | "ready" | "empty" | "error";
   catalogError?: string;
-  agentsDock?: string | null;
-  onToggleSidePane?: () => void;
-  onOpenTerminal?: () => void;
+  leftSidebarOpen?: boolean;
 }
 
 /**
@@ -110,9 +107,7 @@ export function EmptySessionView({
   onCloseTerminal,
   catalogStatus,
   catalogError,
-  agentsDock = null,
-  onToggleSidePane,
-  onOpenTerminal,
+  leftSidebarOpen = true,
 }: EmptySessionViewProps) {
   const repositories = useSessionStore((s) => s.repositories);
   const sessions = useSessionStore((s) => s.sessions);
@@ -655,16 +650,19 @@ export function EmptySessionView({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+    <div className="flex min-h-0 flex-1 pt-1 bg-[var(--bg-surface)] text-[var(--text-primary)]">
       <aside
-        className="flex w-[220px] shrink-0 flex-col border-r border-[var(--border-default)] bg-[var(--bg-surface)]"
+        className={cn(
+          "flex shrink-0 flex-col overflow-hidden bg-[var(--bg-surface)] transition-[width,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)]",
+          leftSidebarOpen ? "w-[220px] opacity-100" : "w-0 opacity-0",
+        )}
         aria-label="Session navigator"
       >
         {/* Scrollable Sidebar Body */}
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col pb-2">
             {/* Top Navigation Actions */}
-            <div className="flex flex-col gap-0.5 px-2 pt-3">
+            <div className="flex flex-col gap-0.5 px-2 pt-2">
               <button
                 type="button"
                 onClick={() => {
@@ -678,10 +676,6 @@ export function EmptySessionView({
               >
                 <Bot className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.5} />
                 <span className="min-w-0 flex-1 truncate font-medium">New session</span>
-                <span className="flex items-center gap-1">
-                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 type-caption font-sans text-[var(--text-tertiary)]">Ctrl</kbd>
-                  <kbd className="rounded bg-[var(--bg-active)] px-1 py-0.5 type-caption font-sans text-[var(--text-tertiary)]">N</kbd>
-                </span>
               </button>
 
               <button
@@ -916,7 +910,7 @@ export function EmptySessionView({
         </div>
       </aside>
 
-      <div className="relative flex min-w-0 flex-1 flex-col bg-[var(--bg-canvas)]">
+      <div className="relative isolate flex min-w-0 flex-1 flex-col overflow-hidden border-l border-t border-[var(--border-default)] rounded-tl-[12px] bg-[var(--bg-canvas)]">
         {activeTab === "artifacts" ? (
           renderArtifactsView()
         ) : activeTab !== "chat" ? (
@@ -926,16 +920,16 @@ export function EmptySessionView({
           {/* Header Bar */}
           <div className="lens-chat-session-header flex min-h-12 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-2 bg-[var(--bg-canvas)]">
             <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
-              <span className="max-w-[220px] truncate type-caption font-medium text-[var(--text-primary)]">
+              <span className="max-w-[220px] truncate text-[13px] font-medium leading-[1.4] text-[var(--text-primary)]">
                 {session?.title ?? "New chat"}
               </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 max-w-[180px] items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex h-7 max-w-[180px] items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 text-[13px] leading-[1.4] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
-                    <Folder className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
+                    <Folder className="h-[15px] w-[15px] shrink-0 text-[var(--text-secondary)]" strokeWidth={1.5} />
                     <span className="truncate">{activeRepo?.name ?? "lens"}</span>
                   </button>
                 </DropdownMenuTrigger>
@@ -974,9 +968,9 @@ export function EmptySessionView({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex h-7 items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                        className="inline-flex h-7 items-center gap-2 rounded-full bg-[var(--bg-surface-raised)] px-2.5 text-[13px] leading-[1.4] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                       >
-                        <GitBranch className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.5} />
+                        <GitBranch className="h-[15px] w-[15px] text-[var(--text-secondary)]" strokeWidth={1.5} />
                         <span>{branchName}</span>
                         <ChevronDown className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2} />
                       </button>
@@ -995,7 +989,7 @@ export function EmptySessionView({
                         className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                         aria-label="Chat options"
                       >
-                        <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
+                        <MoreHorizontal className="h-[17px] w-[17px]" strokeWidth={1.75} />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-44">
@@ -1021,155 +1015,150 @@ export function EmptySessionView({
               )}
             </div>
 
-            <div className="flex items-center h-full">
-              <LayoutToolbar
-                sidePaneOpen={agentsDock !== null}
-                onToggleSidePane={onToggleSidePane}
-                onOpenTerminal={onOpenTerminal}
-              />
-            </div>
           </div>
 
-          {!hasMessages ? (
-            <>
-              <div className="flex flex-1 flex-col items-center justify-center px-6">
-                <div className="w-full max-w-[720px]">
-                  <div className="mb-3 flex flex-wrap items-center justify-center gap-3 type-caption text-[var(--text-tertiary)]">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
-                        >
-                          <Folder className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          <span className="max-w-[160px] truncate">
-                            {activeRepo?.name ?? "No project"}
-                          </span>
-                          <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            const sess = ensureSession();
-                            setSessionRepo(sess.id, null);
-                          }}
-                        >
-                          No project
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {repositories.map((p) => (
-                          <DropdownMenuItem
-                            key={p.id}
-                            onClick={() => {
-                              const sess = ensureSession();
-                              setSessionRepo(sess.id, p.id);
-                            }}
-                          >
-                            <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                            {p.name}
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onAddFolder?.()}>
-                          <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                          Open folder…
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            <div className="relative flex min-w-0 flex-1 flex-col">
+              {!hasMessages ? (
+                <>
+                  <div className="flex flex-1 flex-col items-center justify-center px-6">
+                    <div className="w-full max-w-[720px]">
+                      <div className="mb-3 flex flex-wrap items-center justify-center gap-3 type-caption text-[var(--text-tertiary)]">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
+                            >
+                              <Folder className="h-3.5 w-3.5" strokeWidth={1.5} />
+                              <span className="max-w-[160px] truncate">
+                                {activeRepo?.name ?? "No project"}
+                              </span>
+                              <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-56">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const sess = ensureSession();
+                                setSessionRepo(sess.id, null);
+                              }}
+                            >
+                              No project
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {repositories.map((p) => (
+                              <DropdownMenuItem
+                                key={p.id}
+                                onClick={() => {
+                                  const sess = ensureSession();
+                                  setSessionRepo(sess.id, p.id);
+                                }}
+                              >
+                                <Folder className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                {p.name}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => onAddFolder?.()}>
+                              <FolderPlus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                              Open folder…
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
+                            >
+                              {location === "this-pc" ? (
+                                <Monitor className="h-3 w-3" strokeWidth={1.5} />
+                              ) : (
+                                <Cloud className="h-3 w-3" strokeWidth={1.5} />
+                              )}
+                              <span>
+                                {location === "this-pc" ? "This PC" : "Cloud Agents"}
+                              </span>
+                              <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-48">
+                            <DropdownMenuItem onClick={() => setLocation("this-pc")}>
+                              <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                              This PC
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled
+                              className="cursor-not-allowed opacity-50"
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                              Cloud Agents
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      {renderComposer()}
+
+                      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                         <button
                           type="button"
-                          className="inline-flex items-center gap-2 hover:text-[var(--text-tertiary)]"
+                          onClick={planNewIdea}
+                          className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                         >
-                          {location === "this-pc" ? (
-                            <Monitor className="h-3 w-3" strokeWidth={1.5} />
-                          ) : (
-                            <Cloud className="h-3 w-3" strokeWidth={1.5} />
-                          )}
-                          <span>
-                            {location === "this-pc" ? "This PC" : "Cloud Agents"}
+                          Plan New Idea
+                          <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
+                            ⇧Tab
                           </span>
-                          <ChevronDown className="h-3 w-3" strokeWidth={1.5} />
                         </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-48">
-                        <DropdownMenuItem onClick={() => setLocation("this-pc")}>
-                          <Monitor className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                          This PC
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled
-                          className="cursor-not-allowed opacity-50"
-                          onSelect={(e) => e.preventDefault()}
+                        <button
+                          type="button"
+                          onClick={onMultitask}
+                          className="inline-flex h-8 items-center rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                         >
-                          <Cloud className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                          Cloud Agents
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          Multitask
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {renderComposer()}
-
-                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <div className="flex shrink-0 items-center justify-center px-6 pb-6">
                     <button
                       type="button"
-                      onClick={planNewIdea}
-                      className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                      onClick={onImport}
+                      className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 type-caption text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                     >
-                      Plan New Idea
-                      <span className="type-caption tabular-nums text-[var(--text-tertiary)]">
-                        ⇧Tab
+                      <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                      <span>
+                        Import conversations — sync chats and continue them here
                       </span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={onMultitask}
-                      className="inline-flex h-8 items-center rounded-full border border-[var(--border-subtle)] px-3.5 type-caption text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                    >
-                      Multitask
-                    </button>
                   </div>
-                </div>
-              </div>
+                </>
+              ) : (
+                <>
+                  <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <ChatWindow
+                      messages={messages}
+                      sending={sending}
+                      restoringId={restoringId}
+                      onRestoreCheckpoint={onRestoreCheckpoint ?? (() => {})}
+                      onPromptSelect={(prompt) => setText(prompt)}
+                      streamingContent=""
+                      pendingToolCalls={undefined}
+                    />
+                  </div>
 
-              <div className="flex shrink-0 items-center justify-center px-6 pb-6">
-                <button
-                  type="button"
-                  onClick={onImport}
-                  className="inline-flex max-w-md items-center gap-2.5 rounded-lg px-3 py-2 type-caption text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                >
-                  <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                  <span>
-                    Import conversations — sync chats and continue them here
-                  </span>
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-                <ChatWindow
-                  messages={messages}
-                  sending={sending}
-                  restoringId={restoringId}
-                  onRestoreCheckpoint={onRestoreCheckpoint ?? (() => {})}
-                  onPromptSelect={(prompt) => setText(prompt)}
-                  streamingContent=""
-                  pendingToolCalls={undefined}
-                />
-              </div>
-
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--bg-canvas)] via-[var(--bg-canvas)]/90 to-transparent px-6 pb-6 pt-10">
-                <div className="pointer-events-auto mx-auto w-full max-w-[760px]">
-                  {renderComposer()}
-                </div>
-              </div>
-            </>
-          )}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--bg-canvas)] via-[var(--bg-canvas)]/90 to-transparent px-6 pb-6 pt-10">
+                    <div className="pointer-events-auto mx-auto w-full max-w-[760px]">
+                      {renderComposer()}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
         </div>
         )}
         {terminalOpen && (

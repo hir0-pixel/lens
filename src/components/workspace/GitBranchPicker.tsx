@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, GitBranch, GitGraph, Plus, Search } from "lucide-react";
+import { Check, GitBranch, GitGraph, Plus, Search } from "@/components/icons/tabler";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useGitStore } from "@/stores/gitStore";

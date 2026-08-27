@@ -1,4 +1,4 @@
-﻿export type WorkspaceFileKind = "file" | "folder";
+export type WorkspaceFileKind = "file" | "folder";
 
 export interface WorkspaceFile {
   id: string;
@@ -68,7 +68,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   },
   "src/components/Sidebar.tsx": {
     lang: "typescript",
-    content: `import { Coins, Home, LineChart, Settings, Wallet } from "lucide-react";
+    content: `import { Coins, Home, LineChart, Settings, Wallet } from "@/components/icons/tabler";
 
 const NAV = [
   { label: "Overview", icon: Home },

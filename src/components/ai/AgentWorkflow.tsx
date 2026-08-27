@@ -11,7 +11,7 @@ import {
   Search,
   Terminal,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import type { ToolCallCategory, ToolCallRecord } from "../../lib/types";
 import {

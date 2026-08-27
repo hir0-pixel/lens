@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DiffEditor } from "@monaco-editor/react";
-import { FileCode } from "lucide-react";
+import { FileCode } from "@/components/icons/tabler";
 import {
   getStoredFileContent,
   saveStoredFileContent,

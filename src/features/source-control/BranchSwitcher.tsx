@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -10,7 +10,7 @@ import {
   Star,
   Trash2,
   Pencil,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

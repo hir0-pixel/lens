@@ -13,7 +13,7 @@ import {
   Settings,
   Terminal,
   Type,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { toast } from "sonner";
 import { commandRegistry } from "./CommandRegistry";
 import { useCommandStore } from "./commandStore";

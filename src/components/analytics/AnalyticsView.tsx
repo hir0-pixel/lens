@@ -6,7 +6,7 @@ import {
   Globe,
   Rocket,
   Users,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import type { Project } from "../../lib/types";
 

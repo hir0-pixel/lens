@@ -6,7 +6,7 @@ import {
   ArrowUp,
   GitMerge,
   Check,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import type { Model, Project } from "@/lib/types";
 import { useGitStore } from "@/stores/gitStore";
 import { useLayoutStore } from "@/stores/layoutStore";

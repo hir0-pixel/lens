@@ -1,4 +1,4 @@
-﻿import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import { BrandLogo, type BrandId } from "@/shared/brand/BrandLogo";
 import {

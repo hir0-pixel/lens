@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons/tabler";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -87,7 +87,7 @@ export function TitleBarOverflowMenu() {
           title="App menu"
           className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] outline-none hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] data-[state=open]:bg-[var(--bg-hover)] data-[state=open]:text-[var(--text-primary)]"
         >
-          <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <ChevronDown className="h-4 w-4" strokeWidth={1.75} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

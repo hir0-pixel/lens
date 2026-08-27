@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, GitCompareArrows } from "lucide-react";
+import { ChevronRight, GitCompareArrows } from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import type { FileEdit } from "../../lib/types";
 

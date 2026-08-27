@@ -5,7 +5,7 @@ import {
   FileCode2,
   GitCompareArrows,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 import type { DiffFileChange } from "@/lib/types";
 import { MOCK_DIFF } from "./mock-data";

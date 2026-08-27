@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AnimatedIcon,
   ChevronRight,
   Eye,
   FileCode2,
@@ -7,7 +8,7 @@ import {
   Sparkles,
   Terminal,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 import BrowserView from "./BrowserView";
 import EditorView from "./EditorView";
@@ -298,15 +299,15 @@ export default function OutputTabs() {
                     else closeTab(t.id);
                   }}
                   className={cn(
-                    "absolute right-2 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-tertiary)]",
+                    "group absolute right-2 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-tertiary)]",
                     "transition-opacity duration-[var(--duration-fast)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
                     showClose || t.pinned ? "opacity-100" : "opacity-0",
                   )}
                 >
                   {t.pinned ? (
-                    <Pin className="h-3 w-3" strokeWidth={1.75} />
+                    <AnimatedIcon icon={Pin} interaction="pulse" className="h-3 w-3" strokeWidth={1.75} />
                   ) : (
-                    <X className="h-3 w-3" strokeWidth={1.75} />
+                    <AnimatedIcon icon={X} interaction="pulse" className="h-3 w-3" strokeWidth={1.75} />
                   )}
                 </button>
               </div>

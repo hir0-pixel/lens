@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -9,7 +9,7 @@ import {
   MoreHorizontal,
   RefreshCw,
   RotateCcw,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

@@ -2,7 +2,7 @@ import {
   FolderOpen,
   Keyboard,
   Sparkles,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import type { Project } from "../../lib/types";
 import { KEYBOARD_SHORTCUTS, SUGGESTED_PROMPTS } from "./mock-data";
 

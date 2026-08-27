@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronDown, CircleHelp, Folder, Menu, Settings, Trash, User } from "lucide-react";
+import { ChevronDown, CircleHelp, Folder, Menu, Settings, Trash, User } from "@/components/icons/tabler";
 import { useAutoGrowTextarea } from "@/components/ai/hooks/useAutoGrowTextarea";
 import { cn } from "@/lib/utils";
 

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import TitleBar from "./components/TitleBar";
+import { LayoutToolbar } from "./components/TitleBar";
 import { EmptySessionView } from "./components/workspace/EmptySessionView";
 import { SessionTabStrip } from "./components/workspace/SessionTabStrip";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -99,6 +100,10 @@ function AgentsApp() {
   const repositories = useSessionStore((s) => s.repositories);
   const currentSessionId = useSessionStore((s) => s.currentSessionId);
   const activeRepositoryId = useSessionStore((s) => s.activeRepositoryId);
+  const canGoBack = useSessionStore((s) => s.canGoBack());
+  const canGoForward = useSessionStore((s) => s.canGoForward());
+  const goBack = useSessionStore((s) => s.goBack);
+  const goForward = useSessionStore((s) => s.goForward);
   const newChat = useSessionStore((s) => s.newChat);
   const multitask = useSessionStore((s) => s.multitask);
   const appendMessage = useSessionStore((s) => s.appendMessage);
@@ -124,6 +129,7 @@ function AgentsApp() {
   const [credits, setCredits] = useState(2_000_000);
   const [, setSessionCredits] = useState(348_120);
   const [agentsDock, setAgentsDock] = useState<string | null>(null);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [bottomTerminal, setBottomTerminal] = useState(false);
   const requestAbort = useRef<AbortController | null>(null);
 
@@ -567,11 +573,7 @@ function AgentsApp() {
         terminalOpen={bottomTerminal}
         onCloseTerminal={() => setBottomTerminal(false)}
         onImport={() => setImportOpen(true)}
-        agentsDock={agentsDock}
-        onToggleSidePane={() =>
-          setAgentsDock((k) => (k ? null : "project-files"))
-        }
-        onOpenTerminal={() => setBottomTerminal((v) => !v)}
+        leftSidebarOpen={leftSidebarOpen}
       />
     </ErrorBoundary>
   ) : (
@@ -600,28 +602,48 @@ function AgentsApp() {
         variant="agents"
         onIdeWindow={() => void openIdeWindow()}
         onOpenTerminal={() => setBottomTerminal((v) => !v)}
-        sidePaneOpen={agentsDock === "project-files"}
+        sidePaneOpen={leftSidebarOpen}
         onToggleSidePane={() =>
-          setAgentsDock((k) => (k === "project-files" ? null : "project-files"))
+          setLeftSidebarOpen((open) => !open)
         }
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onGoBack={goBack}
+        onGoForward={goForward}
       />
       <SessionTabStrip />
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">{mainContent}</div>
         {agentsDock === "project-files" ? (
-          <ProjectFilesSidePane onClose={() => setAgentsDock(null)} />
+          <ProjectFilesSidePane />
         ) : agentsDock !== null ? (
           <AgentsSideDock
             kind={agentsDock as AgentsDockKind}
-            onClose={() => setAgentsDock(null)}
-            onOpenTab={(tab) =>
+            onOpenTab={(tab) => {
+              if (tab === "terminal") {
+                setAgentsDock(null);
+                setBottomTerminal(true);
+                return;
+              }
               window.dispatchEvent(
                 new CustomEvent("lens:open-agents-tab", { detail: { kind: tab } }),
-              )
-            }
+              );
+            }}
           />
         ) : null}
+      </div>
+
+      <div className="pointer-events-none fixed right-0 top-10 z-50 flex h-8 items-stretch">
+        <div className="pointer-events-auto bg-transparent">
+          <LayoutToolbar
+            sidePaneOpen={agentsDock !== null}
+            onToggleSidePane={() =>
+              setAgentsDock((dock) => (dock ? null : "project-files"))
+            }
+            onOpenTerminal={() => setBottomTerminal((open) => !open)}
+          />
+        </div>
       </div>
 
       <WorkbenchOverlays />

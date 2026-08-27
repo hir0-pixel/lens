@@ -9,13 +9,12 @@ import {
   Plus,
   Search,
   SquareTerminal,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import TerminalView from "@/components/output/TerminalView";
 import BrowserView from "@/components/output/BrowserView";
 import { useGitStore } from "@/stores/gitStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { cn } from "@/lib/utils";
-import { LayoutToolbar } from "@/components/TitleBar";
 
 export type AgentsDockKind =
   | "picker"
@@ -27,7 +26,6 @@ export type AgentsDockKind =
 
 interface AgentsSideDockProps {
   kind: AgentsDockKind;
-  onClose: () => void;
   onOpenTab?: (kind: Exclude<AgentsDockKind, null | "picker">) => void;
   initialWidthPx?: number;
 }
@@ -56,7 +54,6 @@ function tabLabel(kind: AgentsDockKind) {
  */
 export function AgentsSideDock({
   kind,
-  onClose,
   onOpenTab,
   initialWidthPx = 480,
 }: AgentsSideDockProps) {
@@ -146,13 +143,6 @@ export function AgentsSideDock({
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
         )}
-
-        <div className="ml-auto flex items-center h-full">
-          <LayoutToolbar
-            sidePaneOpen={true}
-            onToggleSidePane={onClose}
-          />
-        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-hidden">

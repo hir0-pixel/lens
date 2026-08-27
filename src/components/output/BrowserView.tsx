@@ -7,7 +7,7 @@ import {
   Lock,
   RefreshCw,
   Star,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import { detectDevServerUrl } from "@/features/projects/detectDevServer";
 import { DisabledControl } from "@/components/ui/DisabledControl";

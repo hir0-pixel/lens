@@ -7,7 +7,7 @@ import {
   History,
   Search,
   Terminal,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "../../lib/utils";
 import type { MentionItem, MentionKind } from "../../lib/types";
 import {

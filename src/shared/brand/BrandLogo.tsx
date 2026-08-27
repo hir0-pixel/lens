@@ -1,6 +1,6 @@
 /**
  * Brand logos sourced via 21st MCP `search_logo` → svgl.app.
- * UI chrome icons stay on lucide-react.
+ * UI chrome icons are supplied by the Tabler bridge.
  */
 import type { ComponentType, SVGProps } from "react";
 import { cn } from "@/lib/utils";

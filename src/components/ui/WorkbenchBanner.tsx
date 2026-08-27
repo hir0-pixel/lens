@@ -1,4 +1,4 @@
-import { AlertCircle, AlertTriangle, Info, RefreshCw, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info, RefreshCw, X } from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 

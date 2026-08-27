@@ -1,4 +1,4 @@
-import { History, Pin, RotateCcw } from "lucide-react";
+import { History, Pin, RotateCcw } from "@/components/icons/tabler";
 import { Button } from "@/components/ui/button";
 import {
   Popover,

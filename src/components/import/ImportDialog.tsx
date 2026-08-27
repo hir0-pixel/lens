@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Boxes, Bot, Code2, FolderOpen, LifeBuoy, Search, Sparkles, Wand2 } from "lucide-react";
+import { Boxes, Bot, Code2, FolderOpen, LifeBuoy, Search, Sparkles, Wand2 } from "@/components/icons/tabler";
 import GithubIcon from "../ui/GithubIcon";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";

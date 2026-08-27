@@ -8,7 +8,7 @@ import {
   Sparkles,
   Terminal,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { useEffect } from "react";
 import OutputTabs from "@/components/output/OutputTabs";
 import { SourceControlPanel } from "@/features/source-control/SourceControlPanel";

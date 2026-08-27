@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/components/icons/tabler";
 import {
   FolderOpen,
   Settings,
@@ -23,7 +23,7 @@ import {
   Info,
   Keyboard,
   Eye,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 
 export interface MenuCommand {
   id: string;

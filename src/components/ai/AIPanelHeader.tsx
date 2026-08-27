@@ -12,7 +12,7 @@ import {
   Sparkles,
   Terminal,
   Trash2,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 import type { AIMode, Model } from "@/lib/types";
 import {

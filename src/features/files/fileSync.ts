@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Real-time two-way file content sync across windows (Tauri + Browser).
  * Uses BroadcastChannel + localStorage events.
  */
@@ -36,7 +36,7 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );`,
-  "src/components/Sidebar.tsx": `import { Home, LineChart, Settings, Wallet } from "lucide-react";
+  "src/components/Sidebar.tsx": `import { Home, LineChart, Settings, Wallet } from "@/components/icons/tabler";
 
 export function Sidebar() {
   return (

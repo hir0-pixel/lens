@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WifiOff } from "lucide-react";
+import { WifiOff } from "@/components/icons/tabler";
 import {
   getNetworkStatus,
   subscribeNetwork,

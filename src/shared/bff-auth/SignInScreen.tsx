@@ -1,5 +1,5 @@
-﻿import { useMemo, useState } from "react";
-import { ShieldCheck, LogIn, Loader2, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ShieldCheck, LogIn, Loader2, AlertTriangle } from "@/components/icons/tabler";
 import { toast } from "sonner";
 import { getBffAuthClient } from "./index";
 import { useAuthStore } from "./store";

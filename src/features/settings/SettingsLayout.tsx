@@ -1,5 +1,5 @@
-﻿import { useCallback, useEffect, useMemo, useRef, type ComponentType } from "react";
-import { Search, Star, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, type ComponentType } from "react";
+import { Search, Star, X } from "@/components/icons/tabler";
 import {
   Breadcrumb,
   BreadcrumbItem,

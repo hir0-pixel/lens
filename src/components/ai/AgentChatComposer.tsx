@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Square,
   X,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import { cn } from "@/lib/utils";
 import type { Attachment, Model } from "@/lib/types";
 import { useAutoGrowTextarea } from "./hooks/useAutoGrowTextarea";

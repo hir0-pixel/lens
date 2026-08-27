@@ -5,7 +5,7 @@ import {
   Copy,
   Image as ImageIcon,
   Video,
-} from "lucide-react";
+} from "@/components/icons/tabler";
 import type { ChatMessage } from "../../lib/types";
 import { cn } from "../../lib/utils";
 import { AgentWorkflow } from "./AgentWorkflow";

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "@/components/icons/tabler";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTerminalStore } from "@/stores/terminalStore";

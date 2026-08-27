@@ -6,7 +6,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { X } from "lucide-react";
+import { X } from "@/components/icons/tabler";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { WorkspaceNavRail } from "@/components/workspace/WorkspaceNavRail";
 import { WorkspaceNavigator } from "@/components/workspace/WorkspaceNavigator";
