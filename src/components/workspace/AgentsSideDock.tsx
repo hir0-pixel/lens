@@ -44,6 +44,9 @@ interface ProjectGitChange {
   deletions: number;
 }
 
+// Keep the review readable without letting it consume the workspace on wide displays.
+const MAX_RIGHT_DOCK_WIDTH = 768;
+
 const TAB_OPTIONS: {
   kind: Exclude<AgentsDockKind, null | "picker">;
   label: string;
@@ -90,7 +93,10 @@ export function AgentsSideDock({
   useEffect(() => {
     if (kind !== "review") return;
     setWidth((current) =>
-      current < 680 ? Math.min(Math.floor(window.innerWidth * 0.66), 980) : current,
+      Math.min(
+        current < 680 ? Math.floor(window.innerWidth * 0.66) : current,
+        MAX_RIGHT_DOCK_WIDTH,
+      ),
     );
   }, [kind]);
 
@@ -142,7 +148,7 @@ export function AgentsSideDock({
     if (!dragging.current) return;
     const next = Math.min(
       Math.max(window.innerWidth - e.clientX, 280),
-      Math.floor(window.innerWidth * 0.7),
+      Math.min(Math.floor(window.innerWidth * 0.7), MAX_RIGHT_DOCK_WIDTH),
     );
     setWidth(next);
   }, []);
