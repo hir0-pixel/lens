@@ -682,8 +682,13 @@ function AgentsApp() {
         <div className="pointer-events-auto bg-transparent">
           <LayoutToolbar
             sidePaneOpen={agentsDock !== null}
-            onToggleSidePane={() => {
-              if (agentsDock) closeRightDock();
+            activeRightPane={agentsDock === "review" || agentsDock === "project-files" ? agentsDock : null}
+            onToggleReview={() => {
+              if (agentsDock === "review") closeRightDock();
+              else openRightDock("review");
+            }}
+            onToggleProjectFiles={() => {
+              if (agentsDock === "project-files") closeRightDock();
               else openRightDock("project-files");
             }}
             onOpenTerminal={toggleBottomTerminal}

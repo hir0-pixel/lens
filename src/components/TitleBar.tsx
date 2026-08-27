@@ -327,7 +327,10 @@ function McpEntry() {
 
 export interface LayoutToolbarProps {
   sidePaneOpen: boolean;
+  activeRightPane?: "review" | "project-files" | null;
   onToggleSidePane?: () => void;
+  onToggleReview?: () => void;
+  onToggleProjectFiles?: () => void;
   onOpenTerminal?: () => void;
   onAgentsWindow?: () => void;
   variant?: "agents" | "ide";
@@ -336,7 +339,10 @@ export interface LayoutToolbarProps {
 
 export function LayoutToolbar({
   sidePaneOpen,
+  activeRightPane,
   onToggleSidePane,
+  onToggleReview,
+  onToggleProjectFiles,
   onOpenTerminal,
   onAgentsWindow,
   variant = "agents",
@@ -353,8 +359,15 @@ export function LayoutToolbar({
             type="button"
             aria-label="Toggle layout"
             title="Toggle layout"
-          className="group flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          className={cn(
+            "group flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+            activeRightPane === "review" ? "bg-[var(--bg-hover)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
+          )}
             onClick={() => {
+              if (onToggleReview) {
+                onToggleReview();
+                return;
+              }
               if (sidePaneOpen) {
                 onToggleSidePane?.();
               } else {
@@ -409,9 +422,13 @@ export function LayoutToolbar({
           title="Side pane"
           className={cn(
             "group flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-            sidePaneOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
+            activeRightPane === "project-files" ? "bg-[var(--bg-hover)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
           )}
           onClick={() => {
+            if (onToggleProjectFiles) {
+              onToggleProjectFiles();
+              return;
+            }
             if (onToggleSidePane) onToggleSidePane();
             else window.dispatchEvent(new CustomEvent("lens:toggle-agents-dock"));
           }}
