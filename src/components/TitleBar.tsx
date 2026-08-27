@@ -36,10 +36,10 @@ export default function TitleBar({
   projectName = "",
   onOpenSettings,
   variant = "agents",
-  onAgentsWindow,
-  onOpenTerminal,
-  sidePaneOpen = false,
-  onToggleSidePane,
+  onAgentsWindow: _onAgentsWindow,
+  onOpenTerminal: _onOpenTerminal,
+  sidePaneOpen: _sidePaneOpen,
+  onToggleSidePane: _onToggleSidePane,
 }: TitleBarProps) {
   const isAgents = variant === "agents";
 
@@ -88,16 +88,6 @@ export default function TitleBar({
       )}
 
       <div className="titlebar-no-drag relative z-[1] ml-auto flex items-stretch">
-        {!sidePaneOpen && (
-          <LayoutToolbar
-            sidePaneOpen={sidePaneOpen}
-            onToggleSidePane={onToggleSidePane}
-            onOpenTerminal={onOpenTerminal}
-            onAgentsWindow={onAgentsWindow}
-            variant={variant}
-          />
-        )}
-
         {!isAgents && (
           <Button
             type="button"
