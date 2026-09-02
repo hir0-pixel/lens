@@ -684,18 +684,18 @@
     position: absolute;
     z-index: 1;
     right: 0;
-    bottom: -28px;
+    bottom: -12px;
     left: 0;
-    height: 28px;
+    height: 12px;
     pointer-events: none;
     /* This element extends over the transcript, so the filter belongs here
        rather than on the header itself: it blurs the text behind the fade. */
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     background: linear-gradient(
       to bottom,
       color-mix(in srgb, var(--bg-canvas) 88%, transparent),
-      color-mix(in srgb, var(--bg-canvas) 40%, transparent) 58%,
+      color-mix(in srgb, var(--bg-canvas) 40%, transparent) 52%,
       transparent
     );
   }
@@ -703,6 +703,31 @@
   .lens-chat-session-header > * {
     position: relative;
     z-index: 2;
+  }
+
+  /* The transcript owns its scroll position. Show a compact scrim only after
+     * content has passed beneath the top edge, keeping the boundary readable
+     * without adding a permanent fade to an untouched conversation. */
+  .lens-chat-transcript-fade {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 18px;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(
+      to bottom,
+      var(--bg-canvas),
+      color-mix(in srgb, var(--bg-canvas) 72%, transparent) 58%,
+      transparent
+    );
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+
+  [data-scrolled="true"] > .lens-chat-transcript-fade {
+    opacity: 1;
   }
 
   .cursor-activity-bar {

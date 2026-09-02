@@ -52,6 +52,10 @@ export function serviceDefinitions(env = process.env) {
         // WebView2 drops the binding cookie across the IdP port hop; seal with
         // a fixed secret instead so callback can open the pending state.
         OIDC_FIXED_BROWSER_BINDING: "lens-desktop-dev-oidc-browser-binding-v1",
+        // The local desktop stack is the documented provider-onboarding demo.
+        // Preserve an explicit sovereign override, but otherwise allow the public
+        // OpenAI-compatible Google endpoint used during development.
+        PROVIDER_PROFILE: process.env.PROVIDER_PROFILE ?? "development",
       },
       validate: (response, body) => {
         if (!response.ok) return false;
