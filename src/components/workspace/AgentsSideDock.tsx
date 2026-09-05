@@ -179,7 +179,7 @@ export function AgentsSideDock({
   return (
     <aside
       className={cn(
-        "relative flex h-full shrink-0 flex-col overflow-hidden border-l border-[var(--border-default)] bg-[var(--bg-surface)]",
+        "relative flex h-full shrink-0 flex-col overflow-hidden bg-[var(--bg-surface)] before:absolute before:bottom-px before:left-0 before:top-9 before:w-px before:bg-[var(--border-default)]",
         "transition-[width,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)]",
       )}
       style={{ width: entered && !closing ? width : 0, opacity: entered && !closing ? 1 : 0 }}
@@ -193,7 +193,7 @@ export function AgentsSideDock({
         aria-orientation="vertical"
         aria-label="Resize panel"
         onPointerDown={startResize}
-        className="absolute left-0 top-0 z-10 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-[var(--accent-primary)]/40"
+        className="absolute bottom-px left-0 top-9 z-10 w-1 -translate-x-1/2 cursor-col-resize hover:bg-[var(--accent-primary)]/40"
       />
 
       {/* Tab strip */}

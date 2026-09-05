@@ -107,9 +107,9 @@ function ServersPopover() {
           type="button"
           aria-label="Servers"
           title="Servers"
-          className="group flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          className="group relative -top-px flex h-6 w-9 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         >
-          <AnimatedIcon icon={Database} interaction="pulse" className="h-[17px] w-[17px]" strokeWidth={1.5} />
+          <AnimatedIcon icon={Database} className="h-[17px] w-[17px] group-hover:-translate-y-px" strokeWidth={1.5} />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -350,7 +350,7 @@ export function LayoutToolbar({
 }: LayoutToolbarProps) {
   const isAgents = variant === "agents";
   return (
-    <div className={cn("flex items-stretch h-full", className)}>
+    <div className={cn("flex h-full items-center", className)}>
       {isAgents ? (
         <>
           <WorkspaceLauncher />
@@ -360,7 +360,7 @@ export function LayoutToolbar({
             aria-label="Toggle layout"
             title="Toggle layout"
           className={cn(
-            "group flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+            "group relative -top-px flex h-6 w-8 items-center justify-center rounded-md hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
             activeRightPane === "review" ? "bg-[var(--bg-hover)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
           )}
             onClick={() => {
@@ -375,7 +375,7 @@ export function LayoutToolbar({
               }
             }}
           >
-            <AnimatedIcon icon={Columns2} className="h-[17px] w-[17px]" strokeWidth={1.5} />
+            <AnimatedIcon icon={Columns2} className="h-[17px] w-[17px] group-hover:-translate-y-px" strokeWidth={1.5} />
           </button>
         </>
       ) : (
@@ -400,7 +400,7 @@ export function LayoutToolbar({
           type="button"
           aria-label="Open terminal"
           title="Terminal"
-          className="group flex h-full w-8 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          className="group relative -top-px flex h-6 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         onClick={() => {
           if (onOpenTerminal) {
             onOpenTerminal();
@@ -413,7 +413,7 @@ export function LayoutToolbar({
           );
         }}
       >
-          <AnimatedIcon icon={SquareTerminal} className="h-[17px] w-[17px]" strokeWidth={1.6} />
+          <AnimatedIcon icon={SquareTerminal} className="h-[17px] w-[17px] group-hover:-translate-y-px" strokeWidth={1.6} />
       </button>
       {isAgents && (
         <button
@@ -421,7 +421,7 @@ export function LayoutToolbar({
           aria-label="Toggle side pane"
           title="Side pane"
           className={cn(
-            "group flex h-full w-8 items-center justify-center hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+            "group relative -top-px flex h-6 w-8 items-center justify-center rounded-md hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
             activeRightPane === "project-files" ? "bg-[var(--bg-hover)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
           )}
           onClick={() => {
@@ -433,7 +433,7 @@ export function LayoutToolbar({
             else window.dispatchEvent(new CustomEvent("lens:toggle-agents-dock"));
           }}
         >
-          <AnimatedIcon icon={PanelRight} className="h-[17px] w-[17px]" strokeWidth={1.5} />
+          <AnimatedIcon icon={PanelRight} className="h-[17px] w-[17px] group-hover:-translate-y-px" strokeWidth={1.5} />
         </button>
       )}
       <TitleBarOverflowMenu />

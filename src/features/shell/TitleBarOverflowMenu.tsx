@@ -85,9 +85,9 @@ export function TitleBarOverflowMenu() {
           type="button"
           aria-label="App menu"
           title="App menu"
-          className="flex h-full w-8 items-center justify-center text-[var(--text-secondary)] outline-none hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] data-[state=open]:bg-[var(--bg-hover)] data-[state=open]:text-[var(--text-primary)]"
+          className="group relative -top-px flex h-6 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] outline-none hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] data-[state=open]:bg-[var(--bg-hover)] data-[state=open]:text-[var(--text-primary)]"
         >
-          <ChevronDown className="h-4 w-4" strokeWidth={1.75} />
+          <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-px" strokeWidth={1.75} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
