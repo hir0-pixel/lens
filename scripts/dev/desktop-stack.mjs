@@ -1,4 +1,5 @@
 import { spawn, execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -11,6 +12,8 @@ const nodeBinary = process.execPath;
 // the frontend is ready. It remains configurable for constrained environments.
 const READINESS_TIMEOUT_MS = Number(process.env.LENS_DEV_READY_TIMEOUT_MS ?? 180_000);
 const POLL_INTERVAL_MS = 250;
+const npmCliPath = process.env.npm_execpath;
+const DEFAULT_DEV_NPM_REGISTRY = "https://registry.npmjs.org/";
 
 export function serviceDefinitions(env = process.env) {
   // Prefer 127.0.0.1 over localhost so Windows IPv4 clients (Tauri) and the
@@ -26,6 +29,7 @@ export function serviceDefinitions(env = process.env) {
       command: nodeBinary,
       args: [path.join(rootPath, "node_modules", "vite", "bin", "vite.js")],
       cwd: rootPath,
+      dependencyProbe: path.join(rootPath, "node_modules", "vite"),
       url: `${frontendUrl.replace(/\/$/, "")}/`,
       validate: (response, body) => response.ok && /<title>\s*Lens\s*<\/title>/i.test(body),
     },
@@ -34,12 +38,14 @@ export function serviceDefinitions(env = process.env) {
       command: nodeBinary,
       args: ["./scripts/tsx-dev.mjs", "watch", "src/index.ts"],
       cwd: path.join(rootPath, "server"),
+      dependencyProbe: path.join(rootPath, "server", "node_modules", "tsx"),
       url: `${bffUrl.replace(/\/$/, "")}/health`,
       // Keep the BFF and bundled local IdP configured as one development
       // stack. This avoids a healthy-but-unconfigured BFF returning 503 from
       // /auth/login when a developer has not created server/.env OIDC values.
       env: {
         APP_ORIGIN: frontendUrl,
+        SESSION_SECRET: "lens-desktop-dev-session-secret-32-bytes",
         OIDC_ISSUER: idpUrl,
         OIDC_CLIENT_ID: "lens-bff",
         OIDC_CLIENT_SECRET: "dev-client-secret",
@@ -67,6 +73,7 @@ export function serviceDefinitions(env = process.env) {
       command: nodeBinary,
       args: ["server.mjs"],
       cwd: path.join(rootPath, "dev-idp"),
+      dependencyProbe: path.join(rootPath, "dev-idp", "node_modules", "oidc-provider"),
       url: `${idpUrl.replace(/\/$/, "")}/.well-known/openid-configuration`,
       env: {
         LENS_APP_ORIGIN: frontendUrl,
@@ -80,6 +87,37 @@ export function serviceDefinitions(env = process.env) {
       },
     },
   ];
+}
+
+export async function ensureServiceDependencies(service, {
+  exists = existsSync,
+  runner = execFile,
+} = {}) {
+  if (!service.dependencyProbe || exists(service.dependencyProbe)) return false;
+  const installCommand = exists(path.join(service.cwd, "package-lock.json")) ? "ci" : "install";
+  console.log(`[desktop-stack] installing ${service.name} dependencies with npm ${installCommand}`);
+  const command = npmCliPath ? nodeBinary : npmCommand();
+  const args = npmCliPath ? [npmCliPath, installCommand] : [installCommand];
+  await new Promise((resolve, reject) => {
+    runner(command, args, {
+      cwd: service.cwd,
+      windowsHide: true,
+      env: {
+        ...process.env,
+        npm_config_registry: process.env.LENS_DEV_NPM_REGISTRY ?? DEFAULT_DEV_NPM_REGISTRY,
+      },
+    }, (error, stdout, stderr) => {
+      if (stdout) process.stdout.write(stdout);
+      if (stderr) process.stderr.write(stderr);
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+  return true;
+}
+
+function npmCommand() {
+  return process.platform === "win32" ? "npm.cmd" : "npm";
 }
 
 /** Probe a service, distinguishing an absent port from an occupied wrong service. */
@@ -176,6 +214,7 @@ async function main() {
       console.log(`[desktop-stack] reusing healthy ${service.name}`);
       return;
     }
+    await ensureServiceDependencies(service);
     const child = startChild(service);
     trackChild(service, child);
     await waitForService(service, {
