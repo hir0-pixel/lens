@@ -79,7 +79,7 @@ export function AIMessageBubble({
               ))}
             </div>
           )}
-          <div className="rounded-[18px] bg-[var(--bg-active)] px-3.5 py-2 type-body-sm leading-[1.45] text-[var(--text-primary)]">
+          <div className="rounded-[18px] bg-[var(--user-message-bg)] px-3.5 py-2 type-body-sm leading-[1.45] text-[var(--user-message-fg)]">
             {message.content}
           </div>
         </div>

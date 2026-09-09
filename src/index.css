@@ -152,7 +152,7 @@
     --border-default: #ebebeb;
     --border-strong: #a1a1a1; /* colors.faint */
     /* Focus = Vercel Blue (colors.link) — reserved for links + focus */
-    --focus-ring-color: #0070f3;
+    --focus-ring-color: #5b6dff;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
@@ -162,13 +162,15 @@
     --text-tertiary: #8f8f8f; /* colors.mute */
     --text-disabled: #a1a1a1; /* colors.faint */
     --text-on-accent: #ffffff; /* colors.on-primary */
+    --user-message-bg: #eef0f6;
+    --user-message-fg: #171717;
 
     /* Primary CTA = ink (colors.primary); link blue is separate accent for chrome signals */
-    --accent-primary: #171717;
-    --accent-primary-hover: color-mix(in srgb, #171717 88%, #ffffff 12%);
-    --accent-primary-active: #0a0a0a;
+    --accent-primary: #0b66d6;
+    --accent-primary-hover: #1674df;
+    --accent-primary-active: #084b9c;
     --accent-primary-muted: #d3e5ff; /* colors.link-soft */
-    --link: #0070f3;
+    --link: #5b6dff;
     --link-deep: #0761d1;
     --link-soft: #d3e5ff;
 
@@ -183,11 +185,11 @@
     --gradient-preview: linear-gradient(90deg, #7928ca, #ff0080);
     --gradient-ship: linear-gradient(90deg, #ff4d4d, #f9cb28);
 
-    --success: #0070f3; /* DESIGN: success maps to link */
+    --success: #26d862;
     --warning: #f5a623;
     --warning-soft: #ffefcf;
     --warning-deep: #ab570a;
-    --error: #ee0000;
+    --error: #e34671;
     --error-deep: #c50000;
     --error-muted: color-mix(in srgb, #ee0000 12%, #ffffff);
     --success-muted: #d3e5ff;
@@ -343,7 +345,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 9%;
     /* Primary CTA = ink (#171717); focus ring = link blue */
-    --primary: 0 0% 9%;
+    --primary: 214 90% 44%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 95%; /* hairline-soft */
     --secondary-foreground: 0 0% 9%;
@@ -1377,7 +1379,7 @@
     --border-subtle: #ebebeb;
     --border-default: #ebebeb;
     --border-strong: #a1a1a1;
-    --focus-ring-color: #0070f3;
+    --focus-ring-color: #5b6dff;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
@@ -1388,9 +1390,9 @@
     --text-disabled: #a1a1a1;
     --text-on-accent: #ffffff;
 
-    --accent-primary: #171717;
-    --accent-primary-hover: color-mix(in srgb, #171717 88%, #ffffff 12%);
-    --accent-primary-active: #0a0a0a;
+    --accent-primary: #0b66d6;
+    --accent-primary-hover: #1674df;
+    --accent-primary-active: #084b9c;
     --accent-primary-muted: #d3e5ff;
     --link: #0070f3;
     --link-deep: #0761d1;
@@ -1403,9 +1405,9 @@
       transparent 70%
     );
 
-    --success: #0070f3;
+    --success: #26d862;
     --warning: #f5a623;
-    --error: #ee0000;
+    --error: #e34671;
     --error-muted: color-mix(in srgb, #ee0000 12%, #ffffff);
     --success-muted: #d3e5ff;
     --info: #0070f3;
@@ -1416,7 +1418,7 @@
     --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 9%;
-    --primary: 0 0% 9%;
+    --primary: 214 90% 44%;
     --primary-foreground: 0 0% 100%;
     --muted: 0 0% 95%;
     --muted-foreground: 0 0% 56%;
@@ -1545,35 +1547,37 @@
   html.dark {
     color-scheme: dark;
     /* Dark inversion of DESIGN-vercel.md ladder (taste §8 — no pure #000/#fff) */
-    --bg-canvas: #0a0a0a;
-    --bg-surface: #171717;
-    --bg-surface-raised: color-mix(in srgb, #171717 88%, #ffffff 12%);
-    --bg-overlay: color-mix(in srgb, #171717 78%, #ffffff 22%);
-    --bg-hover: color-mix(in srgb, #171717 86%, #ffffff 14%);
-    --bg-active: color-mix(in srgb, #171717 78%, #ffffff 22%);
+    --bg-canvas: #141312;
+    --bg-surface: #191a1a;
+    --bg-surface-raised: #1f2121;
+    --bg-overlay: #252928;
+    --bg-hover: #202322;
+    --bg-active: #252928;
     --bg-selected: color-mix(in srgb, #0070f3 18%, #0a0a0a);
 
     --border-subtle: color-mix(in srgb, #ffffff 12%, #0a0a0a);
     --border-default: color-mix(in srgb, #ffffff 20%, #0a0a0a);
     --border-strong: #a1a1a1;
-    --focus-ring-color: #0070f3;
+    --focus-ring-color: #5b6dff;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
-    --border-focus: #0070f3;
+    --border-focus: #5b6dff;
     --cursor-focus: var(--border-focus);
 
-    --text-primary: #fafafa;
+    --text-primary: #d6d5d4;
     --text-secondary: #a1a1a1;
     --text-tertiary: #8f8f8f;
     --text-disabled: #8f8f8f;
-    --text-on-accent: #171717;
+    --text-on-accent: #141312;
+    --user-message-bg: #252928;
+    --user-message-fg: #d4d6d6;
 
     /* Dark CTA: elevated white pill/square on ink canvas */
-    --accent-primary: #fafafa;
-    --accent-primary-hover: #ebebeb;
-    --accent-primary-active: #a1a1a1;
+    --accent-primary: #2684ff;
+    --accent-primary-hover: #4f94ff;
+    --accent-primary-active: #176dcc;
     --accent-primary-muted: color-mix(in srgb, #0070f3 22%, #0a0a0a);
-    --link: #0070f3;
+    --link: #5b6dff;
     --link-deep: #0761d1;
     --cursor-scrollbar: #8f8f8f;
     --cursor-scrollbar-hover: #a1a1a1;
@@ -1588,12 +1592,12 @@
       transparent 70%
     );
 
-    --success: #0070f3;
+    --success: #26d862;
     --warning: #f5a623;
-    --error: #ee0000;
+    --error: #e34671;
     --error-deep: #c50000;
     --error-muted: color-mix(in srgb, #ee0000 16%, #0a0a0a);
-    --success-muted: color-mix(in srgb, #0070f3 18%, #0a0a0a);
+    --success-muted: color-mix(in srgb, #26d862 18%, #141312);
     --info: #0070f3;
 
     --background: 0 0% 4%;
@@ -1602,7 +1606,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 214 100% 57%;
     --primary-foreground: 0 0% 9%;
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;
@@ -1715,4 +1719,3 @@
     border-color: var(--border-default) !important;
   }
 }
-
