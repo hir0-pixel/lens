@@ -27,7 +27,7 @@ export interface AppearanceSettings {
 /** User-selectable accents; the default follows the Refactr brand pair. */
 export const ACCENT_COLORS: Record<AccentId, string> = {
   amber: "#ab570a", /* warning-deep */
-  blue: "#26d862", /* Refactr verdant */
+  blue: "#3183d8", /* shared Lens/Codex accent */
   emerald: "#50e3c2", /* cyan */
   violet: "#7928ca",
   rose: "#ff0080", /* pink */
@@ -109,7 +109,7 @@ export function applyAppearance(settings: AppearanceSettings): void {
   root.style.colorScheme = resolved;
 
   const accent = settings.accent === "blue"
-    ? resolved === "dark" ? "#26d862" : "#1d3023"
+    ? "#3183d8"
     : ACCENT_COLORS[settings.accent];
   root.style.setProperty("--lens-accent", accent);
   root.style.setProperty("--radius", `${settings.cornerRadius / 16}rem`);
@@ -118,18 +118,18 @@ export function applyAppearance(settings: AppearanceSettings): void {
   root.style.setProperty("--lens-font-family", settings.fontFamily);
 
   if (resolved === "dark") {
-    root.style.setProperty("--primary", "142 69% 50%");
+    root.style.setProperty("--primary", "211 69% 52%");
     root.style.setProperty("--primary-foreground", "45 13% 8%");
-    root.style.setProperty("--ring", "142 69% 50%");
+    root.style.setProperty("--ring", "211 69% 52%");
     root.style.setProperty("--accent-primary", accent);
-    root.style.setProperty("--accent-primary-hover", "#5be987");
-    root.style.setProperty("--accent-primary-active", "#1fa94d");
+    root.style.setProperty("--accent-primary-hover", "#5a9be0");
+    root.style.setProperty("--accent-primary-active", "#1d62aa");
     root.style.setProperty("--accent-primary-muted", `color-mix(in srgb, ${accent} 22%, #141312)`);
-    root.style.setProperty("--border-focus", "#26d862");
-    root.style.setProperty("--focus-ring-color", "#26d862");
+    root.style.setProperty("--border-focus", "#3183d8");
+    root.style.setProperty("--focus-ring-color", "#3183d8");
     root.style.setProperty("--focus-ring-width", "2px");
     root.style.setProperty("--focus-ring-offset", "2px");
-    root.style.setProperty("--cursor-focus", "#26d862");
+    root.style.setProperty("--cursor-focus", "#3183d8");
     root.style.setProperty("--link", "#b5cef5");
     root.style.setProperty("--link-deep", "#b5cef5");
     root.style.setProperty("--success", "#26d862");
@@ -139,7 +139,7 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--success-muted", "color-mix(in srgb, #26d862 18%, #141312)");
     root.style.setProperty("--info", "#b5cef5");
     root.style.setProperty("--gradient-accent", accent);
-    root.style.setProperty("--gradient-accent-hover", "#5be987");
+    root.style.setProperty("--gradient-accent-hover", "#5a9be0");
     root.style.setProperty(
       "--gradient-glow",
       `radial-gradient(circle, color-mix(in srgb, ${accent} 20%, transparent) 0%, transparent 70%)`,
@@ -185,24 +185,24 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--sidebar-accent", "30 2% 15%");
     root.style.setProperty("--sidebar-accent-foreground", "30 20% 99%");
     root.style.setProperty("--sidebar-border", "220 14% 19%");
-    root.style.setProperty("--sidebar-ring", "142 69% 50%");
+    root.style.setProperty("--sidebar-ring", "211 69% 52%");
   } else {
-    root.style.setProperty("--primary", "138 24% 15%");
-    root.style.setProperty("--primary-foreground", "45 16% 94%");
-    root.style.setProperty("--ring", "138 24% 15%");
+    root.style.setProperty("--primary", "211 69% 52%");
+    root.style.setProperty("--primary-foreground", "45 13% 8%");
+    root.style.setProperty("--ring", "211 69% 52%");
     /* Lens CTA uses the selected accent. */
     root.style.setProperty("--accent-primary", accent);
     root.style.setProperty(
       "--accent-primary-hover",
-      "#284635",
+      "#5a9be0",
     );
-    root.style.setProperty("--accent-primary-active", "#14251a");
-    root.style.setProperty("--accent-primary-muted", "color-mix(in srgb, #1d3023 12%, #f1f0ec)");
-    root.style.setProperty("--focus-ring-color", "#1d3023");
+    root.style.setProperty("--accent-primary-active", "#1d62aa");
+    root.style.setProperty("--accent-primary-muted", "color-mix(in srgb, #3183d8 12%, #f1f0ec)");
+    root.style.setProperty("--focus-ring-color", "#3183d8");
     root.style.setProperty("--focus-ring-width", "2px");
     root.style.setProperty("--focus-ring-offset", "2px");
-    root.style.setProperty("--border-focus", "#1d3023");
-    root.style.setProperty("--cursor-focus", "#1d3023");
+    root.style.setProperty("--border-focus", "#3183d8");
+    root.style.setProperty("--cursor-focus", "#3183d8");
     root.style.setProperty("--link", "#001d3c");
     root.style.setProperty("--link-deep", "#001d3c");
     root.style.setProperty("--success", "#26d862");
@@ -212,7 +212,7 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--success-muted", "color-mix(in srgb, #26d862 12%, #f1f0ec)");
     root.style.setProperty("--info", "#1a73e8");
     root.style.setProperty("--gradient-accent", accent);
-    root.style.setProperty("--gradient-accent-hover", "#284635");
+    root.style.setProperty("--gradient-accent-hover", "#5a9be0");
     root.style.setProperty(
       "--gradient-glow",
       `radial-gradient(circle, color-mix(in srgb, ${accent} 18%, transparent) 0%, transparent 70%)`,
@@ -223,7 +223,7 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--bg-overlay", "#fcfcf9");
     root.style.setProperty("--bg-hover", "#f2f1ed");
     root.style.setProperty("--bg-active", "#e6e5e0");
-    root.style.setProperty("--bg-selected", "color-mix(in srgb, #1d3023 10%, #f1f0ec)");
+    root.style.setProperty("--bg-selected", "color-mix(in srgb, #3183d8 10%, #f1f0ec)");
     root.style.setProperty("--border-subtle", "#d8d4cd");
     root.style.setProperty("--border-default", "#d8d4cd");
     root.style.setProperty("--border-strong", "#8e918f");
@@ -231,7 +231,7 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--text-secondary", "#5f6368");
     root.style.setProperty("--text-tertiary", "#818581");
     root.style.setProperty("--text-disabled", "#818581");
-    root.style.setProperty("--text-on-accent", "#f1f0ec");
+    root.style.setProperty("--text-on-accent", "#141312");
     root.style.setProperty("--user-message-bg", "#e6e5e0");
     root.style.setProperty("--user-message-fg", "#26251e");
     root.style.setProperty("--cursor-title-bg", "#f1f0ec");
@@ -253,12 +253,12 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--secondary-foreground", "45 13% 13%");
     root.style.setProperty("--sidebar-background", "60 20% 98%");
     root.style.setProperty("--sidebar-foreground", "216 5% 39%");
-    root.style.setProperty("--sidebar-primary", "138 24% 15%");
-    root.style.setProperty("--sidebar-primary-foreground", "45 16% 94%");
+    root.style.setProperty("--sidebar-primary", "211 69% 52%");
+    root.style.setProperty("--sidebar-primary-foreground", "45 13% 8%");
     root.style.setProperty("--sidebar-accent", "45 12% 94%");
     root.style.setProperty("--sidebar-accent-foreground", "45 13% 13%");
     root.style.setProperty("--sidebar-border", "39 16% 83%");
-    root.style.setProperty("--sidebar-ring", "138 24% 15%");
+    root.style.setProperty("--sidebar-ring", "211 69% 52%");
   }
 
   root.classList.toggle("high-contrast", settings.highContrast);

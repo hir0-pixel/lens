@@ -145,12 +145,12 @@
     --bg-overlay: #fcfcf9;
     --bg-hover: #f2f1ed;
     --bg-active: #e6e5e0;
-    --bg-selected: color-mix(in srgb, #1d3023 10%, #f1f0ec);
+    --bg-selected: color-mix(in srgb, #3183d8 10%, #f1f0ec);
 
     --border-subtle: #d8d4cd;
     --border-default: #d8d4cd;
     --border-strong: #8e918f;
-    --focus-ring-color: #1d3023;
+    --focus-ring-color: #3183d8;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
@@ -159,14 +159,14 @@
     --text-secondary: #5f6368;
     --text-tertiary: #818581;
     --text-disabled: #818581;
-    --text-on-accent: #f1f0ec;
+    --text-on-accent: #141312;
     --user-message-bg: #e6e5e0;
     --user-message-fg: #26251e;
 
-    --accent-primary: #1d3023;
-    --accent-primary-hover: #284635;
-    --accent-primary-active: #14251a;
-    --accent-primary-muted: color-mix(in srgb, #1d3023 12%, #f1f0ec);
+    --accent-primary: #3183d8;
+    --accent-primary-hover: #5a9be0;
+    --accent-primary-active: #1d62aa;
+    --accent-primary-muted: color-mix(in srgb, #3183d8 12%, #f1f0ec);
     --link: #001d3c;
     --link-deep: #001d3c;
     --link-soft: #d2e3fc;
@@ -175,7 +175,7 @@
     --gradient-accent-hover: var(--accent-primary-hover);
     --gradient-glow: radial-gradient(
       circle,
-      color-mix(in srgb, #1d3023 18%, transparent) 0%,
+      color-mix(in srgb, #3183d8 18%, transparent) 0%,
       transparent 70%
     );
     --gradient-develop: linear-gradient(90deg, #007cf0, #00dfd8);
@@ -1371,12 +1371,12 @@
     --bg-overlay: #fcfcf9;
     --bg-hover: #f2f1ed;
     --bg-active: #e6e5e0;
-    --bg-selected: color-mix(in srgb, #1d3023 10%, #f1f0ec);
+    --bg-selected: color-mix(in srgb, #3183d8 10%, #f1f0ec);
 
     --border-subtle: #d8d4cd;
     --border-default: #d8d4cd;
     --border-strong: #8e918f;
-    --focus-ring-color: #1d3023;
+    --focus-ring-color: #3183d8;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
@@ -1385,12 +1385,12 @@
     --text-secondary: #5f6368;
     --text-tertiary: #818581;
     --text-disabled: #818581;
-    --text-on-accent: #f1f0ec;
+    --text-on-accent: #141312;
 
-    --accent-primary: #1d3023;
-    --accent-primary-hover: #284635;
-    --accent-primary-active: #14251a;
-    --accent-primary-muted: color-mix(in srgb, #1d3023 12%, #f1f0ec);
+    --accent-primary: #3183d8;
+    --accent-primary-hover: #5a9be0;
+    --accent-primary-active: #1d62aa;
+    --accent-primary-muted: color-mix(in srgb, #3183d8 12%, #f1f0ec);
     --link: #001d3c;
     --link-deep: #001d3c;
 
@@ -1398,7 +1398,7 @@
     --gradient-accent-hover: var(--accent-primary-hover);
     --gradient-glow: radial-gradient(
       circle,
-      color-mix(in srgb, #1d3023 18%, transparent) 0%,
+      color-mix(in srgb, #3183d8 18%, transparent) 0%,
       transparent 70%
     );
 
@@ -1555,10 +1555,10 @@
     --border-subtle: #2a2f37;
     --border-default: #2a2f37;
     --border-strong: #818581;
-    --focus-ring-color: #26d862;
+    --focus-ring-color: #3183d8;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
-    --border-focus: #26d862;
+    --border-focus: #3183d8;
     --cursor-focus: var(--border-focus);
 
     --text-primary: #fdfbfa;
@@ -1569,10 +1569,10 @@
     --user-message-bg: #26251e;
     --user-message-fg: #fdfbfa;
 
-    --accent-primary: #26d862;
-    --accent-primary-hover: #5be987;
-    --accent-primary-active: #1fa94d;
-    --accent-primary-muted: color-mix(in srgb, #26d862 22%, #141312);
+    --accent-primary: #3183d8;
+    --accent-primary-hover: #5a9be0;
+    --accent-primary-active: #1d62aa;
+    --accent-primary-muted: color-mix(in srgb, #3183d8 22%, #141312);
     --link: #b5cef5;
     --link-deep: #b5cef5;
     --cursor-scrollbar: #818581;
@@ -1584,7 +1584,7 @@
     --gradient-accent-hover: var(--accent-primary-hover);
     --gradient-glow: radial-gradient(
       circle,
-      color-mix(in srgb, #26d862 20%, transparent) 0%,
+      color-mix(in srgb, #3183d8 20%, transparent) 0%,
       transparent 70%
     );
 
