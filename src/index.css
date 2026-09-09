@@ -138,47 +138,44 @@
   :root {
     color-scheme: light;
 
-    /* —— Color system — DESIGN-vercel.md only —— */
-    --bg-canvas: #fafafa; /* colors.canvas */
-    --bg-surface: #ffffff; /* colors.canvas-elevated */
-    /* Inset / nested wells on elevated white — canvas, not second white */
-    --bg-surface-raised: #fafafa;
-    --bg-overlay: #ffffff;
-    --bg-hover: #f2f2f2; /* colors.hairline-soft */
-    --bg-active: #ebebeb; /* colors.hairline */
-    --bg-selected: #ebebeb;
+    /* Refactr canvas, with Cursor/Perplexity content surfaces. */
+    --bg-canvas: #f1f0ec;
+    --bg-surface: #fcfcf9;
+    --bg-surface-raised: #e6e5e0;
+    --bg-overlay: #fcfcf9;
+    --bg-hover: #f2f1ed;
+    --bg-active: #e6e5e0;
+    --bg-selected: color-mix(in srgb, #1d3023 10%, #f1f0ec);
 
-    --border-subtle: #ebebeb; /* colors.hairline — panel seams */
-    --border-default: #ebebeb;
-    --border-strong: #a1a1a1; /* colors.faint */
-    /* Focus = Vercel Blue (colors.link) — reserved for links + focus */
-    --focus-ring-color: #7183ff;
+    --border-subtle: #d8d4cd;
+    --border-default: #d8d4cd;
+    --border-strong: #8e918f;
+    --focus-ring-color: #1d3023;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
 
-    --text-primary: #171717; /* colors.ink */
-    --text-secondary: #4d4d4d; /* colors.body */
-    --text-tertiary: #8f8f8f; /* colors.mute */
-    --text-disabled: #a1a1a1; /* colors.faint */
-    --text-on-accent: #ffffff; /* colors.on-primary */
-    --user-message-bg: #eef0f6;
-    --user-message-fg: #171717;
+    --text-primary: #26251e;
+    --text-secondary: #5f6368;
+    --text-tertiary: #818581;
+    --text-disabled: #818581;
+    --text-on-accent: #f1f0ec;
+    --user-message-bg: #e6e5e0;
+    --user-message-fg: #26251e;
 
-    /* Primary CTA = ink (colors.primary); link blue is separate accent for chrome signals */
-    --accent-primary: #0b66d6;
-    --accent-primary-hover: #1674df;
-    --accent-primary-active: #084b9c;
-    --accent-primary-muted: #d3e5ff; /* colors.link-soft */
-    --link: #7183ff;
-    --link-deep: #0761d1;
-    --link-soft: #d3e5ff;
+    --accent-primary: #1d3023;
+    --accent-primary-hover: #284635;
+    --accent-primary-active: #14251a;
+    --accent-primary-muted: color-mix(in srgb, #1d3023 12%, #f1f0ec);
+    --link: #001d3c;
+    --link-deep: #001d3c;
+    --link-soft: #d2e3fc;
 
     --gradient-accent: var(--accent-primary);
     --gradient-accent-hover: var(--accent-primary-hover);
     --gradient-glow: radial-gradient(
       circle,
-      color-mix(in srgb, #0070f3 18%, transparent) 0%,
+      color-mix(in srgb, #1d3023 18%, transparent) 0%,
       transparent 70%
     );
     --gradient-develop: linear-gradient(90deg, #007cf0, #00dfd8);
@@ -186,16 +183,16 @@
     --gradient-ship: linear-gradient(90deg, #ff4d4d, #f9cb28);
 
     --success: #26d862;
-    --warning: #f5a623;
-    --warning-soft: #ffefcf;
-    --warning-deep: #ab570a;
-    --error: #e34671;
-    --error-deep: #c50000;
-    --error-muted: color-mix(in srgb, #ee0000 12%, #ffffff);
-    --success-muted: #d3e5ff;
-    --info: #0070f3;
-    --violet: #7928ca;
-    --cyan: #50e3c2;
+    --warning: #d9923a;
+    --warning-soft: #f8eedb;
+    --warning-deep: #8d5c18;
+    --error: #b91c1c;
+    --error-deep: #450a0a;
+    --error-muted: color-mix(in srgb, #b91c1c 12%, #f1f0ec);
+    --success-muted: color-mix(in srgb, #26d862 12%, #f1f0ec);
+    --info: #1a73e8;
+    --violet: #7183ff;
+    --cyan: #32b8c6;
     --pink: #ff0080;
     --magenta: #eb367f;
 
@@ -1365,52 +1362,52 @@
     --ds-fg-muted: var(--text-secondary);
   }
 
-  /* Light theme — DESIGN-vercel.md */
+  /* Light: Refactr linen, Cursor text and bubble, Perplexity panels. */
   html.light {
     color-scheme: light;
-    --bg-canvas: #fafafa;
-    --bg-surface: #ffffff;
-    --bg-surface-raised: #fafafa;
-    --bg-overlay: #ffffff;
-    --bg-hover: #f2f2f2;
-    --bg-active: #ebebeb;
-    --bg-selected: #ebebeb;
+    --bg-canvas: #f1f0ec;
+    --bg-surface: #fcfcf9;
+    --bg-surface-raised: #e6e5e0;
+    --bg-overlay: #fcfcf9;
+    --bg-hover: #f2f1ed;
+    --bg-active: #e6e5e0;
+    --bg-selected: color-mix(in srgb, #1d3023 10%, #f1f0ec);
 
-    --border-subtle: #ebebeb;
-    --border-default: #ebebeb;
-    --border-strong: #a1a1a1;
-    --focus-ring-color: #7183ff;
+    --border-subtle: #d8d4cd;
+    --border-default: #d8d4cd;
+    --border-strong: #8e918f;
+    --focus-ring-color: #1d3023;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
 
-    --text-primary: #171717;
-    --text-secondary: #4d4d4d;
-    --text-tertiary: #8f8f8f;
-    --text-disabled: #a1a1a1;
-    --text-on-accent: #ffffff;
+    --text-primary: #26251e;
+    --text-secondary: #5f6368;
+    --text-tertiary: #818581;
+    --text-disabled: #818581;
+    --text-on-accent: #f1f0ec;
 
-    --accent-primary: #0b66d6;
-    --accent-primary-hover: #1674df;
-    --accent-primary-active: #084b9c;
-    --accent-primary-muted: #d3e5ff;
-    --link: #0070f3;
-    --link-deep: #0761d1;
+    --accent-primary: #1d3023;
+    --accent-primary-hover: #284635;
+    --accent-primary-active: #14251a;
+    --accent-primary-muted: color-mix(in srgb, #1d3023 12%, #f1f0ec);
+    --link: #001d3c;
+    --link-deep: #001d3c;
 
     --gradient-accent: var(--accent-primary);
     --gradient-accent-hover: var(--accent-primary-hover);
     --gradient-glow: radial-gradient(
       circle,
-      color-mix(in srgb, #0070f3 18%, transparent) 0%,
+      color-mix(in srgb, #1d3023 18%, transparent) 0%,
       transparent 70%
     );
 
     --success: #26d862;
-    --warning: #f5a623;
-    --error: #e34671;
-    --error-muted: color-mix(in srgb, #ee0000 12%, #ffffff);
-    --success-muted: #d3e5ff;
-    --info: #0070f3;
+    --warning: #d9923a;
+    --error: #b91c1c;
+    --error-muted: color-mix(in srgb, #b91c1c 12%, #f1f0ec);
+    --success-muted: color-mix(in srgb, #26d862 12%, #f1f0ec);
+    --info: #1a73e8;
 
     --background: 0 0% 98%;
     --foreground: 0 0% 9%;
@@ -1433,11 +1430,11 @@
     --sidebar-accent: 0 0% 95%;
     --sidebar-accent-foreground: 0 0% 9%;
     --sidebar-ring: 212 100% 48%;
-    --cursor-scrollbar: #a1a1a1;
-    --cursor-scrollbar-hover: #8f8f8f;
+    --cursor-scrollbar: #8e918f;
+    --cursor-scrollbar-hover: #5f6368;
     --cursor-focus: var(--focus-ring-color);
-    --cursor-title-bg: #fafafa;
-    --cursor-title-fg: #4d4d4d;
+    --cursor-title-bg: #f1f0ec;
+    --cursor-title-fg: #5f6368;
     --scrollbar-size: 10px;
 
     /* Compatibility for existing workspace surfaces while they use semantic tokens. */
@@ -1546,59 +1543,58 @@
 
   html.dark {
     color-scheme: dark;
-    /* Dark inversion of DESIGN-vercel.md ladder (taste §8 — no pure #000/#fff) */
+    /* Dark: Refactr canvas, Perplexity response surface, Cursor user bubble. */
     --bg-canvas: #141312;
-    --bg-surface: #191a1a;
-    --bg-surface-raised: #1f2121;
-    --bg-overlay: #252928;
-    --bg-hover: #202322;
-    --bg-active: #252928;
-    --bg-selected: color-mix(in srgb, #0070f3 18%, #0a0a0a);
+    --bg-surface: #1f2121;
+    --bg-surface-raised: #26251e;
+    --bg-overlay: #26251e;
+    --bg-hover: #26251e;
+    --bg-active: #26251e;
+    --bg-selected: color-mix(in srgb, #26d862 18%, #141312);
 
-    --border-subtle: color-mix(in srgb, #ffffff 12%, #0a0a0a);
-    --border-default: color-mix(in srgb, #ffffff 20%, #0a0a0a);
-    --border-strong: #a1a1a1;
-    --focus-ring-color: #7183ff;
+    --border-subtle: #2a2f37;
+    --border-default: #2a2f37;
+    --border-strong: #818581;
+    --focus-ring-color: #26d862;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
-    --border-focus: #7183ff;
+    --border-focus: #26d862;
     --cursor-focus: var(--border-focus);
 
-    --text-primary: #d6d5d4;
-    --text-secondary: #a1a1a1;
-    --text-tertiary: #8f8f8f;
-    --text-disabled: #8f8f8f;
+    --text-primary: #fdfbfa;
+    --text-secondary: #818581;
+    --text-tertiary: #818581;
+    --text-disabled: #818581;
     --text-on-accent: #141312;
-    --user-message-bg: #252928;
-    --user-message-fg: #d4d6d6;
+    --user-message-bg: #26251e;
+    --user-message-fg: #fdfbfa;
 
-    /* Dark CTA: elevated white pill/square on ink canvas */
-    --accent-primary: #2684ff;
-    --accent-primary-hover: #4f94ff;
-    --accent-primary-active: #176dcc;
-    --accent-primary-muted: color-mix(in srgb, #0070f3 22%, #0a0a0a);
-    --link: #7183ff;
-    --link-deep: #0761d1;
-    --cursor-scrollbar: #8f8f8f;
-    --cursor-scrollbar-hover: #a1a1a1;
-    --cursor-title-bg: #0a0a0a;
-    --cursor-title-fg: #a1a1a1;
+    --accent-primary: #26d862;
+    --accent-primary-hover: #5be987;
+    --accent-primary-active: #1fa94d;
+    --accent-primary-muted: color-mix(in srgb, #26d862 22%, #141312);
+    --link: #b5cef5;
+    --link-deep: #b5cef5;
+    --cursor-scrollbar: #818581;
+    --cursor-scrollbar-hover: #9ba1a6;
+    --cursor-title-bg: #141312;
+    --cursor-title-fg: #818581;
 
     --gradient-accent: var(--accent-primary);
     --gradient-accent-hover: var(--accent-primary-hover);
     --gradient-glow: radial-gradient(
       circle,
-      color-mix(in srgb, #0070f3 20%, transparent) 0%,
+      color-mix(in srgb, #26d862 20%, transparent) 0%,
       transparent 70%
     );
 
     --success: #26d862;
-    --warning: #f5a623;
-    --error: #e34671;
-    --error-deep: #c50000;
-    --error-muted: color-mix(in srgb, #ee0000 16%, #0a0a0a);
+    --warning: #d9923a;
+    --error: #b91c1c;
+    --error-deep: #450a0a;
+    --error-muted: color-mix(in srgb, #b91c1c 16%, #141312);
     --success-muted: color-mix(in srgb, #26d862 18%, #141312);
-    --info: #0070f3;
+    --info: #b5cef5;
 
     --background: 0 0% 4%;
     --foreground: 0 0% 98%;
