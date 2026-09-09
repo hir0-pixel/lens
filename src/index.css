@@ -152,7 +152,7 @@
     --border-default: #ebebeb;
     --border-strong: #a1a1a1; /* colors.faint */
     /* Focus = Vercel Blue (colors.link) — reserved for links + focus */
-    --focus-ring-color: #5b6dff;
+    --focus-ring-color: #7183ff;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
@@ -170,7 +170,7 @@
     --accent-primary-hover: #1674df;
     --accent-primary-active: #084b9c;
     --accent-primary-muted: #d3e5ff; /* colors.link-soft */
-    --link: #5b6dff;
+    --link: #7183ff;
     --link-deep: #0761d1;
     --link-soft: #d3e5ff;
 
@@ -1379,7 +1379,7 @@
     --border-subtle: #ebebeb;
     --border-default: #ebebeb;
     --border-strong: #a1a1a1;
-    --focus-ring-color: #5b6dff;
+    --focus-ring-color: #7183ff;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
     --border-focus: var(--focus-ring-color);
@@ -1558,10 +1558,10 @@
     --border-subtle: color-mix(in srgb, #ffffff 12%, #0a0a0a);
     --border-default: color-mix(in srgb, #ffffff 20%, #0a0a0a);
     --border-strong: #a1a1a1;
-    --focus-ring-color: #5b6dff;
+    --focus-ring-color: #7183ff;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
-    --border-focus: #5b6dff;
+    --border-focus: #7183ff;
     --cursor-focus: var(--border-focus);
 
     --text-primary: #d6d5d4;
@@ -1577,7 +1577,7 @@
     --accent-primary-hover: #4f94ff;
     --accent-primary-active: #176dcc;
     --accent-primary-muted: color-mix(in srgb, #0070f3 22%, #0a0a0a);
-    --link: #5b6dff;
+    --link: #7183ff;
     --link-deep: #0761d1;
     --cursor-scrollbar: #8f8f8f;
     --cursor-scrollbar-hover: #a1a1a1;
