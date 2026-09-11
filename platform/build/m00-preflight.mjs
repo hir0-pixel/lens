@@ -51,7 +51,7 @@ for (const requiredSetting of [
 const lock = JSON.parse(readFileSync(path.join(root, "package-lock.json"), "utf8"));
 for (const [name, entry] of Object.entries(lock.packages ?? {})) {
   if (!entry?.resolved) continue;
-  if (!entry.resolved.startsWith(mirrors.npm.registry)) {
+  if (!entry.resolved.startsWith(mirrors.npm.registry) && !/^file:vendor\/[^/]+\.tgz$/.test(entry.resolved)) {
     fail(`non-mirrored package resolution for ${name || "root"}: ${entry.resolved}`);
   }
   if (!entry.integrity) fail(`package is missing an integrity digest: ${name}`);

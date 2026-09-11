@@ -92,7 +92,9 @@ function bootstrap() {
   const lock = JSON.parse(readFileSync(path.join(root, "package-lock.json"), "utf8"));
   const packages = Object.values(lock.packages ?? {});
   const externalResolution = packages.find(
-    (entry) => entry?.resolved && !entry.resolved.startsWith(mirrors.npm.registry),
+    (entry) => entry?.resolved
+      && !entry.resolved.startsWith(mirrors.npm.registry)
+      && !/^file:vendor\/[^/]+\.tgz$/.test(entry.resolved),
   );
   if (externalResolution) {
     fail(`lockfile contains a non-mirrored dependency URL: ${externalResolution.resolved}`);
