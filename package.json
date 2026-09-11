@@ -31,6 +31,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:m0-harness": "vitest run tests/integration/harnessM0.test.ts",
+    "evidence:m1-governance": "vite-node scripts/manual/m01-governance-evidence.ts",
     "security:production": "node scripts/security/production-build-check.mjs",
     "test:security": "vitest run tests/security",
     "test:orchestrator-service": "npm test --prefix orchestrator-service",

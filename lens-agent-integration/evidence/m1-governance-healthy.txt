@@ -1,0 +1,4 @@
+> vite-node scripts/manual/m01-governance-evidence.ts healthy
+decision_requested   echo runId=01a09013-2b55-70a3-b66c-a2ce6845ed24 toolCallId=call-1 toolName=echo
+fence_consumed       echo runId=01a09013-2b55-70a3-b66c-a2ce6845ed24 toolCallId=call-1 toolName=echo
+tool_completed       echo runId=01a09013-2b55-70a3-b66c-a2ce6845ed24 toolCallId=call-1 toolName=echo
