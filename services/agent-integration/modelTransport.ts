@@ -15,6 +15,7 @@ import type { ModelGateway, ModelGatewayChatDispatchInput, RuntimePort } from ".
 import { createModelProviderAdapter } from "../model-provider/createModelProviderAdapter";
 import type { ProviderEndpointConfig } from "../model-provider/ProviderAdapter";
 import type { SecretStore } from "../secrets/SecretStore";
+import { CONTEXT_BLOCK_REASON, CONTEXT_BLOCK_SYSTEM_PROMPT } from "./contextBinding";
 
 const PROVIDER_ID = "lens-model-gateway";
 const API = "lens-chat";
@@ -137,6 +138,7 @@ export function createLensAgentProvider(options: LensAgentProviderOptions) {
   };
 
   const stream = (requestModel: Model<typeof API>, context: Context, streamOptions?: { signal?: AbortSignal; metadata?: Record<string, unknown> }): AssistantMessageEventStream => {
+    if (context.systemPrompt === CONTEXT_BLOCK_SYSTEM_PROMPT) return errorStream(requestModel, CONTEXT_BLOCK_REASON);
     const admission = streamOptions?.metadata?.[ADMISSION_KEY];
     if (requestModel.id !== model.id || typeof admission !== "string") return errorStream(requestModel, "Model request was not admitted.");
     const dispatch = pending.get(admission);
