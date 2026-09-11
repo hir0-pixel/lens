@@ -1,6 +1,7 @@
 import { measureOutputUnits } from "../inference-adapter/localMeter";
 import type { SecretStore } from "../secrets/SecretStore";
 import type { ModelDescriptor, ModelProviderAdapter, NormalizedProviderError, ProviderEndpointConfig, ProviderGenerateInput } from "./ProviderAdapter";
+import type { ChatDelta, ProviderChatInput } from "./ProviderAdapter";
 import { assertInternalProviderUrl, modelAllowed, openAiCompatibleResourceUrl, parseOpenAiCompatibleModelCatalog, resolveSecretRef } from "./providerEndpointPolicy";
 
 type FetchPort = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -94,6 +95,88 @@ export class OpenAICompatibleAdapter implements ModelProviderAdapter {
         const json = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
         const delta = json.choices?.[0]?.delta?.content;
         if (typeof delta === "string" && delta.length > 0) yield delta;
+      }
+    }
+  }
+
+  async *generateChatStream(input: ProviderChatInput, signal: AbortSignal): AsyncGenerator<ChatDelta> {
+    if (!modelAllowed(input.model, this.config.allowedModels)) throw this.normalizeError(new Error("FORBIDDEN"));
+    const response = await this.fetcher(openAiCompatibleResourceUrl(this.origin, "chat/completions"), {
+      method: "POST",
+      headers: { "content-type": "application/json", ...await this.authHeaders() },
+      redirect: "error",
+      body: JSON.stringify({
+        model: input.model,
+        stream: true,
+        messages: input.messages.map((message) => {
+          if (message.role === "assistant") {
+            return {
+              role: message.role,
+              content: message.content,
+              ...(message.toolCalls ? {
+                tool_calls: message.toolCalls.map((call) => ({
+                  id: call.id,
+                  type: "function",
+                  function: { name: call.name, arguments: call.arguments },
+                })),
+              } : {}),
+            };
+          }
+          if (message.role === "tool") {
+            return { role: message.role, content: message.content, tool_call_id: message.toolCallId };
+          }
+          return message;
+        }),
+        tools: input.tools.map((tool) => ({
+          type: "function",
+          function: { name: tool.name, description: tool.description, parameters: tool.parameters },
+        })),
+      }),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(Math.max(1, input.deadlineAt - Date.now()))]),
+    });
+    if (response.status === 429) throw this.normalizeError(Object.assign(new Error("OVERLOADED"), { status: 429 }));
+    if (!response.ok || !response.body) throw this.normalizeError(Object.assign(new Error("upstream"), { status: response.status }));
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      if (Buffer.byteLength(buffer, "utf8") > 256 * 1024) {
+        await reader.cancel();
+        throw this.normalizeError(new Error("UNBOUNDED"));
+      }
+      const parts = buffer.split("\n");
+      buffer = parts.pop() ?? "";
+      for (const line of parts) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+        const data = trimmed.slice(5).trim();
+        if (data === "[DONE]") return;
+        const json = JSON.parse(data) as {
+          choices?: Array<{ delta?: {
+            content?: string;
+            tool_calls?: Array<{
+              index?: number;
+              id?: string;
+              function?: { name?: string; arguments?: string };
+            }>;
+          } }>;
+        };
+        const delta = json.choices?.[0]?.delta;
+        if (typeof delta?.content === "string" && delta.content.length > 0) yield { type: "text", text: delta.content };
+        for (const call of delta?.tool_calls ?? []) {
+          if (!Number.isSafeInteger(call.index) || call.index! < 0) throw this.normalizeError(new Error("INVALID_TOOL_CALL"));
+          yield {
+            type: "tool-call",
+            index: call.index!,
+            ...(typeof call.id === "string" ? { id: call.id } : {}),
+            ...(typeof call.function?.name === "string" ? { name: call.function.name } : {}),
+            ...(typeof call.function?.arguments === "string" ? { argumentsDelta: call.function.arguments } : {}),
+          };
+        }
       }
     }
   }
