@@ -40,10 +40,27 @@ export interface ToolOutcome {
   isError: boolean;
 }
 
+interface ToolGovernanceLogBase {
+  runId: string;
+  toolCallId: string;
+  toolName: string;
+}
+
+export type ToolGovernanceLogEvent = ToolGovernanceLogBase & (
+  | { event: "decision_requested" | "fence_consumed" }
+  | { event: "tool_blocked"; reason: typeof POLICY_BLOCK_REASON }
+  | { event: "tool_completed"; isError: boolean }
+);
+
+export interface ToolGovernanceLogPort {
+  emit(event: ToolGovernanceLogEvent): void;
+}
+
 export interface ToolGovernanceOptions {
   pdp: ToolPolicyPort;
   scope: ToolGovernanceScope;
   resolveIntent(event: HookInvocation<"before_tool">): ToolIntent;
+  log: ToolGovernanceLogPort;
   recordOutcome(outcome: ToolOutcome): void | Promise<void>;
   now?: () => number;
 }
@@ -76,10 +93,29 @@ export function bindToolGovernance(
 ): () => void {
   const now = options.now ?? Date.now;
   const stopBeforeTool = harness.hooks.on("before_tool", (event) => {
+    const metadata = {
+      runId: event.runId,
+      toolCallId: event.toolCallId,
+      toolName: event.toolName,
+    };
+    const emit = (logEvent: ToolGovernanceLogEvent) => {
+      try {
+        options.log.emit(logEvent);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const block = () => {
+      emit({ event: "tool_blocked", ...metadata, reason: POLICY_BLOCK_REASON });
+      return { block: { reason: POLICY_BLOCK_REASON } } as const;
+    };
+
     try {
+      if (!emit({ event: "decision_requested", ...metadata })) return block();
       const intent = options.resolveIntent(event);
       const normalizedContextDigest = normalizedToolIntentDigest(event.toolName, event.args);
-      if (now() >= options.scope.deadlineAt) return { block: { reason: POLICY_BLOCK_REASON } };
+      if (now() >= options.scope.deadlineAt) return block();
 
       const decision = options.pdp.decideBatch({
         ...options.scope,
@@ -92,7 +128,7 @@ export function bindToolGovernance(
         && decision.allowed.length === intent.resourceRefs.length
         && decision.allowed.every((resourceRef, index) => resourceRef === intent.resourceRefs[index]);
       if (!fullyAllowed || now() >= options.scope.deadlineAt) {
-        return { block: { reason: POLICY_BLOCK_REASON } };
+        return block();
       }
 
       options.pdp.consumeFence(decision.fence!, {
@@ -103,14 +139,26 @@ export function bindToolGovernance(
         normalizedContextDigest,
         useBoundary: "tool_boundary",
       });
-      if (now() >= options.scope.deadlineAt) return { block: { reason: POLICY_BLOCK_REASON } };
+      if (!emit({ event: "fence_consumed", ...metadata })) return block();
+      if (now() >= options.scope.deadlineAt) return block();
       return undefined;
     } catch {
-      return { block: { reason: POLICY_BLOCK_REASON } };
+      return block();
     }
   });
 
   const stopAfterTool = harness.hooks.on("after_tool", async (event) => {
+    try {
+      options.log.emit({
+        event: "tool_completed",
+        runId: event.runId,
+        toolCallId: event.toolCallId,
+        toolName: event.toolName,
+        isError: event.isError,
+      });
+    } catch {
+      // Outcome recording remains mandatory even when observability is unavailable.
+    }
     await options.recordOutcome({
       runId: event.runId,
       lane: event.lane,

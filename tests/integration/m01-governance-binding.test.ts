@@ -21,6 +21,7 @@ import {
   createEchoTool,
   normalizedToolIntentDigest,
   type ToolGovernanceScope,
+  type ToolGovernanceLogEvent,
   type ToolOutcome,
   type ToolPolicyPort,
 } from "../../services/agent-integration/governanceBinding";
@@ -95,13 +96,18 @@ async function runEchoCalls(options: {
   ]);
 
   let executions = 0;
+  const timeline: string[] = [];
+  const logs: ToolGovernanceLogEvent[] = [];
   const outcomes: ToolOutcome[] = [];
   const { harness } = await AgentHarness.create(
     {
       session,
       models,
       model: faux.getModel(),
-      tools: [createEchoTool(() => { executions += 1; })],
+      tools: [createEchoTool(() => {
+        executions += 1;
+        timeline.push("execution");
+      })],
       systemPrompt: "M01 governance test",
     },
     TODO_CONTEXT,
@@ -110,6 +116,12 @@ async function runEchoCalls(options: {
     pdp: options.pdp,
     scope,
     resolveIntent,
+    log: {
+      emit(event) {
+        logs.push(event);
+        timeline.push(event.event);
+      },
+    },
     recordOutcome: (outcome) => { outcomes.push(outcome); },
     now: options.now ?? (() => 1_000),
   });
@@ -118,7 +130,7 @@ async function runEchoCalls(options: {
     const lane = await harness.lane("main", TODO_CONTEXT);
     await lane.prompt("run the echo tool", [], TODO_CONTEXT);
     const entries = await session.findEntries(undefined, TODO_CONTEXT);
-    return { executions, outcomes, transcript: JSON.stringify(entries) };
+    return { executions, logs, outcomes, timeline, transcript: JSON.stringify(entries) };
   } finally {
     await harness.close(TODO_CONTEXT);
     await repo.close(TODO_CONTEXT);
@@ -281,6 +293,35 @@ describe("M01 governance binding", () => {
     })).not.toBe(first);
   });
 
+  it("pdp.tool.log-ordering", async () => {
+    const allowed = await runEchoCalls({ pdp: createPdp() });
+    expect(allowed.logs.map(({ event }) => event)).toEqual([
+      "decision_requested",
+      "fence_consumed",
+      "tool_completed",
+    ]);
+    expect(allowed.timeline).toEqual([
+      "decision_requested",
+      "fence_consumed",
+      "execution",
+      "tool_completed",
+    ]);
+
+    const secretResource = "classified-document-8472";
+    const blocked = await runEchoCalls({
+      pdp: createPdp(false),
+      calls: [{ resourceRef: secretResource, value: "secret input" }],
+    });
+    expect(blocked.logs.map(({ event }) => event)).toEqual([
+      "decision_requested",
+      "tool_blocked",
+    ]);
+    expect(blocked.timeline).toEqual(["decision_requested", "tool_blocked"]);
+    expect(blocked.executions).toBe(0);
+    expect(JSON.stringify(blocked.logs)).not.toContain(secretResource);
+    expect(JSON.stringify(blocked.logs)).not.toContain("secret input");
+  });
+
   it("does not disclose unauthorized resource ids in block reasons", async () => {
     const handlers = new Map<string, unknown>();
     const hooks = {
@@ -293,6 +334,7 @@ describe("M01 governance binding", () => {
       pdp: createPdp(false),
       scope,
       resolveIntent,
+      log: { emit: () => undefined },
       recordOutcome: () => undefined,
       now: () => 1_000,
     });
