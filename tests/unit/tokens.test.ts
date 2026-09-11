@@ -2,34 +2,31 @@ import { describe, expect, it } from "vitest";
 import { CURSOR } from "@/shared/design-system/cursorTokens";
 import { ACCENT_COLORS } from "@/shared/themes/themeManager";
 
-const VERCEL_HEX = new Set([
-  "#171717",
-  "#ffffff",
-  "#4d4d4d",
-  "#8f8f8f",
-  "#a1a1a1",
-  "#ebebeb",
-  "#f2f2f2",
-  "#fafafa",
-  "#0070f3",
-  "#0761d1",
-  "#d3e5ff",
-  "#ee0000",
-  "#c50000",
-  "#f5a623",
-  "#ffefcf",
+// Approved palette per DESIGN-lens.md. Add a colour here only when that file
+// ratifies it. Vercel is retired; a Vercel hex reappearing here is a regression.
+const APPROVED_HEX = new Set([
+  // surfaces
+  "#f7f7f4", // canvas / chrome
+  "#fdfbfa", // panel, raised-lightest
+  "#f2f1ed", // hover / raised / neutral button
+  "#e6e5e0", // border, active selection
+  // ink
+  "#26251e", // primary
+  "#5a5852", // secondary
+  "#a09c92", // tertiary / placeholder (inferred)
+  "#807d72", // scrollbar hover (inferred)
+  "#141312", // text on primary button
+  // accent
+  "#3183d8",
+  "#5a9be0", // hover
+  "#1d62aa", // active
+  // semantic
+  "#b91c1c", // danger
+  // accent presets — retained pending review (DESIGN-lens.md)
   "#ab570a",
-  "#7928ca",
-  "#d8ccf1",
   "#50e3c2",
-  "#aaffec",
+  "#7928ca",
   "#ff0080",
-  "#eb367f",
-  "#007cf0",
-  "#00dfd8",
-  "#ff4d4d",
-  "#f9cb28",
-  "#0a0a0a", // dark-mode off-black (taste §8; not pure #000)
 ]);
 
 describe("Cursor workbench tokens", () => {
@@ -41,33 +38,45 @@ describe("Cursor workbench tokens", () => {
     expect(CURSOR.titleBarHeight).toBe(35);
   });
 
-  it("uses DESIGN-vercel.md canvas / surface / focus colors", () => {
-    expect(CURSOR.colors.sideBarBg).toBe("#ffffff");
-    expect(CURSOR.colors.editorBg).toBe("#fafafa");
-    expect(CURSOR.colors.focusBorder).toBe("#0070f3");
-    expect(CURSOR.colors.buttonBg).toBe("#171717");
+  it("uses DESIGN-lens.md canvas / panel / focus / button colors", () => {
+    expect(CURSOR.colors.sideBarBg).toBe("#f7f7f4");
+    expect(CURSOR.colors.editorBg).toBe("#fdfbfa");
+    expect(CURSOR.colors.focusBorder).toBe("#3183d8");
+    expect(CURSOR.colors.buttonBg).toBe("#3183d8");
+    expect(CURSOR.colors.buttonFg).toBe("#141312");
+    expect(CURSOR.colors.buttonSecondaryBg).toBe("#f2f1ed");
   });
 
-  it("keeps light chrome contrast: elevated white on canvas, hairline seams", () => {
-    expect(CURSOR.colors.editorBg).toBe("#fafafa");
-    expect(CURSOR.colors.sideBarBg).toBe("#ffffff");
+  it("keeps light chrome contrast: lighter panel on canvas, hairline seams", () => {
+    expect(CURSOR.colors.editorBg).toBe("#fdfbfa");
+    expect(CURSOR.colors.sideBarBg).toBe("#f7f7f4");
     expect(CURSOR.colors.sideBarBg).not.toBe(CURSOR.colors.editorBg);
-    expect(CURSOR.colors.sideBarBorder).toBe("#ebebeb");
-    expect(CURSOR.colors.panelBorder).toBe("#ebebeb");
-    expect(CURSOR.colors.listHoverBg).toBe("#f2f2f2");
+    expect(CURSOR.colors.sideBarBorder).toBe("#e6e5e0");
+    expect(CURSOR.colors.panelBorder).toBe("#e6e5e0");
+    expect(CURSOR.colors.listHoverBg).toBe("#f2f1ed");
   });
 
-  it("keeps workbench color map inside DESIGN-vercel (+ dark off-black)", () => {
+  it("retires Vercel and never uses ink as a surface", () => {
+    const retired = new Set(["#171717", "#0070f3", "#fafafa", "#ffffff", "#ebebeb", "#f2f2f2", "#0a0a0a"]);
     for (const [key, value] of Object.entries(CURSOR.colors)) {
-      expect(VERCEL_HEX.has(value.toLowerCase()) || VERCEL_HEX.has(value), `${key}=${value}`).toBe(
+      expect(retired.has(value.toLowerCase()), `${key}=${value} is a retired Vercel value`).toBe(false);
+    }
+    for (const key of ["buttonBg", "buttonSecondaryBg", "sideBarBg", "editorBg"] as const) {
+      expect(CURSOR.colors[key], `${key} must not be ink`).not.toBe("#26251e");
+    }
+  });
+
+  it("keeps workbench color map inside the approved palette (+ dark off-black)", () => {
+    for (const [key, value] of Object.entries(CURSOR.colors)) {
+      expect(APPROVED_HEX.has(value.toLowerCase()) || APPROVED_HEX.has(value), `${key}=${value}`).toBe(
         true,
       );
     }
   });
 
-  it("maps accent presets to DESIGN-vercel colors only", () => {
+  it("maps accent presets to approved palette colors only", () => {
     for (const [id, value] of Object.entries(ACCENT_COLORS)) {
-      expect(VERCEL_HEX.has(value.toLowerCase()) || VERCEL_HEX.has(value), `${id}=${value}`).toBe(
+      expect(APPROVED_HEX.has(value.toLowerCase()) || APPROVED_HEX.has(value), `${id}=${value}`).toBe(
         true,
       );
     }
