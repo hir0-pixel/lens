@@ -5,8 +5,10 @@
 `bindContextAuthorization` filters `toolResult` messages in the Prime Agent
 `transform_context` hook. It batches the unique resource refs into one PDP
 decision for the employee subject, then keeps a result only when every one of
-its refs is allowed. Unbacked and partially authorised results are dropped as
-whole messages before `modelTransport` assembles the provider payload.
+its refs is allowed. Unbacked and partially authorised results have their
+original content discarded wholesale and are replaced with a structurally
+valid `[withheld]` tool-result stub before `modelTransport` assembles the
+provider payload.
 
 If the PDP or count-only log port fails, the hook replaces the request context
 with a private blocked sentinel. The Lens provider consumes that sentinel and
@@ -30,17 +32,21 @@ Actual second-request message payload captured by
     { "id": "call-allowed", "name": "search_corpus", "arguments": "{\"resourceRef\":\"document-allowed\"}" },
     { "id": "call-denied", "name": "search_corpus", "arguments": "{\"resourceRef\":\"document-denied\"}" }
   ] },
-  { "role": "tool", "content": "Allowed refund policy. [document-allowed]", "toolCallId": "call-allowed" }
+  { "role": "tool", "content": "Allowed refund policy. [document-allowed]", "toolCallId": "call-allowed" },
+  { "role": "tool", "content": "[withheld]", "toolCallId": "call-denied" }
 ]
 ```
 
-The excluded text is absent. The tool-call argument retains the requested ref
-as conversation protocol, but no excluded document content or citation enters
-the model payload.
+The excluded text is absent, while the stub keeps every assistant tool call
+paired with a tool result. Its source `details` are `{ "resourceRefs": [] }`
+before transport mapping. The tool-call argument retains the requested ref as
+conversation protocol, but no excluded document content or citation enters the
+model payload.
 
 ## Verification
 
-- M4 + M1 + M2 focused suites: 27/27 passed before the final count-only failure-log assertion; final M4 suite: 9/9 passed.
+- M4, M1, M2, and one-shot RAG focused suites: 32/32 passed.
+- M4 suite, including `context.transcript-stays-valid`: 10/10 passed.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with 21 existing warnings and no errors.
 - Orchestrator service: 175/175 passed.

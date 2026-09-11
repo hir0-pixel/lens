@@ -7,6 +7,7 @@ import type { ToolGovernanceScope } from "./governanceBinding";
 
 export const CONTEXT_BLOCK_SYSTEM_PROMPT = "lens:context-authorization-blocked";
 export const CONTEXT_BLOCK_REASON = "Not permitted";
+export const WITHHELD_TOOL_CONTENT = "[withheld]";
 
 export type ContextPolicyPort = Pick<PolicyDecisionPoint, "decideBatch">;
 
@@ -55,16 +56,25 @@ export function bindContextAuthorization(
             normalizedContextDigest: `sha256:${createHash("sha256").update(JSON.stringify(union)).digest("hex")}`,
             useBoundary: "generation_start",
           }).allowed);
-      const messages = event.messages.filter((message) => {
-        if (message.role !== "toolResult") return true;
+      let kept = 0;
+      const messages = event.messages.map((message) => {
+        if (message.role !== "toolResult") return message;
         const refs = refsByMessage.get(message) ?? [];
-        return refs.length > 0 && refs.every((ref) => allowed.has(ref));
+        if (refs.length > 0 && refs.every((ref) => allowed.has(ref))) {
+          kept += 1;
+          return message;
+        }
+        return {
+          ...message,
+          content: [{ type: "text" as const, text: WITHHELD_TOOL_CONTENT }],
+          details: { resourceRefs: [] } satisfies CorpusToolDetails,
+        };
       });
       options.log.emit({
         event: "context_filtered",
         total: toolResults.length,
-        kept: messages.filter((message) => message.role === "toolResult").length,
-        dropped: event.messages.length - messages.length,
+        kept,
+        dropped: toolResults.length - kept,
       });
       return { messages };
     } catch {

@@ -1,11 +1,11 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { AgentHarness, JsonlSessionRepo, NodeExecutionEnv, TODO_CONTEXT, type AgentHarnessTool } from "@earendil-works/pi-agent-core/node";
+import { AgentHarness, JsonlSessionRepo, NodeExecutionEnv, TODO_CONTEXT, type AgentHarnessTool, type AgentMessage } from "@earendil-works/pi-agent-core/node";
 import { createModels } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { describe, expect, it } from "vitest";
-import { bindContextAuthorization, type ContextFilteredEvent } from "../../services/agent-integration/contextBinding";
+import { bindContextAuthorization, WITHHELD_TOOL_CONTENT, type ContextFilteredEvent } from "../../services/agent-integration/contextBinding";
 import type { CorpusToolDetails } from "../../services/agent-integration/corpusToolContract";
 import { createLensAgentProvider } from "../../services/agent-integration/modelTransport";
 import type { ModelGatewayChatDispatchInput } from "../../services/model-gateway/ModelGateway";
@@ -45,6 +45,7 @@ async function runContext(options: {
   const payloads: ModelGatewayChatDispatchInput[] = [];
   const decisions: Array<{ subjectRef: string; resourceRefs: readonly string[] }> = [];
   const logs: ContextFilteredEvent[] = [];
+  const filteredContexts: AgentMessage[][] = [];
   let generation = 0;
   const transport = createLensAgentProvider({
     selection: { modelRef: "model" },
@@ -85,12 +86,15 @@ async function runContext(options: {
     },
     log: { emit: (event) => { logs.push(event); } },
   });
+  harness.hooks.on("transform_context", (event) => {
+    filteredContexts.push(event.messages);
+  });
 
   try {
     const lane = await harness.lane("main", TODO_CONTEXT);
     await lane.prompt("Compare the policies without embedding document text", [], TODO_CONTEXT);
     const entries = await session.findEntries(undefined, TODO_CONTEXT);
-    return { payloads, decisions, logs, transcript: JSON.stringify(entries), finalMessage: JSON.stringify(entries[0]) };
+    return { payloads, decisions, logs, filteredContexts, transcript: JSON.stringify(entries), finalMessage: JSON.stringify(entries[0]) };
   } finally {
     await harness.close(TODO_CONTEXT);
     await repo.close(TODO_CONTEXT);
@@ -104,6 +108,7 @@ describe("M4 context binding", () => {
     const outgoing = JSON.stringify(result.payloads.at(-1));
     expect(outgoing).toContain(ALLOWED_TEXT);
     expect(outgoing).not.toContain(DENIED_TEXT);
+    expect(outgoing).toContain(WITHHELD_TOOL_CONTENT);
     expect(result.decisions).toEqual([{ subjectRef: "employee-7", resourceRefs: [ALLOWED_REF, DENIED_REF] }]);
   });
 
@@ -113,6 +118,7 @@ describe("M4 context binding", () => {
     expect(result.payloads).toHaveLength(2);
     expect(outgoing).not.toContain(ALLOWED_TEXT);
     expect(outgoing).not.toContain(DENIED_TEXT);
+    expect(outgoing.match(/\[withheld\]/g)).toHaveLength(2);
   });
 
   it("context.fail-closed", async () => {
@@ -154,6 +160,7 @@ describe("M4 context binding", () => {
     const outgoing = JSON.stringify(result.payloads.at(-1));
     expect(outgoing).not.toContain(ALLOWED_TEXT);
     expect(outgoing).not.toContain(DENIED_TEXT);
+    expect(outgoing.match(/\[withheld\]/g)).toHaveLength(2);
     expect(result.decisions).toEqual([]);
   });
 
@@ -162,7 +169,27 @@ describe("M4 context binding", () => {
     const outgoing = JSON.stringify(result.payloads.at(-1));
     expect(outgoing).not.toContain(ALLOWED_TEXT);
     expect(outgoing).not.toContain(DENIED_TEXT);
+    expect(outgoing.match(/\[withheld\]/g)).toHaveLength(2);
     expect(result.decisions).toHaveLength(1);
+  });
+
+  it("context.transcript-stays-valid", async () => {
+    const result = await runContext();
+    const messages = result.filteredContexts.at(-1)!;
+    const toolCallIds = messages.flatMap((message) => message.role === "assistant"
+      ? message.content.flatMap((content) => content.type === "toolCall" ? [content.id] : [])
+      : []);
+    const resultIds = new Set(messages.flatMap((message) => message.role === "toolResult"
+      ? [message.toolCallId]
+      : []));
+    expect(messages).toContainEqual(expect.objectContaining({
+      role: "toolResult",
+      toolCallId: "call-denied",
+      content: [{ type: "text", text: WITHHELD_TOOL_CONTENT }],
+      details: { resourceRefs: [] },
+    }));
+    expect(toolCallIds.length).toBeGreaterThan(0);
+    expect(toolCallIds.every((id) => resultIds.has(id))).toBe(true);
   });
 
   it("context.filtered-log-counts-only", async () => {
