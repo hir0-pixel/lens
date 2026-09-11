@@ -67,7 +67,7 @@ export function bindContextAuthorization(
         return {
           ...message,
           content: [{ type: "text" as const, text: WITHHELD_TOOL_CONTENT }],
-          details: { resourceRefs: [] } satisfies CorpusToolDetails,
+          details: { resourceRefs: [] } satisfies Pick<CorpusToolDetails, "resourceRefs">,
         };
       });
       options.log.emit({
