@@ -22,6 +22,7 @@ const MODEL_REF_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 export interface RagHandlerResult {
   output: string;
   citations: readonly { source: string; section: string }[];
+  incomplete?: true;
 }
 
 function queryDigest(query: string): `sha256:${string}` {
@@ -30,7 +31,7 @@ function queryDigest(query: string): `sha256:${string}` {
 
 export function createApiRouter(options: {
   auth: AuthService;
-  ragHandler?: (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string; conversationRef: string; sessionAssertion: string; memorySessionAssertion: string; modelRef?: string }, signal: AbortSignal) => Promise<RagHandlerResult>;
+  ragHandler?: (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string; conversationRef: string; sessionAssertion: string; memorySessionAssertion: string; modelRef?: string; agentMode?: true }, signal: AbortSignal) => Promise<RagHandlerResult>;
   conversationReferenceCodec?: ConversationReferenceCodec;
   sessionAssertionIssuer?: DelegatedSessionAssertionIssuer;
   memoryAssertionIssuer?: DelegatedSessionAssertionIssuer;
@@ -71,6 +72,11 @@ export function createApiRouter(options: {
     }
     const modelId = req.body?.modelId;
     if (modelId !== undefined && (typeof modelId !== "string" || !MODEL_REF_PATTERN.test(modelId))) {
+      res.status(400).json({ error: "INVALID_ARGUMENT" });
+      return;
+    }
+    const agentMode = req.body?.agentMode;
+    if (agentMode !== undefined && typeof agentMode !== "boolean") {
       res.status(400).json({ error: "INVALID_ARGUMENT" });
       return;
     }
@@ -152,11 +158,11 @@ export function createApiRouter(options: {
     req.once("aborted", () => controller.abort());
     try {
       const result = await options.ragHandler(
-        { requestId, query, subject: session.subject, sessionRef: session.sessionRef, deviceRef: session.deviceRef, conversationRef, sessionAssertion, memorySessionAssertion, ...(modelId ? { modelRef: modelId } : {}) },
+        { requestId, query, subject: session.subject, sessionRef: session.sessionRef, deviceRef: session.deviceRef, conversationRef, sessionAssertion, memorySessionAssertion, ...(modelId ? { modelRef: modelId } : {}), ...(agentMode === true ? { agentMode: true as const } : {}) },
         controller.signal,
       );
       if (controller.signal.aborted) return;
-      res.json({ output: result.output, citations: result.citations, conversationRef });
+      res.json({ output: result.output, citations: result.citations, conversationRef, ...(result.incomplete === true ? { incomplete: true } : {}) });
     } catch (error) {
       if (!res.headersSent) {
         if (error instanceof OrchestratorClientError && error.code === "FORBIDDEN") {

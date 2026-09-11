@@ -42,7 +42,7 @@ interface ProviderSecretCapability {
 export function createApp(options?: {
   authService?: ReturnType<typeof createAuthService>;
   generateHandler?: (input: { prompt: string; subject: string }) => Promise<string>;
-  ragHandler?: (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string; conversationRef: string; sessionAssertion: string; memorySessionAssertion: string; modelRef?: string }, signal: AbortSignal) => Promise<{ output: string; citations: readonly { source: string; section: string }[] }>;
+  ragHandler?: (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string; conversationRef: string; sessionAssertion: string; memorySessionAssertion: string; modelRef?: string; agentMode?: true }, signal: AbortSignal) => Promise<{ output: string; citations: readonly { source: string; section: string }[]; incomplete?: true }>;
   conversationReferenceCodec?: ConversationReferenceCodec;
   sessionAssertionIssuer?: DelegatedSessionAssertionIssuer;
   memoryAssertionIssuer?: DelegatedSessionAssertionIssuer;
@@ -67,7 +67,7 @@ export function createApp(options?: {
     ? new OrchestratorClient(cfg.ORCHESTRATOR_URL, cfg.ORCHESTRATOR_TOKEN)
     : undefined;
   const ragHandler = options?.ragHandler ?? (orchestratorClient
-    ? (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string; conversationRef: string; sessionAssertion: string; memorySessionAssertion: string; modelRef?: string }, signal: AbortSignal) => orchestratorClient.ask({
+    ? (input: { requestId: string; query: string; subject: string; sessionRef: string; deviceRef: string; conversationRef: string; sessionAssertion: string; memorySessionAssertion: string; modelRef?: string; agentMode?: true }, signal: AbortSignal) => orchestratorClient.ask({
         requestId: input.requestId,
         query: input.query,
         subjectRef: input.subject,
@@ -82,6 +82,7 @@ export function createApp(options?: {
         deadlineMs: 60_000,
         retryBudget: 0,
         modelRef: input.modelRef,
+        ...(input.agentMode === true ? { agentMode: true as const } : {}),
       }, signal)
     : undefined);
 

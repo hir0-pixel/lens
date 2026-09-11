@@ -28,6 +28,8 @@ import { AgentRunAuthorityHttpClient } from "../../services/agent-run-authority/
 import { RuntimeAttemptHttpClient } from "../../services/runtime-attempt/RuntimeAttemptHttpClient";
 import { loadApprovedCatalogFromBff } from "./approvedCatalogClient";
 import { assertCompanyRagProfile } from "../../services/rag-profile/companyRagProfile";
+import type { DecisionFenceSigner, FactReaders, PolicyBundle } from "../../services/pdp/PolicyDecisionPoint";
+import { createAgentAuditLedger, createAgentPolicyReplica } from "./agentPdpReplica";
 
 export interface OrchestratorServiceEnv {
   PORT?: string;
@@ -98,6 +100,7 @@ export interface OrchestratorServiceEnv {
   COMPANY_RAG_PROFILE_JSON?: string;
   /** Dev lab: set false to use deterministic route classification instead of dispatching router model "default" (not in BFF catalog). */
   USE_GATEWAY_TURN_ROUTER?: string;
+  AGENT_SESSION_ROOT?: string;
 }
 
 function loadEnv(): OrchestratorServiceEnv {
@@ -150,6 +153,7 @@ function loadEnv(): OrchestratorServiceEnv {
     APPROVED_CATALOG_TOKEN: process.env.LENS_APPROVED_CATALOG_TOKEN,
     COMPANY_RAG_PROFILE_JSON: process.env.LENS_COMPANY_RAG_PROFILE_JSON,
     USE_GATEWAY_TURN_ROUTER: process.env.LENS_USE_GATEWAY_TURN_ROUTER,
+    AGENT_SESSION_ROOT: process.env.LENS_AGENT_SESSION_ROOT,
   };
 }
 
@@ -295,6 +299,12 @@ export interface OrchestratorMainDependencies {
   productionClaimStore?: ClaimStore;
   /** Readiness for the four adapters above — must reflect the remote authority, not process-local construction. Required in production. */
   productionAuthoritiesReady?: () => Promise<boolean>;
+  /** The exact signed bundle and live fact-source adapters also supplied to Retrieval's PDP replica. */
+  agentPolicy?: {
+    factReaders: FactReaders;
+    policyBundle: PolicyBundle;
+    signer: DecisionFenceSigner;
+  };
 }
 
 export type SharedAuthorities = {
@@ -500,6 +510,12 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
     );
   }
   const sharedAuthorities = loadSharedAuthorities(env, dependencies, effectiveModelEligibility);
+  const agentPolicyReplica = dependencies.agentPolicy
+    ? createAgentPolicyReplica({
+        ...dependencies.agentPolicy,
+        auditLedger: createAgentAuditLedger(),
+      })
+    : undefined;
   if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && !env.USAGE_RECEIPT_PUBLIC_KEY) {
     throw new Error("Production requires LENS_USAGE_RECEIPT_PUBLIC_KEY to verify sidecar-signed usage.");
   }
@@ -544,6 +560,8 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
     employeeCatalog,
     ragProfile,
     conversationHistory: history,
+    agentPolicyReplica,
+    agentSessionRoot: env.AGENT_SESSION_ROOT,
   });
   const http = createOrchestratorHttp({
     workloadToken: env.ORCHESTRATOR_WORKLOAD_TOKEN,

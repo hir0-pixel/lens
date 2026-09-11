@@ -35,10 +35,11 @@ export interface OrchestratorChatRequest {
   modelRef?: string;
   delegatedSessionAssertion: string;
   memorySessionAssertion?: string;
+  agentMode?: true;
 }
 
 export interface OrchestratorChatResponse {
-  status: "COMPLETED" | "CANCELLED" | "DENIED" | "FAILED";
+  status: "COMPLETED" | "INCOMPLETE" | "CANCELLED" | "DENIED" | "FAILED";
   requestId: string;
   turnId?: string;
   output?: string;
@@ -136,6 +137,9 @@ function parseChatRequest(payload: unknown, now: number): Omit<OrchestratorChatR
   if (record.model_ref !== undefined && !MODEL_REF_PATTERN.test(String(record.model_ref))) {
     throw new Error("INVALID_REQUEST");
   }
+  if (record.agent_mode !== undefined && record.agent_mode !== true) {
+    throw new Error("INVALID_REQUEST");
+  }
   if (!boundedRef(record.session_assertion, 2_048)) {
     throw new DelegatedSessionAssertionError("Delegated session assertion is missing or malformed.");
   }
@@ -182,6 +186,7 @@ function parseChatRequest(payload: unknown, now: number): Omit<OrchestratorChatR
     retryBudget: record.retry_budget,
     bulkhead: record.bulkhead,
     ...(typeof record.model_ref === "string" ? { modelRef: record.model_ref } : {}),
+    ...(record.agent_mode === true ? { agentMode: true as const } : {}),
     delegatedSessionAssertion: record.session_assertion,
     memorySessionAssertion: record.memory_session_assertion,
   };
@@ -293,7 +298,7 @@ export function createOrchestratorHttp(options: OrchestratorHttpOptions): Orches
         return handleChat(request, controller.signal);
       })
       .then((result) => {
-        const status = result.status === "COMPLETED" ? 200 : result.status === "DENIED" ? 403 : result.status === "CANCELLED" ? 499 : 503;
+        const status = result.status === "COMPLETED" || result.status === "INCOMPLETE" ? 200 : result.status === "DENIED" ? 403 : result.status === "CANCELLED" ? 499 : 503;
         respond(res, status, result as unknown as Record<string, unknown>, draining);
       })
       .catch((error: Error) => {
