@@ -6,6 +6,7 @@ import {
 } from "../../services/internal-http/internalHttp";
 import { createModelProviderAdapter } from "../../services/model-provider/createModelProviderAdapter";
 import type { AdapterType, ProviderEndpointConfig } from "../../services/model-provider/ProviderAdapter";
+import type { ChatDelta, ChatMessage, ChatTool } from "../../services/model-provider/ProviderAdapter";
 import type { SecretStore } from "../../services/secrets/SecretStore";
 
 const PROVIDER_CAPABILITY = "grounded-assistant";
@@ -310,6 +311,78 @@ export async function* runProviderGeneration(input: {
       }
       if (code === "STALE_FENCE") throw new ProviderRuntimeResolutionError("STALE_FENCE", "Provider returned a stale fence.");
       throw new ProviderRuntimeResolutionError("DEPENDENCY_UNAVAILABLE", "Provider generation failed.");
+    }
+  } finally {
+    release();
+  }
+}
+
+export async function* runProviderChatGeneration(input: {
+  resolver: ProviderRuntimeConfigResolver;
+  secretStore: SecretStore;
+  concurrency: ProviderConcurrencyGate;
+  modelRef: string;
+  capability: string;
+  messages: readonly ChatMessage[];
+  tools: readonly ChatTool[];
+  deadlineAt: number;
+  signal: AbortSignal;
+  fetcher?: FetchPort;
+  adapterProfile?: "sovereign" | "development";
+  expectedCatalog?: ProviderIdentityBinding;
+}): AsyncGenerator<ChatDelta> {
+  const cfg = await input.resolver.resolve(input.modelRef, input.capability);
+
+  if (input.expectedCatalog && (input.expectedCatalog.catalogVersion !== cfg.catalogVersion || input.expectedCatalog.catalogDigest !== cfg.catalogDigest)) {
+    throw new ProviderRuntimeResolutionError("STALE_FENCE", "Provider catalog version/digest drifted from the authorized lease.");
+  }
+  if (!cfg.allowedCapabilities.includes("generate") || !cfg.allowedCapabilities.includes("stream")) {
+    throw new ProviderRuntimeResolutionError("FORBIDDEN", "Provider does not support the required generate/stream capability.");
+  }
+
+  const release = await input.concurrency.acquire(cfg.providerId);
+  try {
+    const adapterConfig: ProviderEndpointConfig = {
+      adapterType: cfg.adapterType,
+      baseUrl: cfg.internalUrl,
+      secretRef: cfg.secretRef,
+      tlsWorkloadRef: cfg.tlsWorkloadRef,
+      allowedModels: [input.modelRef],
+      expectedCapabilities: cfg.allowedCapabilities,
+      timeoutMs: cfg.timeoutMs,
+      maxConcurrency: cfg.maxConcurrency,
+      profile: input.adapterProfile ?? "sovereign",
+    };
+    const adapter = createModelProviderAdapter(adapterConfig, input.fetcher ?? fetch, input.secretStore);
+    if (!adapter.generateChatStream) {
+      throw new ProviderRuntimeResolutionError("FORBIDDEN", "Provider does not support agent chat.");
+    }
+    try {
+      const upstream = adapter.generateChatStream({
+        model: input.modelRef,
+        messages: input.messages,
+        tools: input.tools,
+        deadlineAt: input.deadlineAt,
+      }, input.signal);
+      const iterator = upstream[Symbol.asyncIterator]();
+      const abortPromise = new Promise<IteratorResult<ChatDelta>>((_, reject) => {
+        const cancel = () => reject(new Error("CANCELLED"));
+        if (input.signal.aborted) cancel();
+        else input.signal.addEventListener("abort", cancel, { once: true });
+      });
+      while (true) {
+        const next = await Promise.race([iterator.next(), abortPromise]);
+        if (next.done) return;
+        yield next.value;
+      }
+    } catch (err) {
+      if (input.signal.aborted) throw new Error("CANCELLED");
+      if (err instanceof ProviderRuntimeResolutionError) throw err;
+      const code = err && typeof err === "object" && "code" in err ? String((err as { code: unknown }).code) : "";
+      if (code === "CANCELLED") throw new Error("CANCELLED");
+      if (code === "OVERLOADED") throw new Error("OVERLOADED");
+      if (code === "STALE_FENCE") throw new ProviderRuntimeResolutionError("STALE_FENCE", "Provider returned a stale fence.");
+      throw new ProviderRuntimeResolutionError("DEPENDENCY_UNAVAILABLE", "Provider chat generation failed.");
     }
   } finally {
     release();

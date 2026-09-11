@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "bootstrap": "node platform/build/workspace.mjs bootstrap",
+    "install:public": "node scripts/dev/install-public.mjs",
     "generate": "node platform/build/workspace.mjs generate && node scripts/contracts/rag-generate.mjs",
     "rag:generate": "node scripts/contracts/rag-generate.mjs",
     "rag:check": "node scripts/contracts/rag-check.mjs",

@@ -1,4 +1,5 @@
 import type { RuntimePort, RuntimeReceipt, SchedulerPort, SchedulerReservation } from "../../services/model-gateway/ModelGateway";
+import type { ChatDelta, ChatMessage, ChatTool } from "../../services/model-provider/ProviderAdapter";
 
 type FetchPort = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -57,6 +58,62 @@ async function readNdjsonGeneration(response: Response): Promise<{ output: strin
   }
   if (!receipt) throw new Error("DEPENDENCY_UNAVAILABLE");
   return { output, receipt };
+}
+
+async function readNdjsonChat(response: Response): Promise<{ deltas: ChatDelta[]; receipt: Record<string, unknown> }> {
+  if (!response.body) throw new Error("DEPENDENCY_UNAVAILABLE");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const deltas: ChatDelta[] = [];
+  let buffer = "";
+  let size = 0;
+  let receipt: Record<string, unknown> | undefined;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw new Error("DEPENDENCY_UNAVAILABLE");
+    }
+    buffer += decoder.decode(value, { stream: true });
+    let newline = buffer.indexOf("\n");
+    while (newline >= 0) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (line) {
+        const event = JSON.parse(line) as { delta?: unknown; done?: boolean; receipt?: Record<string, unknown> };
+        if (event.delta && typeof event.delta === "object") {
+          const delta = event.delta as Record<string, unknown>;
+          if (delta.type === "text" && typeof delta.text === "string") {
+            deltas.push({ type: "text", text: delta.text });
+          } else if (
+            delta.type === "tool-call"
+            && typeof delta.index === "number"
+            && Number.isSafeInteger(delta.index)
+            && delta.index >= 0
+            && (delta.id === undefined || typeof delta.id === "string")
+            && (delta.name === undefined || typeof delta.name === "string")
+            && (delta.argumentsDelta === undefined || typeof delta.argumentsDelta === "string")
+          ) {
+            deltas.push({
+              type: "tool-call",
+              index: delta.index,
+              ...(typeof delta.id === "string" ? { id: delta.id } : {}),
+              ...(typeof delta.name === "string" ? { name: delta.name } : {}),
+              ...(typeof delta.argumentsDelta === "string" ? { argumentsDelta: delta.argumentsDelta } : {}),
+            });
+          } else {
+            throw new Error("DEPENDENCY_UNAVAILABLE");
+          }
+        }
+        if (event.done && event.receipt) receipt = event.receipt;
+      }
+      newline = buffer.indexOf("\n");
+    }
+  }
+  if (!receipt) throw new Error("DEPENDENCY_UNAVAILABLE");
+  return { deltas, receipt };
 }
 
 async function readBoundedJson(response: Response): Promise<unknown> {
@@ -237,6 +294,91 @@ export class InternalInferenceClient implements SchedulerPort, RuntimePort {
         usageSignature: receipt.usage_signature,
       },
     };
+  }
+
+  async executeChat(input: {
+    reservationId: string;
+    fence: number;
+    endpointRef: string;
+    scopeId: string;
+    deadlineAt: number;
+    modelRef: string;
+    messages: readonly ChatMessage[];
+    tools: readonly ChatTool[];
+    leaseToken?: string;
+    requestDigest?: string;
+    endpointGeneration?: string;
+  }, signal: AbortSignal): Promise<{ deltas: readonly ChatDelta[]; receipt: RuntimeReceipt }> {
+    try {
+      const response = await this.fetcher(new URL("/v1/inference/chat", this.origin), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "application/x-ndjson",
+          "x-lens-model-workload-token": this.workloadToken,
+        },
+        body: JSON.stringify({
+          reservation_id: input.reservationId,
+          fence: input.fence,
+          endpoint_ref: input.endpointRef,
+          endpoint_generation: input.endpointGeneration,
+          request_digest: input.requestDigest,
+          lease_token: input.leaseToken,
+          scope_id: input.scopeId,
+          deadline_at: input.deadlineAt,
+          model_ref: input.modelRef,
+          messages: input.messages,
+          tools: input.tools,
+        }),
+        signal: requestSignal(signal, input.deadlineAt),
+      });
+      if (response.status === 429) throw new Error("OVERLOADED");
+      if (!response.ok) throw new Error("DEPENDENCY_UNAVAILABLE");
+      const payload = await readNdjsonChat(response);
+      const receipt = payload.receipt;
+      if (
+        receipt.reservation_id !== input.reservationId ||
+        receipt.fence !== input.fence ||
+        receipt.scope_id !== input.scopeId ||
+        typeof receipt.schema_version !== "number" ||
+        typeof receipt.request_id !== "string" ||
+        typeof receipt.turn_id !== "string" ||
+        typeof receipt.step_id !== "string" ||
+        typeof receipt.artifact_digest !== "string" ||
+        typeof receipt.endpoint_generation !== "string" ||
+        typeof receipt.usage_event_id !== "string" ||
+        receipt.usage_event_id.length > 256 ||
+        typeof receipt.measured_units !== "number" ||
+        !Number.isSafeInteger(receipt.measured_units) ||
+        receipt.measured_units < 0 ||
+        typeof receipt.usage_signature !== "string" ||
+        receipt.usage_signature.length < 16 ||
+        (receipt.terminal !== "completed" && receipt.terminal !== "cancelled" && receipt.terminal !== "failed")
+      ) {
+        throw new Error("DEPENDENCY_UNAVAILABLE");
+      }
+      return {
+        deltas: payload.deltas,
+        receipt: {
+          schemaVersion: receipt.schema_version,
+          reservationId: receipt.reservation_id as string,
+          requestId: receipt.request_id,
+          turnId: receipt.turn_id,
+          stepId: receipt.step_id,
+          fence: receipt.fence as number,
+          artifactDigest: receipt.artifact_digest,
+          endpointGeneration: receipt.endpoint_generation,
+          usageEventId: receipt.usage_event_id,
+          measuredUnits: receipt.measured_units,
+          terminal: receipt.terminal,
+          usageSignature: receipt.usage_signature,
+        },
+      };
+    } catch (error) {
+      if (signal.aborted) throw new Error("CANCELLED");
+      if (error instanceof Error && (error.message === "OVERLOADED" || error.message === "DEPENDENCY_UNAVAILABLE")) throw error;
+      throw new Error("DEPENDENCY_UNAVAILABLE");
+    }
   }
 
   private async post(path: string, body: Record<string, unknown>, signal: AbortSignal): Promise<unknown> {

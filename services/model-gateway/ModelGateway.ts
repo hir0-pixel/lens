@@ -3,9 +3,13 @@ import type { ReceiptVerifier } from "../security/authorityReceipt";
 import type { ClaimStore } from "../security/replayClaimStore";
 import type { RuntimeAttemptStore } from "../runtime-attempt/RuntimeAttemptStore";
 import { RuntimeAttemptError } from "../runtime-attempt/RuntimeAttemptStore";
+import type { ChatDelta, ChatMessage, ChatTool } from "../model-provider/ProviderAdapter";
 
 export class ModelGatewayError extends Error { constructor(readonly code: "FORBIDDEN" | "OVERLOADED" | "STALE_AUTHORITY" | "CANCELLED" | "DEPENDENCY_UNAVAILABLE") { super(code); } }
 export interface ModelEligibilityPort { resolve(input: { capability: string; artifactDigest: string; denyEpoch: number }): Promise<{ endpointRef: string; snapshotExpiresAt: number; external: boolean; endpointGeneration?: string }>; }
+export interface ModelEligibilityPort {
+  resolveChat?(input: { capability: string; artifactDigest: string; denyEpoch: number; modelRef: string }): Promise<{ endpointRef: string; snapshotExpiresAt: number; external: boolean; endpointGeneration?: string }>;
+}
 export interface SchedulerReservation {
   reservationId: string;
   requestDigest: string;
@@ -68,6 +72,23 @@ export interface RuntimePort {
     stepId?: string;
     artifactDigest?: string;
   }, signal: AbortSignal): Promise<{ output: string; receipt: RuntimeReceipt }>;
+  executeChat?(input: {
+    reservationId: string;
+    fence: number;
+    endpointRef: string;
+    scopeId: string;
+    deadlineAt: number;
+    modelRef: string;
+    messages: readonly ChatMessage[];
+    tools: readonly ChatTool[];
+    leaseToken?: string;
+    requestDigest?: string;
+    endpointGeneration?: string;
+    requestId?: string;
+    turnId?: string;
+    stepId?: string;
+    artifactDigest?: string;
+  }, signal: AbortSignal): Promise<{ deltas: readonly ChatDelta[]; receipt: RuntimeReceipt }>;
 }
 
 export interface ModelGatewayAuthority {
@@ -94,6 +115,11 @@ export interface ModelGatewayDispatchInput {
   authority: ModelGatewayAuthority;
 }
 
+export interface ModelGatewayChatDispatchInput extends Omit<ModelGatewayDispatchInput, "chunks"> {
+  messages: readonly ChatMessage[];
+  tools: readonly ChatTool[];
+}
+
 export class ModelGateway {
   constructor(
     private readonly registry: ModelEligibilityPort,
@@ -104,6 +130,41 @@ export class ModelGateway {
     private readonly attempts: RuntimeAttemptStore,
     private readonly now = () => Date.now(),
   ) {}
+
+  async generateChat(input: ModelGatewayChatDispatchInput, signal: AbortSignal): Promise<{ deltas: readonly ChatDelta[]; receipt: RuntimeReceipt }> {
+    const executeChat = this.runtime.executeChat?.bind(this.runtime);
+    if (!executeChat) throw new ModelGatewayError("DEPENDENCY_UNAVAILABLE");
+    let deltas: readonly ChatDelta[] | undefined;
+    const gateway = new ModelGateway(
+      {
+        resolve: async () => {
+          const model = await this.registry.resolveChat?.({ capability: input.capability, artifactDigest: input.artifactDigest, denyEpoch: input.denyEpoch, modelRef: input.modelRef });
+          if (!model) throw new ModelGatewayError("FORBIDDEN");
+          return model;
+        },
+      },
+      this.scheduler,
+      {
+        execute: async (runtimeInput, runtimeSignal) => {
+          const result = await executeChat({
+            ...runtimeInput,
+            modelRef: input.modelRef,
+            messages: input.messages,
+            tools: input.tools,
+          }, runtimeSignal);
+          deltas = result.deltas;
+          return { output: "", receipt: result.receipt };
+        },
+      },
+      this.receipts,
+      this.claims,
+      this.attempts,
+      this.now,
+    );
+    const result = await gateway.generate({ ...input, chunks: [] }, signal);
+    if (!deltas) throw new ModelGatewayError("DEPENDENCY_UNAVAILABLE");
+    return { deltas, receipt: result.receipt };
+  }
 
   async generate(input: ModelGatewayDispatchInput, signal: AbortSignal): Promise<{ output: string; receipt: RuntimeReceipt }> {
     if (signal.aborted) throw new ModelGatewayError("CANCELLED");
