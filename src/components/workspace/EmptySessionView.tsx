@@ -22,7 +22,7 @@ import {
   Sparkles,
   Timer,
 } from "@/components/icons/tabler";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import type { AIMode, Attachment, Model, ChatMessage } from "@/lib/types";
 import { MODELS } from "@/lib/mock-data";
@@ -56,6 +56,8 @@ import {
 } from "@/stores/sessionStore";
 
 type LocationScope = "this-pc" | "cloud";
+
+const LEFT_SIDEBAR_WIDTH = "clamp(240px,18vw,280px)";
 
 interface EmptySessionViewProps {
   model: Model;
@@ -658,12 +660,15 @@ export function EmptySessionView({
       <aside
         className={cn(
           "flex shrink-0 flex-col overflow-hidden bg-[var(--bg-surface)] transition-[width,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)]",
-          leftSidebarOpen ? "w-[220px] opacity-100" : "w-0 opacity-0",
+          leftSidebarOpen
+            ? "w-[var(--left-sidebar-width)] opacity-100"
+            : "w-0 opacity-0",
         )}
+        style={{ "--left-sidebar-width": LEFT_SIDEBAR_WIDTH } as CSSProperties}
         aria-label="Session navigator"
       >
         {/* Scrollable Sidebar Body */}
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea className="min-h-0 w-[var(--left-sidebar-width)] flex-1">
           <div className="flex flex-col pb-2">
             {/* Top Navigation Actions */}
             <div className="flex flex-col gap-0.5 px-2 pt-2">
@@ -892,7 +897,7 @@ export function EmptySessionView({
           </div>
         </ScrollArea>
 
-        <div className="flex h-12 shrink-0 items-center gap-2 border-t border-[var(--border-subtle)] px-3">
+        <div className="flex h-12 w-[var(--left-sidebar-width)] shrink-0 items-center gap-2 border-t border-[var(--border-subtle)] px-3">
           <UserAccountMenu showLabel />
           <button
             type="button"

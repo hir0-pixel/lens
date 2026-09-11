@@ -194,42 +194,42 @@ export function ProjectFilesSidePane({
 
   return (
     <aside
-      className="relative flex h-full shrink-0 flex-col overflow-hidden border-l border-[var(--border-default)] bg-[var(--bg-surface)] transition-[width,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)]"
+      className="relative flex h-full shrink-0 flex-col overflow-hidden bg-[var(--bg-surface)] before:absolute before:bottom-px before:left-0 before:top-9 before:w-px before:bg-[var(--border-default)] transition-[width,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)]"
       style={{ width: entered && !closing ? widthPx : 0, opacity: entered && !closing ? 1 : 0 }}
       onTransitionEnd={(event) => {
         if (closing && event.propertyName === "width") onExited?.();
       }}
       aria-label="Project Files"
     >
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] pl-3 pr-1">
+      <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-subtle)] px-3">
         <div className="flex min-w-0 items-center gap-2">
           <LayoutGrid className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.5} />
           <span className="truncate type-caption-uppercase font-medium text-[var(--text-primary)]">
             {projectName}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadTree()}
-          disabled={loading}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
-          title="Refresh project files"
-          aria-label="Refresh project files"
-        >
-          <RefreshCw className={loading ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} strokeWidth={1.5} />
-        </button>
       </div>
 
       <div className="border-b border-[var(--border-subtle)] p-2">
-        <div className="relative flex items-center">
+        <div className="relative flex items-center gap-1">
           <Search className="absolute left-2.5 h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.5} />
           <input
             type="text"
             placeholder="Search files..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="h-7 w-full rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus:outline focus:outline-1 focus:outline-[var(--border-focus)]"
+            className="h-7 min-w-0 flex-1 rounded-md bg-[var(--bg-surface-raised)] pl-8 pr-2 type-caption text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors duration-[var(--duration-instant)] ease-[var(--ease-standard)] focus:bg-[var(--bg-overlay)] focus:outline focus:outline-1 focus:outline-[var(--border-focus)]"
           />
+          <button
+            type="button"
+            onClick={() => void loadTree()}
+            disabled={loading}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
+            title="Refresh project files"
+            aria-label="Refresh project files"
+          >
+            <RefreshCw className={loading ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} strokeWidth={1.5} />
+          </button>
         </div>
       </div>
 

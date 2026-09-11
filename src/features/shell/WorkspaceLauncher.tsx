@@ -144,7 +144,7 @@ export function WorkspaceLauncher() {
           type="button"
           aria-label="Open workspace"
           title="Open workspace"
-          className="mx-1 inline-flex h-6 items-center gap-0.5 self-center rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-1.5 leading-none hover:bg-[var(--bg-hover)]"
+          className="relative -top-px mx-1 inline-flex h-6 items-center gap-0.5 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-raised)] px-1.5 leading-none hover:bg-[var(--bg-hover)]"
         >
           <ExplorerGlyph className="block" />
           <ChevronDown

@@ -43,7 +43,10 @@ function pemOneLine(pem) {
 function writeEnv(name, lines) {
   const body = Object.entries(lines)
     .filter(([, value]) => value !== undefined && value !== "")
-    .map(([key, value]) => `${key}=${value.includes(" ") || value.includes("\\n") ? `"${value}"` : value}`)
+    .map(([key, value]) => {
+      const text = /(?:_PATH|_PREFIX)$/.test(key) ? value.replaceAll("\\", "/") : value;
+      return `${key}=${text.includes(" ") || text.includes("\\n") ? `"${text}"` : text}`;
+    })
     .join("\n");
   writeFileSync(resolve(stackDir, name), `${body}\n`, "utf8");
 }

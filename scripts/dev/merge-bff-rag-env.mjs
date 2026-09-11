@@ -27,10 +27,11 @@ function parseEnv(text) {
 function serializeEnv(record) {
   return Object.entries(record)
     .map(([key, value]) => {
-      if (/[\s#]/.test(value) || value.includes("\n")) {
-        return `${key}="${value.replace(/\n/g, "\\n")}"`;
+      const text = /(?:_PATH|_PREFIX)$/.test(key) ? value.replaceAll("\\", "/") : value;
+      if (/[\s#]/.test(text) || text.includes("\n")) {
+        return `${key}="${text.replace(/\n/g, "\\n")}"`;
       }
-      return `${key}=${value}`;
+      return `${key}=${text}`;
     })
     .join("\n");
 }
