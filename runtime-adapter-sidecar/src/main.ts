@@ -14,6 +14,7 @@ import { PostgresPool, createSqlitePgCompatPool, type PgPool } from "../../servi
 import { createInternalServiceHttp } from "../../services/internal-http/internalServiceHttp";
 import { assertInternalOrigin, assertWorkloadToken, deadlineSignal, readBoundedJson, type FetchPort } from "../../services/internal-http/internalHttp";
 import { canonicalJson } from "../../services/security/canonicalJson";
+import type { ChatDelta, ChatMessage, ChatTool } from "../../services/model-provider/ProviderAdapter";
 import type { SecretStore } from "../../services/secrets/SecretStore";
 import {
   HttpProviderRuntimeConfigResolver,
@@ -24,6 +25,7 @@ import {
   type ProviderIdentityBinding,
   type ProviderRuntimeConfigResolver,
   type ProviderSecretResolver,
+  runProviderChatGeneration,
   runProviderGeneration,
   SidecarSecretStore,
 } from "./providerRuntime";
@@ -50,6 +52,7 @@ export interface RuntimeAdapterEnv {
   ATTEMPT_STORE_DATABASE_URL?: string;
   GPU_CAPACITY?: string;
   SCHEDULER_CELL_ID?: string;
+  PROVIDER_PROFILE?: "sovereign" | "development";
 }
 
 function loadEnv(): RuntimeAdapterEnv {
@@ -71,6 +74,7 @@ function loadEnv(): RuntimeAdapterEnv {
     ATTEMPT_STORE_DATABASE_URL: process.env.LENS_ATTEMPT_STORE_DATABASE_URL,
     GPU_CAPACITY: process.env.LENS_GPU_CAPACITY,
     SCHEDULER_CELL_ID: process.env.LENS_SCHEDULER_CELL_ID,
+    PROVIDER_PROFILE: process.env.PROVIDER_PROFILE === "sovereign" ? "sovereign" : "development",
   };
 }
 
@@ -93,6 +97,46 @@ async function writeNdjson(res: ServerResponse, payload: Record<string, unknown>
   if (res.destroyed || res.writableEnded) return;
   const line = `${JSON.stringify(payload)}\n`;
   if (!res.write(line)) await once(res, "drain");
+}
+
+function parseChatMessages(value: unknown): ChatMessage[] {
+  if (!Array.isArray(value)) throw new Error("INVALID_ARGUMENT");
+  return value.map((item) => {
+    if (!item || typeof item !== "object") throw new Error("INVALID_ARGUMENT");
+    const message = item as Record<string, unknown>;
+    if ((message.role === "system" || message.role === "user") && typeof message.content === "string") {
+      return { role: message.role, content: message.content };
+    }
+    if (message.role === "tool" && typeof message.content === "string" && typeof message.toolCallId === "string") {
+      return { role: "tool", content: message.content, toolCallId: message.toolCallId };
+    }
+    if (message.role === "assistant" && typeof message.content === "string") {
+      if (message.toolCalls === undefined) return { role: "assistant", content: message.content };
+      if (!Array.isArray(message.toolCalls)) throw new Error("INVALID_ARGUMENT");
+      const toolCalls = message.toolCalls.map((call) => {
+        if (!call || typeof call !== "object") throw new Error("INVALID_ARGUMENT");
+        const record = call as Record<string, unknown>;
+        if (typeof record.id !== "string" || typeof record.name !== "string" || typeof record.arguments !== "string") {
+          throw new Error("INVALID_ARGUMENT");
+        }
+        return { id: record.id, name: record.name, arguments: record.arguments };
+      });
+      return { role: "assistant", content: message.content, toolCalls };
+    }
+    throw new Error("INVALID_ARGUMENT");
+  });
+}
+
+function parseChatTools(value: unknown): ChatTool[] {
+  if (!Array.isArray(value)) throw new Error("INVALID_ARGUMENT");
+  return value.map((item) => {
+    if (!item || typeof item !== "object") throw new Error("INVALID_ARGUMENT");
+    const tool = item as Record<string, unknown>;
+    if (typeof tool.name !== "string" || typeof tool.description !== "string" || !("parameters" in tool)) {
+      throw new Error("INVALID_ARGUMENT");
+    }
+    return { name: tool.name, description: tool.description, parameters: tool.parameters };
+  });
 }
 
 class InternalRuntimeClient {
@@ -388,6 +432,152 @@ export async function main(
     }
   };
 
+  const chatStream = async (body: Record<string, unknown>, res: ServerResponse, req: IncomingMessage): Promise<void> => {
+    const reservationId = String(body.reservation_id);
+    const leaseToken = String(body.lease_token ?? "");
+    const status = await attempts.getAttemptStatus(reservationId).catch(() => undefined);
+    if (!status || status.state === "OUTCOME_UNKNOWN") throw new Error("OUTCOME_UNKNOWN");
+    if (status.state !== "CONTACT_INTENT_COMMITTED" && status.state !== "RUNTIME_STARTED" && status.state !== "STREAMING") {
+      throw new Error("STALE_FENCE");
+    }
+    if (!leaseToken) throw new Error("STALE_FENCE");
+    const lease = leaseVerifier.verify(leaseToken, {
+      purpose: "scheduler_lease",
+      issuer: "authority-scheduler",
+      requestId: status.requestId,
+      turnId: status.turnId,
+      stepId: status.stepId,
+      reservationRef: reservationId,
+      modelRef: status.modelRef,
+      artifactDigest: status.artifactDigest as `sha256:${string}`,
+      revision: status.fence,
+    });
+    const expectedBound = `sha256:${createHash("sha256").update(`${status.requestDigest}|${status.endpointRef}|${status.endpointGeneration}|${status.artifactDigest}`).digest("hex")}`;
+    if (lease.boundDigest !== expectedBound) throw new Error("STALE_FENCE");
+    if (!Number.isFinite(Number(body.fence)) || Number(body.fence) !== status.fence) throw new Error("STALE_FENCE");
+    if (!body.endpoint_ref || !body.endpoint_generation || !body.request_digest) throw new Error("STALE_FENCE");
+    if (status.endpointRef !== String(body.endpoint_ref)) throw new Error("STALE_FENCE");
+    if (status.endpointGeneration !== String(body.endpoint_generation)) throw new Error("STALE_FENCE");
+    if (status.requestDigest !== String(body.request_digest)) throw new Error("STALE_FENCE");
+    if (status.modelRef !== String(body.model_ref)) throw new Error("STALE_FENCE");
+    if ((status.leaseExpiresAt ?? 0) > 0 && status.leaseExpiresAt! <= Date.now()) throw new Error("STALE_FENCE");
+    if (status.state === "CONTACT_INTENT_COMMITTED") await attempts.transitionTo(reservationId, "RUNTIME_STARTED");
+    await attempts.transitionTo(reservationId, "STREAMING").catch(() => undefined);
+
+    const messages = parseChatMessages(body.messages);
+    const tools = parseChatTools(body.tools);
+    const deadlineAt = Number(body.deadline_at);
+    const openStream = async (): Promise<void> => {
+      if (res.headersSent) return;
+      res.writeHead(200, {
+        "content-type": "application/x-ndjson",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+      });
+    };
+    let meteredOutput = "";
+    const runSignal = new AbortController();
+    res.on("close", () => { if (!res.writableEnded) runSignal.abort(); });
+    req.on("aborted", () => runSignal.abort());
+    req.on("close", () => { if (!res.writableEnded) runSignal.abort(); });
+
+    const persistMeasured = async (terminal: "completed" | "cancelled" | "failed"): Promise<void> => {
+      const measuredUnits = measureOutputUnits(meteredOutput);
+      const usageEventId = `usage:${reservationId}:${body.fence}`;
+      const usagePayload = {
+        schemaVersion: USAGE_SCHEMA_VERSION,
+        reservationId,
+        requestId: status.requestId,
+        turnId: status.turnId,
+        stepId: status.stepId,
+        fence: status.fence,
+        artifactDigest: status.artifactDigest,
+        endpointGeneration: status.endpointGeneration,
+        usageEventId,
+        measuredUnits,
+        terminal,
+      };
+      const signature = signUsage(usageKey, usagePayload);
+      const terminalState = terminal === "cancelled" ? "CANCELLED" : terminal === "failed" ? "FAILED" : "COMPLETED";
+      await attempts.completeWithUsage(reservationId, {
+        usageEventId,
+        generatedTokens: measuredUnits,
+        signature,
+        terminal: terminalState,
+      });
+      await writeNdjson(res, {
+        done: true,
+        receipt: {
+          reservation_id: reservationId,
+          fence: Number(body.fence),
+          scope_id: String(body.scope_id),
+          usage_event_id: usageEventId,
+          generated_tokens: measuredUnits,
+          measured_units: measuredUnits,
+          terminal,
+          usage_signature: signature,
+          schema_version: USAGE_SCHEMA_VERSION,
+          request_id: status.requestId,
+          turn_id: status.turnId,
+          step_id: status.stepId,
+          artifact_digest: status.artifactDigest,
+          endpoint_generation: status.endpointGeneration,
+        },
+      });
+    };
+
+    try {
+      if (!providerRuntime) throw new Error("DEPENDENCY_UNAVAILABLE");
+      const stream: AsyncGenerator<ChatDelta> = runProviderChatGeneration({
+        resolver: providerRuntime.configResolver,
+        secretStore: providerRuntime.secretStore,
+        concurrency: providerRuntime.gate,
+        modelRef: status.modelRef,
+        capability: PROVIDER_CAPABILITY,
+        messages,
+        tools,
+        deadlineAt,
+        signal: runSignal.signal,
+        adapterProfile: profile === "production" || env.PROVIDER_PROFILE === "sovereign" ? "sovereign" : "development",
+        expectedCatalog: providerIdentityBinding.get(reservationId),
+      });
+      const iterator = stream[Symbol.asyncIterator]();
+      let first = await iterator.next();
+      if (!first.done) await openStream();
+      while (!first.done) {
+        if (runSignal.signal.aborted) throw new Error("CANCELLED");
+        const delta = first.value;
+        const fragment = delta.type === "text" ? delta.text : delta.argumentsDelta ?? "";
+        const next = meteredOutput + fragment;
+        if (Buffer.byteLength(next, "utf8") > MAX_STREAM_BYTES) throw new Error("OUTPUT_TOO_LARGE");
+        meteredOutput = next;
+        await writeNdjson(res, { delta });
+        first = await iterator.next();
+      }
+      if (!res.headersSent) await openStream();
+      await persistMeasured("completed");
+      res.end();
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        const detail = error instanceof Error ? error.message : String(error);
+        console.error(`[runtime-chat] ${detail}`);
+      }
+      const message = error instanceof Error ? error.message : "";
+      if (message === "CANCELLED") {
+        await persistMeasured("cancelled").catch(() => undefined);
+        if (!res.writableEnded) res.end();
+        return;
+      }
+      if (message === "OUTPUT_TOO_LARGE") {
+        await persistMeasured("failed").catch(() => undefined);
+        if (!res.writableEnded) res.end();
+        return;
+      }
+      await attempts.markOutcomeUnknown(reservationId).catch(() => undefined);
+      throw error;
+    }
+  };
+
   const http = createInternalServiceHttp({
     workloadToken: env.WORKLOAD_TOKEN,
     tokenHeader: "x-lens-model-workload-token",
@@ -599,6 +789,7 @@ export async function main(
     },
     streamRoutes: {
       "/v1/inference/generate": generateStream,
+      "/v1/inference/chat": chatStream,
     },
     mapError: (error) => {
       if (error instanceof ProviderRuntimeResolutionError) {

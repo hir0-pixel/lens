@@ -805,13 +805,22 @@ export class ProductionOrchestratorService {
     const scheduler = options.scheduler ?? new GpuScheduler(options.gpuCapacity ?? 8, this.now, leaseIssuer);
     const runtime = options.runtime ?? new InferenceAdapter();
     this.modelGateway = new ModelGateway(
-      { resolve: (input) => this.modelEligibility.resolveEndpoint(input) },
+      {
+        resolve: (input) => this.modelEligibility.resolveEndpoint(input),
+        resolveChat: (input) => this.modelEligibility.resolveEndpoint(input),
+      },
       {
         reserve: async (input) => scheduler.reserve(input),
         start: async (...args) => { await Promise.resolve(scheduler.start(...args)); },
         release: async (...args) => { await Promise.resolve(scheduler.release(...args)); },
       },
-      { execute: (input, signal) => runtime.execute(input, signal) },
+      {
+        execute: (input, signal) => runtime.execute(input, signal),
+        executeChat: (input, signal) => {
+          if (!runtime.executeChat) throw new ModelGatewayError("DEPENDENCY_UNAVAILABLE");
+          return runtime.executeChat(input, signal);
+        },
+      },
       this.receiptVerifier,
       this.claimStore,
       attempts,

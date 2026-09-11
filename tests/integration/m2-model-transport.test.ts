@@ -14,6 +14,7 @@ import {
 } from "../../services/agent-integration/modelTransport";
 import { AgentError } from "../../services/agent-runtime/AgentRuntime";
 import { GpuScheduler } from "../../services/gpu-scheduler/GpuScheduler";
+import { InternalInferenceClient } from "../../orchestrator-service/src/internalInferenceClient";
 import { ModelGateway, type ModelGatewayAuthority, type ModelGatewayChatDispatchInput, type RuntimePort } from "../../services/model-gateway/ModelGateway";
 import { OpenAICompatibleAdapter } from "../../services/model-provider/OpenAICompatibleAdapter";
 import type { ProviderEndpointConfig } from "../../services/model-provider/ProviderAdapter";
@@ -285,5 +286,67 @@ describe("M2a model transport", () => {
     expect(calls.count).toBe(0);
     expect(result.transcript).toContain("Model request was not admitted.");
     expect(result.transcript).not.toContain("partial answer");
+  });
+
+  it("transport.sidecar-agent-path", async () => {
+    const requests: Array<{ url: string; body: Record<string, unknown> }> = [];
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      requests.push({ url: String(input), body });
+      const call = requests.length;
+      const deltas = call === 1
+        ? [
+            { type: "tool-call", index: 0, id: "call-sidecar", name: "echo", argumentsDelta: '{"resourceRef":"document-1",' },
+            { type: "tool-call", index: 0, argumentsDelta: '"value":"hello"}' },
+          ]
+        : [{ type: "text", text: "sidecar done" }];
+      const lines = [
+        ...deltas.map((delta) => JSON.stringify({ delta })),
+        JSON.stringify({
+          done: true,
+          receipt: {
+            reservation_id: body.reservation_id,
+            fence: body.fence,
+            scope_id: body.scope_id,
+            schema_version: 1,
+            request_id: `request-${call}`,
+            turn_id: `turn-${call}`,
+            step_id: `step-${call}`,
+            artifact_digest: ARTIFACT,
+            endpoint_generation: body.endpoint_generation,
+            usage_event_id: `usage-${call}`,
+            measured_units: 2,
+            terminal: "completed",
+            usage_signature: `signed-usage-token-${call}`,
+          },
+        }),
+      ];
+      return new Response(`${lines.join("\n")}\n`, { status: 200, headers: { "content-type": "application/x-ndjson" } });
+    });
+    const client = new InternalInferenceClient("http://127.0.0.1:8793", "w".repeat(40), fetcher);
+    const gateway = gatewayFactory();
+    const transport = createLensAgentProvider({
+      selection: { modelRef: MODEL_REF },
+      gateway: gateway.createGateway(client),
+      prepareDispatch: gateway.prepareDispatch,
+      environment: {},
+    });
+    const connect = vi.spyOn(net.Socket.prototype, "connect").mockImplementation(() => { throw new Error("direct socket"); });
+    const result = await runHarness(transport, true);
+
+    expect(result).toMatchObject({ executions: 1 });
+    expect(result.transcript).toContain("sidecar done");
+    expect(connect).not.toHaveBeenCalled();
+    expect(requests).toHaveLength(2);
+    expect(requests.every((request) => request.url.endsWith("/v1/inference/chat"))).toBe(true);
+    expect(requests[0]!.body).toMatchObject({
+      model_ref: MODEL_REF,
+      messages: [{ role: "system", content: "Lens system prompt" }, { role: "user", content: "complete the task" }],
+      tools: [{ name: "echo" }],
+    });
+    expect(requests[1]!.body.messages).toEqual(expect.arrayContaining([
+      expect.objectContaining({ role: "assistant", toolCalls: [{ id: "call-sidecar", name: "echo", arguments: '{"resourceRef":"document-1","value":"hello"}' }] }),
+      expect.objectContaining({ role: "tool", toolCallId: "call-sidecar" }),
+    ]));
   });
 });
