@@ -29,7 +29,7 @@ import { RuntimeAttemptHttpClient } from "../../services/runtime-attempt/Runtime
 import { loadApprovedCatalogFromBff } from "./approvedCatalogClient";
 import { assertCompanyRagProfile } from "../../services/rag-profile/companyRagProfile";
 import type { DecisionFenceSigner, FactReaders, PolicyBundle } from "../../services/pdp/PolicyDecisionPoint";
-import { createAgentAuditLedger, createAgentPolicyReplica, type AgentPolicyReplica } from "./agentPdpReplica";
+import { createAgentAuditLedger, createAgentPolicyReplica, loadAgentFenceLedger, type AgentPolicyReplica } from "./agentPdpReplica";
 import { createDevAgentPolicyFacts } from "./agentDevFacts";
 import type { ProductionAgentHarnessOptions } from "./agentHarness";
 import { SqliteMcpRegistry } from "../../services/mcp-registry/McpRegistry";
@@ -127,6 +127,8 @@ export interface OrchestratorServiceEnv {
   /** 32+ character master key for MCP_SECRET_STORE_PATH — must match the key the store was
    * sealed with (the BFF's SECRET_STORE_KEY). */
   MCP_SECRET_STORE_KEY?: string;
+  /** SQLite path for cross-replica agent PDP fence consumption. Absent → in-process ledger (single-replica dev/test). Production must not set this to ":memory:". */
+  AGENT_FENCE_LEDGER_PATH?: string;
 }
 
 function loadEnv(): OrchestratorServiceEnv {
@@ -185,6 +187,7 @@ function loadEnv(): OrchestratorServiceEnv {
     MCP_REGISTRY_PATH: process.env.LENS_MCP_REGISTRY_PATH,
     MCP_SECRET_STORE_PATH: process.env.LENS_MCP_SECRET_STORE_PATH,
     MCP_SECRET_STORE_KEY: process.env.LENS_MCP_SECRET_STORE_KEY,
+    AGENT_FENCE_LEDGER_PATH: process.env.LENS_AGENT_FENCE_LEDGER_PATH,
   };
 }
 
@@ -345,9 +348,14 @@ export function loadAgentPolicyReplica(
   const agentPolicy = dependencies.agentPolicy ?? (env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS === "true"
     ? createDevAgentPolicyFacts(env.LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY!)
     : undefined);
-  return agentPolicy
-    ? createAgentPolicyReplica({ ...agentPolicy, auditLedger: createAgentAuditLedger() })
-    : undefined;
+  if (!agentPolicy) return undefined;
+  const authorityProfile = parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE);
+  const fenceLedger = loadAgentFenceLedger(env.AGENT_FENCE_LEDGER_PATH, authorityProfile);
+  return createAgentPolicyReplica({
+    ...agentPolicy,
+    auditLedger: createAgentAuditLedger(),
+    fenceLedger,
+  });
 }
 
 /** Open passthrough schema used only as the harness-facing `parameters` shape for a
@@ -575,6 +583,9 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   }
   if (authorityProfile === "production" && env.MCP_REGISTRY_PATH === ":memory:") {
     throw new Error("Production must not use an in-memory MCP registry (LENS_MCP_REGISTRY_PATH=:memory:); a persistent registry is required.");
+  }
+  if (authorityProfile === "production" && env.AGENT_FENCE_LEDGER_PATH === ":memory:") {
+    throw new Error("Production must not use an in-memory agent fence ledger (LENS_AGENT_FENCE_LEDGER_PATH=:memory:); a persistent ledger is required.");
   }
   const assertionVerifier = new DelegatedSessionAssertionVerifier(env.ASSERTION_VERIFY_KEY);
   const memoryAssertionVerifier = new DelegatedSessionAssertionVerifier(env.MEMORY_ASSERTION_VERIFY_KEY);

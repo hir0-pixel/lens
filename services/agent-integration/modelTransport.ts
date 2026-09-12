@@ -53,6 +53,7 @@ export interface InProcessLensAgentProviderOptions extends Omit<LensAgentProvide
 export function assertAgentEnvironment(environment: NodeJS.ProcessEnv): void {
   const forbidden = Object.keys(environment).find((name) =>
     name === "SECRET_STORE_KEY"
+    || name.endsWith("SECRET_STORE_KEY")
     || name === "CATALOG_WORKLOAD_TOKEN"
     || name.endsWith("_API_KEY")
   );

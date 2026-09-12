@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { InMemoryFenceLedger, type FenceLedger } from "./FenceLedger";
 export type PdpFailure =
   | "POLICY_HEAD_UNAVAILABLE"
   | "BATCH_LIMIT_EXCEEDED"
@@ -20,8 +21,15 @@ export interface DecisionFenceSigner { sign(fence: Omit<DecisionFence, "signatur
 
 /** Sole authorization authority. Caller claims never participate in evaluation. */
 export class PolicyDecisionPoint {
-  private active?: PolicyBundle; private readonly consumedFences = new Set<string>();
-  constructor(private readonly readers: FactReaders, private readonly audit: PdpAuditPort, private readonly signer: DecisionFenceSigner, private readonly now = () => Date.now(), private readonly nextFence = () => `pdp-fence-${randomBytes(8).toString("hex")}`) {}
+  private active?: PolicyBundle;
+  constructor(
+    private readonly readers: FactReaders,
+    private readonly audit: PdpAuditPort,
+    private readonly signer: DecisionFenceSigner,
+    private readonly now = () => Date.now(),
+    private readonly nextFence = () => `pdp-fence-${randomBytes(8).toString("hex")}`,
+    private readonly fenceLedger: FenceLedger = new InMemoryFenceLedger(),
+  ) {}
   activate(bundle: PolicyBundle, approval: { independent: boolean; auditAdmitted: boolean; compatibilityPassed: boolean }): void { if (!bundle.signed || !approval.independent || !approval.auditAdmitted || !approval.compatibilityPassed) throw new PdpError("POLICY_HEAD_UNAVAILABLE"); this.active = Object.freeze({ ...bundle }); }
   decideBatch(input: { requestId: string; callerWorkloadRef: string; subjectRef: string; deviceRef: string; action: string; resourceRefs: readonly string[]; normalizedContextDigest: string; useBoundary?: "operation" | "generation_start" | "tool_boundary"; deadlineAt: number }): { allowed: readonly string[]; fence?: DecisionFence } {
     if (!this.active) throw new PdpError("POLICY_HEAD_UNAVAILABLE"); if (input.resourceRefs.length === 0 || input.resourceRefs.length > 1000) throw new PdpError("BATCH_LIMIT_EXCEEDED"); if (input.deadlineAt <= this.now()) throw new PdpError("AUTHORITY_UNAVAILABLE");
@@ -46,5 +54,7 @@ export class PolicyDecisionPoint {
     }
     throw new PdpError("AUTHORIZATION_STATE_CHANGED");
   }
-  consumeFence(fence: DecisionFence, input: { requestId: string; callerWorkloadRef: string; action: string; useBoundary: "operation" | "generation_start" | "tool_boundary"; normalizedContextDigest: string; resourceRefs: readonly string[] }): void { if (!this.signer.verify(fence) || fence.expiresAt <= this.now() || fence.requestId !== input.requestId || fence.callerWorkloadRef !== input.callerWorkloadRef || fence.action !== input.action || fence.useBoundary !== input.useBoundary || fence.intentDigest !== input.normalizedContextDigest || fence.resourceRefs.join("|") !== input.resourceRefs.join("|") || this.consumedFences.has(fence.fenceId)) throw new PdpError("FENCE_INVALID"); this.consumedFences.add(fence.fenceId); }
+  consumeFence(fence: DecisionFence, input: { requestId: string; callerWorkloadRef: string; action: string; useBoundary: "operation" | "generation_start" | "tool_boundary"; normalizedContextDigest: string; resourceRefs: readonly string[] }): void {
+    if (!this.signer.verify(fence) || fence.expiresAt <= this.now() || fence.requestId !== input.requestId || fence.callerWorkloadRef !== input.callerWorkloadRef || fence.action !== input.action || fence.useBoundary !== input.useBoundary || fence.intentDigest !== input.normalizedContextDigest || fence.resourceRefs.join("|") !== input.resourceRefs.join("|") || !this.fenceLedger.consume(fence.fenceId)) throw new PdpError("FENCE_INVALID");
+  }
 }

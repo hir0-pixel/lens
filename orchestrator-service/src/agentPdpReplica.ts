@@ -1,5 +1,10 @@
 import { AuditLedger } from "../../services/audit/AuditLedger";
 import {
+  createAgentFenceLedger,
+  type AuthorityProfile,
+  type FenceLedger,
+} from "../../services/pdp/FenceLedger";
+import {
   PolicyDecisionPoint,
   type DecisionFenceSigner,
   type FactReaders,
@@ -23,6 +28,14 @@ export interface AgentPolicyReplicaInput {
   signer: DecisionFenceSigner;
   auditLedger: AuditLedger;
   now?: () => number;
+  fenceLedger?: FenceLedger;
+}
+
+export function loadAgentFenceLedger(
+  fenceLedgerPath: string | undefined,
+  authorityProfile: AuthorityProfile,
+): FenceLedger {
+  return createAgentFenceLedger(fenceLedgerPath, authorityProfile);
 }
 
 export interface AgentPolicyReplica {
@@ -60,6 +73,8 @@ export function createAgentPolicyReplica(input: AgentPolicyReplicaInput): AgentP
     },
     input.signer,
     input.now,
+    undefined,
+    input.fenceLedger,
   );
   pdp.activate(input.policyBundle, {
     independent: true,
