@@ -5,7 +5,7 @@
  * receipt from `consumeSubEnvelope` before every dispatch — a process-local ledger cannot
  * issue those receipts honestly for more than one process, which is exactly why production
  * must use `SqliteCostAuthority` (or a real network client to an equivalent service), never
- * `services/cost-controller/CostController.ts`.
+ * a process-local in-memory ledger.
  */
 import type { SignedAuthorityReceipt } from "../security/authorityReceipt";
 
