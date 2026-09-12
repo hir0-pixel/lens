@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { canonicalJson } from "../security/canonicalJson";
+
+// Anchored to this module, not process.cwd(): services run from their own package directories.
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 export type McpEgressClass = "none" | "internal" | "external-approved";
 
@@ -47,7 +51,7 @@ export function parseApprovedEgressPolicy(raw: unknown): ApprovedEgressPolicy {
 }
 
 export function loadApprovedEgressPolicy(configPath?: string): ApprovedEgressPolicy {
-  const path = configPath ?? join(process.cwd(), "platform/build/approved-egress.json");
+  const path = configPath ?? join(REPO_ROOT, "platform/build/approved-egress.json");
   return parseApprovedEgressPolicy(JSON.parse(readFileSync(path, "utf8")));
 }
 
