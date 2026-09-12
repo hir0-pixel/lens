@@ -6,8 +6,8 @@ import { RuntimeAttemptError } from "../runtime-attempt/RuntimeAttemptStore";
 import type { ChatDelta, ChatMessage, ChatTool } from "../model-provider/ProviderAdapter";
 
 export class ModelGatewayError extends Error { constructor(readonly code: "FORBIDDEN" | "OVERLOADED" | "STALE_AUTHORITY" | "CANCELLED" | "DEPENDENCY_UNAVAILABLE") { super(code); } }
-export interface ModelEligibilityPort { resolve(input: { capability: string; artifactDigest: string; denyEpoch: number }): Promise<{ endpointRef: string; snapshotExpiresAt: number; external: boolean; endpointGeneration?: string }>; }
 export interface ModelEligibilityPort {
+  resolve(input: { capability: string; artifactDigest: string; denyEpoch: number }): Promise<{ endpointRef: string; snapshotExpiresAt: number; external: boolean; endpointGeneration?: string }>;
   resolveChat?(input: { capability: string; artifactDigest: string; denyEpoch: number; modelRef: string }): Promise<{ endpointRef: string; snapshotExpiresAt: number; external: boolean; endpointGeneration?: string }>;
 }
 export interface SchedulerReservation {
