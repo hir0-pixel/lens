@@ -472,6 +472,36 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
 
       const stops = [
         bindCompactionDecline(harness),
+        bindToolGovernance(harness, {
+          pdp: options.pdp,
+          scope: {
+            requestId: request.requestId,
+            callerWorkloadRef: AGENT_HARNESS_WORKLOAD_ID,
+            subjectRef: request.subjectRef,
+            deviceRef: request.deviceRef,
+            deadlineAt: request.deadlineAt,
+          },
+          resolveIntent(event) {
+            if (event.toolName !== searchCorpusCatalogEntry.toolId) throw new Error("Unknown tool.");
+            return resolveSearchCorpusIntent(options.profile, profileSelector);
+          },
+          log: {
+            emit(event) {
+              if (event.event === "tool_blocked") policyBlocked = true;
+              log.emit(event);
+            },
+          },
+          recordOutcome(outcome) {
+            const stepId = pendingToolSteps.get(outcome.toolCallId);
+            if (!stepId) return;
+            run = runtime.finalize({
+              runId: run.runId,
+              stepId,
+              state: outcome.isError ? "FAILED" : "SUCCEEDED",
+            });
+          },
+          now,
+        }),
         harness.hooks.on("before_tool", (event: HookInvocation<"before_tool">) => {
           if (event.toolName !== searchCorpusCatalogEntry.toolId) return undefined;
           if (now() >= request.deadlineAt) {
@@ -505,36 +535,6 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
             if (error instanceof AgentError && error.code === "ENVELOPE_EXHAUSTED") incomplete = "steps";
             return { block: { reason: "Run incomplete", terminate: true } };
           }
-        }),
-        bindToolGovernance(harness, {
-          pdp: options.pdp,
-          scope: {
-            requestId: request.requestId,
-            callerWorkloadRef: AGENT_HARNESS_WORKLOAD_ID,
-            subjectRef: request.subjectRef,
-            deviceRef: request.deviceRef,
-            deadlineAt: request.deadlineAt,
-          },
-          resolveIntent(event) {
-            if (event.toolName !== searchCorpusCatalogEntry.toolId) throw new Error("Unknown tool.");
-            return resolveSearchCorpusIntent(options.profile, profileSelector);
-          },
-          log: {
-            emit(event) {
-              if (event.event === "tool_blocked") policyBlocked = true;
-              log.emit(event);
-            },
-          },
-          recordOutcome(outcome) {
-            const stepId = pendingToolSteps.get(outcome.toolCallId);
-            if (!stepId) return;
-            run = runtime.finalize({
-              runId: run.runId,
-              stepId,
-              state: outcome.isError ? "FAILED" : "SUCCEEDED",
-            });
-          },
-          now,
         }),
         bindContextAuthorization(harness, {
           pdp: options.pdp,

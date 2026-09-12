@@ -1,11 +1,15 @@
 import { createHash } from "node:crypto";
 import express from "express";
 import request from "supertest";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { OrchestratorClient } from "../src/rag/orchestratorClient";
 import { createApiRouter } from "../src/routes/api";
 
 const TOKEN = "t".repeat(32);
+
+beforeAll(() => {
+  process.env.SESSION_SECRET = "s".repeat(48);
+});
 
 function completed(requestId: string, status: "COMPLETED" | "INCOMPLETE" = "COMPLETED") {
   const output = status === "COMPLETED" ? "Finished" : "Partial answer";
