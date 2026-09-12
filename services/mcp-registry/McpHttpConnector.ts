@@ -1,6 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Sandbox } from "../tool-execution/ToolExecutionService";
 import { canonicalJson } from "../security/canonicalJson";
+import {
+  isServerApprovedForExternalEgress,
+  loadApprovedEgressPolicy,
+  type ApprovedEgressPolicy,
+} from "./dataFlowProfile";
 import { parseMcpServerTargetRef, parseMcpToolAction, type McpRegistry } from "./McpRegistry";
 import { computeSchemaDigest } from "./schemaDigest";
 import type { McpCredentialResolver } from "./McpCredentialBroker";
@@ -60,6 +65,7 @@ export interface McpHttpConnectorOptions {
   fetcher?: typeof fetch;
   maxOutputBytes?: number;
   timeoutMs?: number;
+  approvedEgress?: ApprovedEgressPolicy;
 }
 
 /**
@@ -81,6 +87,7 @@ export class McpHttpConnector implements Sandbox {
   private readonly fetcher: typeof fetch;
   private readonly maxOutputBytes: number;
   private readonly timeoutMs: number;
+  private readonly approvedEgress: ApprovedEgressPolicy;
 
   constructor(options: McpHttpConnectorOptions) {
     this.registry = options.registry;
@@ -88,6 +95,7 @@ export class McpHttpConnector implements Sandbox {
     this.fetcher = options.fetcher ?? fetch;
     this.maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.approvedEgress = options.approvedEgress ?? loadApprovedEgressPolicy();
   }
 
   async dispatch(input: {
@@ -117,6 +125,9 @@ export class McpHttpConnector implements Sandbox {
     // drifted, or disabled tools, and none for a tool that was never approved.
     const pinned = await this.registry.getTool(serverId, toolId);
     if (!pinned || pinned.state !== "approved") throw new Error("MCP tool is not callable.");
+    if (pinned.dataFlowProfile.egressClass === "external-approved" && !isServerApprovedForExternalEgress(server.endpoint, this.approvedEgress)) {
+      throw new Error("MCP server is not on the approved external egress list.");
+    }
 
     const secret = await this.credentials.resolve(input.credentialRef, input.executionFence);
     const signal = AbortSignal.timeout(this.timeoutMs);

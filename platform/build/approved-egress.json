@@ -1,0 +1,9 @@
+{
+  "schemaId": "urn:sovereign:approved-egress:v1",
+  "version": 1,
+  "owner": "platform/build",
+  "policy": {
+    "network": "deny-by-default",
+    "allowedDestinations": []
+  }
+}

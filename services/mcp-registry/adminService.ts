@@ -10,11 +10,12 @@ import {
   type McpToolState,
   type ResultAuthorizationMode,
 } from "./McpRegistry";
+import { type McpDataFlowProfile, validateDataFlowProfile } from "./dataFlowProfile";
 import { computeSchemaDigest } from "./schemaDigest";
 import { buildListRequest, type McpJsonRpcResponse, type McpToolDescriptor, type McpToolsListResult } from "./wireProtocol";
 
 export class McpAdminError extends Error {
-  constructor(public readonly code: "INVALID_ARGUMENT" | "INVALID_TRANSPORT" | "NOT_FOUND" | "TOOL_NOT_DISCOVERED" | "DEPENDENCY_UNAVAILABLE", message: string) {
+  constructor(public readonly code: "INVALID_ARGUMENT" | "INVALID_TRANSPORT" | "NOT_FOUND" | "TOOL_NOT_DISCOVERED" | "DEPENDENCY_UNAVAILABLE" | "DATA_FLOW_PROFILE_REQUIRED", message: string) {
     super(message);
     this.name = "McpAdminError";
   }
@@ -29,6 +30,7 @@ export interface RegisterServerInput {
 export interface ApproveToolInput {
   serverId: string;
   toolId: string;
+  dataFlowProfile: McpDataFlowProfile;
   resultAuthorization: ResultAuthorizationMode;
   provenancePath?: string;
 }
@@ -82,18 +84,30 @@ export class McpAdminService {
   }
 
   async approveTool(input: ApproveToolInput): Promise<{ id: string; state: McpToolState }> {
+    if (!validateDataFlowProfile(input.dataFlowProfile)) {
+      throw new McpAdminError("DATA_FLOW_PROFILE_REQUIRED", "MCP tool approval requires a valid dataFlowProfile.");
+    }
     const server = await this.registry.getServer(input.serverId);
     if (!server) throw new McpAdminError("NOT_FOUND", "MCP server not found.");
     const tools = await this.listLiveTools(server);
     const tool = tools.find((candidate) => candidate.name === input.toolId);
     if (!tool) throw new McpAdminError("TOOL_NOT_DISCOVERED", "Tool was not found on discovery; it cannot be approved.");
-    const record: McpToolRecord = await this.registry.approveTool({
-      serverId: input.serverId,
-      toolId: input.toolId,
-      schemaDigest: computeSchemaDigest(tool.inputSchema),
-      resultAuthorization: input.resultAuthorization,
-      provenancePath: input.provenancePath,
-    });
+    let record: McpToolRecord;
+    try {
+      record = await this.registry.approveTool({
+        serverId: input.serverId,
+        toolId: input.toolId,
+        schemaDigest: computeSchemaDigest(tool.inputSchema),
+        dataFlowProfile: input.dataFlowProfile,
+        resultAuthorization: input.resultAuthorization,
+        provenancePath: input.provenancePath,
+      });
+    } catch (error) {
+      if (error instanceof McpRegistryError && error.code === "DATA_FLOW_PROFILE_REQUIRED") {
+        throw new McpAdminError("DATA_FLOW_PROFILE_REQUIRED", error.message);
+      }
+      throw error;
+    }
     return { id: `${record.serverId}:${record.toolId}`, state: record.state };
   }
 

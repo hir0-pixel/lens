@@ -7,6 +7,7 @@ import { __resetConfig } from "../src/config";
 import { MemorySecretStore } from "../../services/secrets/SecretStore";
 import { SqliteMcpRegistry } from "../../services/mcp-registry/McpRegistry";
 import { McpAdminService } from "../../services/mcp-registry/adminService";
+import { NO_EGRESS_PROFILE } from "../../tests/helpers/mcpDataFlow";
 import { StubMcpServer } from "../../tests/helpers/stubMcpServer";
 
 process.env.NODE_ENV = "test";
@@ -84,7 +85,7 @@ describe("mcp admin routes", () => {
     expect(JSON.stringify(discovered.body)).not.toContain(secretValue);
     expect(JSON.stringify(discovered.body)).not.toContain(stored?.secretRef);
 
-    const approved = await client.post(`/admin/mcp-servers/${registered.body.id}/tools/echo/approve`).send({ resultAuthorization: "tool-gated" });
+    const approved = await client.post(`/admin/mcp-servers/${registered.body.id}/tools/echo/approve`).send({ dataFlowProfile: NO_EGRESS_PROFILE, resultAuthorization: "tool-gated" });
     expect(approved.status).toBe(201);
     expect(approved.body.state).toBe("approved");
     expect(JSON.stringify(approved.body)).not.toContain(endpoint);
@@ -99,7 +100,7 @@ describe("mcp admin routes", () => {
     const registered = await client.post("/admin/mcp-servers").send({ endpoint, transport: "http", secret: "s".repeat(20) });
     // discover both tools, approve only one
     await client.post(`/admin/mcp-servers/${registered.body.id}/discover`).send();
-    await client.post(`/admin/mcp-servers/${registered.body.id}/tools/echo/approve`).send({ resultAuthorization: "tool-gated" });
+    await client.post(`/admin/mcp-servers/${registered.body.id}/tools/echo/approve`).send({ dataFlowProfile: NO_EGRESS_PROFILE, resultAuthorization: "tool-gated" });
 
     const approvedTools = await registry.listApprovedToolsForServer(registered.body.id);
     expect(approvedTools.map((tool) => tool.toolId)).toEqual(["echo"]);
