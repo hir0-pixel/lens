@@ -7,7 +7,11 @@ import { McpCredentialBroker } from "../../services/mcp-registry/McpCredentialBr
 import { McpHttpConnector, boundContent, computeArgumentsDigest } from "../../services/mcp-registry/McpHttpConnector";
 import { probeMcpServerHealth } from "../../services/mcp-registry/healthProbe";
 import { ToolExecutionError, ToolExecutionService, type ToolCatalogEntry } from "../../services/tool-execution/ToolExecutionService";
+import { EXTERNAL_EGRESS_PROFILE, INTERNAL_EGRESS_PROFILE, NO_EGRESS_PROFILE } from "../helpers/mcpDataFlow";
 import { StubMcpServer, STUB_PROVENANCE_PATH } from "../helpers/stubMcpServer";
+import { computeDataFlowProfileDigest } from "../../services/mcp-registry/dataFlowProfile";
+import { mcpRuntimeCatalogEntry } from "../../services/agent-integration/mcpTool";
+import { computeSchemaDigest } from "../../services/mcp-registry/schemaDigest";
 
 const SECRET_VALUE = "s3cr3t-mcp-credential-do-not-leak";
 const SUBJECT_REF = "employee-1";
@@ -30,19 +34,121 @@ describe("MCP HTTP connector", () => {
     const registered = await admin.registerServer({ endpoint, transport: "http", secret: SECRET_VALUE });
     serverId = registered.id;
     await admin.discoverTools(serverId);
-    await admin.approveTool({ serverId, toolId: "echo", resultAuthorization: "tool-gated" });
-    await admin.approveTool({ serverId, toolId: "lookup_ticket", resultAuthorization: "resource-gated", provenancePath: STUB_PROVENANCE_PATH });
+    await admin.approveTool({ serverId, toolId: "echo", dataFlowProfile: NO_EGRESS_PROFILE, resultAuthorization: "tool-gated" });
+    await admin.approveTool({ serverId, toolId: "lookup_ticket", dataFlowProfile: INTERNAL_EGRESS_PROFILE, resultAuthorization: "resource-gated", provenancePath: STUB_PROVENANCE_PATH });
   });
 
   afterEach(async () => {
     await stub.stop();
   });
 
-  function makeConnector(maxOutputBytes?: number) {
-    const broker = new McpCredentialBroker(registry, secrets);
-    const connector = new McpHttpConnector({ registry, credentials: broker, maxOutputBytes });
+  function makeConnector(
+    maxOutputBytes?: number,
+    approvedEgress?: { allowedDestinations: readonly string[] },
+    registryOverride: SqliteMcpRegistry = registry,
+    secretsOverride: MemorySecretStore = secrets,
+  ) {
+    const broker = new McpCredentialBroker(registryOverride, secretsOverride);
+    const connector = new McpHttpConnector({
+      registry: registryOverride,
+      credentials: broker,
+      maxOutputBytes,
+      approvedEgress: approvedEgress ?? { allowedDestinations: ["127.0.0.1", "localhost"] },
+    });
     return { broker, connector };
   }
+
+  it("mcp.registration-requires-data-flow: approval without a valid dataFlowProfile is refused", async () => {
+    await expect(admin.approveTool({
+      serverId,
+      toolId: "echo",
+      dataFlowProfile: { egressClass: "none", targets: [""] },
+      resultAuthorization: "tool-gated",
+    })).rejects.toMatchObject({ code: "DATA_FLOW_PROFILE_REQUIRED" });
+
+    await expect(registry.approveTool({
+      serverId,
+      toolId: "echo",
+      schemaDigest: computeSchemaDigest({ type: "object" }),
+      dataFlowProfile: { egressClass: "invalid" as never, targets: [] },
+      resultAuthorization: "tool-gated",
+    })).rejects.toMatchObject({ code: "DATA_FLOW_PROFILE_REQUIRED" });
+
+    const unapproved = await registry.getTool(serverId, "echo");
+    expect(unapproved?.dataFlowProfile).toEqual(NO_EGRESS_PROFILE);
+  });
+
+  it("mcp.external-egress-refused-unless-approved: external-approved tools block unless the server endpoint is allowlisted", async () => {
+    const externalRegistry = new SqliteMcpRegistry(":memory:");
+    const externalSecrets = new MemorySecretStore();
+    const externalAdmin = new McpAdminService(externalRegistry, externalSecrets, fetch);
+    const registered = await externalAdmin.registerServer({ endpoint, transport: "http", secret: SECRET_VALUE });
+    await externalAdmin.discoverTools(registered.id);
+    await externalAdmin.approveTool({
+      serverId: registered.id,
+      toolId: "echo",
+      dataFlowProfile: EXTERNAL_EGRESS_PROFILE,
+      resultAuthorization: "tool-gated",
+    });
+
+    const { broker, connector } = makeConnector(undefined, { allowedDestinations: [] }, externalRegistry, externalSecrets);
+    const { credentialRef } = await broker.issue({
+      subjectRef: SUBJECT_REF,
+      targetRef: mcpServerTargetRef(registered.id),
+      action: mcpToolAction("echo"),
+      executionFence: FENCE,
+    });
+    const listCountBefore = stub.listCount;
+    await expect(connector.dispatch({
+      targetRef: mcpServerTargetRef(registered.id),
+      action: mcpToolAction("echo"),
+      credentialRef,
+      executionFence: FENCE,
+      idempotencyKey: "idem-external-blocked",
+      argumentsDigest: "sha256:deadbeef",
+    })).rejects.toThrow(/approved external egress/i);
+    expect(stub.listCount).toBe(listCountBefore);
+
+    const { broker: approvedBroker, connector: approvedConnector } = makeConnector(undefined, { allowedDestinations: ["127.0.0.1"] }, externalRegistry, externalSecrets);
+    const { credentialRef: approvedRef } = await approvedBroker.issue({
+      subjectRef: SUBJECT_REF,
+      targetRef: mcpServerTargetRef(registered.id),
+      action: mcpToolAction("echo"),
+      executionFence: "fence-approved",
+    });
+    const outcome = await approvedConnector.dispatch({
+      targetRef: mcpServerTargetRef(registered.id),
+      action: mcpToolAction("echo"),
+      credentialRef: approvedRef,
+      executionFence: "fence-approved",
+      idempotencyKey: "idem-external-approved",
+      argumentsDigest: "sha256:deadbeef",
+    });
+    expect(outcome.status).toBe("succeeded");
+  });
+
+  it("mcp.data-flow-digest-is-real: the catalog digest tracks the pinned dataFlowProfile", () => {
+    const schema = { type: "object", properties: { text: { type: "string" } }, additionalProperties: false };
+    const descriptor = {
+      toolId: "echo",
+      version: "1",
+      serverId,
+      inputSchema: schema,
+      schemaDigest: computeSchemaDigest(schema),
+      resultAuthorization: "tool-gated" as const,
+      risk: "read" as const,
+      dataFlowProfile: NO_EGRESS_PROFILE,
+    };
+    const placeholder = mcpRuntimeCatalogEntry(descriptor);
+    const real = computeDataFlowProfileDigest(NO_EGRESS_PROFILE);
+    expect(placeholder.dataFlowProfileDigest).not.toBe(real);
+
+    const changed = computeDataFlowProfileDigest({ egressClass: "internal", targets: ["retrieval.internal"] });
+    expect(changed).not.toBe(real);
+    expect(computeDataFlowProfileDigest(NO_EGRESS_PROFILE)).toBe(real);
+    expect(computeDataFlowProfileDigest({ egressClass: "internal", targets: ["b.example", "a.example"] }))
+      .toBe(computeDataFlowProfileDigest({ egressClass: "internal", targets: ["a.example", "b.example"] }));
+  });
 
   it("calls an approved tool and returns bounded content with provenance refs", async () => {
     const { broker, connector } = makeConnector();

@@ -31,6 +31,7 @@ import {
   resolveMcpToolIntent,
   type McpToolDescriptor,
 } from "../../services/agent-integration/mcpTool";
+import { computeDataFlowProfileDigest, type McpDataFlowProfile } from "../../services/mcp-registry/dataFlowProfile";
 import type { CredentialBroker, Sandbox } from "../../services/tool-execution/ToolExecutionService";
 import type { AuditLedger } from "../../services/audit/AuditLedger";
 import type { AgentRunAuthorityPort } from "../../services/agent-run-authority/AgentRunAuthority";
@@ -187,7 +188,13 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
   }, now);
   runtime.registerTool(searchCorpusCatalogEntry);
   const mcpDescriptors = options.mcpTools?.descriptors ?? [];
-  for (const descriptor of mcpDescriptors) runtime.registerTool(mcpRuntimeCatalogEntry(descriptor));
+  for (const descriptor of mcpDescriptors) {
+    const profile = (descriptor as McpToolDescriptor & { dataFlowProfile?: McpDataFlowProfile }).dataFlowProfile;
+    runtime.registerTool({
+      ...mcpRuntimeCatalogEntry(descriptor),
+      ...(profile ? { dataFlowProfileDigest: computeDataFlowProfileDigest(profile) } : {}),
+    });
+  }
   const mcpDescriptorsByToolId = new Map(mcpDescriptors.map((descriptor) => [descriptor.toolId, descriptor]));
   const knownToolNames = new Set<string>([searchCorpusCatalogEntry.toolId, ...mcpDescriptorsByToolId.keys()]);
   const toolVersionByName = new Map<string, string>([

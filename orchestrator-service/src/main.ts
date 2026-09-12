@@ -392,12 +392,16 @@ export async function loadMcpTools(
   const secrets = new EncryptedSqliteSecretStore(env.MCP_SECRET_STORE_PATH, env.MCP_SECRET_STORE_KEY);
   const approvedToolGated = (await registry.listAllTools())
     .filter((tool) => tool.state === "approved" && tool.resultAuthorization === "tool-gated");
-  const descriptors: McpToolDescriptor[] = approvedToolGated.map((tool) => ({
+  type RegistryBackedDescriptor = McpToolDescriptor & {
+    dataFlowProfile: import("../../services/mcp-registry/dataFlowProfile").McpDataFlowProfile;
+  };
+  const descriptors: RegistryBackedDescriptor[] = approvedToolGated.map((tool) => ({
     toolId: tool.toolId,
     version: "1",
     serverId: tool.serverId,
     inputSchema: OPEN_MCP_TOOL_SCHEMA,
     schemaDigest: tool.schemaDigest,
+    dataFlowProfile: tool.dataFlowProfile,
     resultAuthorization: tool.resultAuthorization,
     risk: "high_risk",
   }));

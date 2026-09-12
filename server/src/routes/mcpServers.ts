@@ -11,7 +11,13 @@ const registerSchema = z.object({
   secret: z.string().min(8).max(4096),
 });
 
+const dataFlowProfileSchema = z.object({
+  egressClass: z.enum(["none", "internal", "external-approved"]),
+  targets: z.array(z.string().min(1).max(512)),
+});
+
 const approveSchema = z.object({
+  dataFlowProfile: dataFlowProfileSchema,
   resultAuthorization: z.enum(["tool-gated", "resource-gated"]),
   provenancePath: z.string().min(1).max(512).optional(),
 });
@@ -20,6 +26,7 @@ function statusForAdminError(code: McpAdminError["code"]): number {
   switch (code) {
     case "INVALID_ARGUMENT":
     case "INVALID_TRANSPORT":
+    case "DATA_FLOW_PROFILE_REQUIRED":
       return 400;
     case "NOT_FOUND":
     case "TOOL_NOT_DISCOVERED":
@@ -96,6 +103,7 @@ export function createMcpServersRouter(options: { auth: AuthService; admin: McpA
       const result = await options.admin.approveTool({
         serverId: req.params.id,
         toolId: req.params.toolId,
+        dataFlowProfile: parsed.data.dataFlowProfile,
         resultAuthorization: parsed.data.resultAuthorization,
         provenancePath: parsed.data.provenancePath,
       });

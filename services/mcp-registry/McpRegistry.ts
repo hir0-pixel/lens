@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
+import { type McpDataFlowProfile, validateDataFlowProfile } from "./dataFlowProfile";
 
 /**
  * Sovereignty constraint: HTTP transport only. Spawning a process (stdio) is code execution
@@ -38,6 +39,7 @@ export interface McpToolRecord {
   serverId: string;
   toolId: string;
   schemaDigest: `sha256:${string}`;
+  dataFlowProfile: McpDataFlowProfile;
   resultAuthorization: ResultAuthorizationMode;
   provenancePath?: string;
   state: McpToolState;
@@ -49,12 +51,13 @@ export interface McpToolApprovalInput {
   serverId: string;
   toolId: string;
   schemaDigest: `sha256:${string}`;
+  dataFlowProfile: McpDataFlowProfile;
   resultAuthorization: ResultAuthorizationMode;
   provenancePath?: string;
 }
 
 export class McpRegistryError extends Error {
-  constructor(public readonly code: "INVALID_TRANSPORT" | "NOT_FOUND", message: string) {
+  constructor(public readonly code: "INVALID_TRANSPORT" | "NOT_FOUND" | "DATA_FLOW_PROFILE_REQUIRED", message: string) {
     super(message);
     this.name = "McpRegistryError";
   }
@@ -91,11 +94,28 @@ function serverRowToRecord(row: Record<string, unknown>): McpServerRecord {
   };
 }
 
+function parseStoredDataFlowProfile(raw: unknown): McpDataFlowProfile {
+  if (raw === null || raw === undefined || typeof raw !== "string" || raw.length === 0) {
+    throw new McpRegistryError("DATA_FLOW_PROFILE_REQUIRED", "MCP tool dataFlowProfile is required.");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new McpRegistryError("DATA_FLOW_PROFILE_REQUIRED", "MCP tool dataFlowProfile is invalid.");
+  }
+  if (!validateDataFlowProfile(parsed)) {
+    throw new McpRegistryError("DATA_FLOW_PROFILE_REQUIRED", "MCP tool dataFlowProfile is invalid.");
+  }
+  return parsed;
+}
+
 function toolRowToRecord(row: Record<string, unknown>): McpToolRecord {
   return {
     serverId: String(row.server_id),
     toolId: String(row.tool_id),
     schemaDigest: String(row.schema_digest) as `sha256:${string}`,
+    dataFlowProfile: parseStoredDataFlowProfile(row.data_flow_profile),
     resultAuthorization: row.result_authorization as ResultAuthorizationMode,
     provenancePath: row.provenance_path === null || row.provenance_path === undefined ? undefined : String(row.provenance_path),
     state: row.state as McpToolState,
@@ -126,6 +146,7 @@ export class SqliteMcpRegistry implements McpRegistry {
       server_id TEXT NOT NULL,
       tool_id TEXT NOT NULL,
       schema_digest TEXT NOT NULL,
+      data_flow_profile TEXT NOT NULL,
       result_authorization TEXT NOT NULL,
       provenance_path TEXT,
       state TEXT NOT NULL,
@@ -133,6 +154,14 @@ export class SqliteMcpRegistry implements McpRegistry {
       updated_at INTEGER NOT NULL,
       PRIMARY KEY (server_id, tool_id)
     )`);
+    const columns = new Set(
+      (this.db.prepare("PRAGMA table_info(mcp_tools)").all() as Array<Record<string, unknown>>)
+        .map((row) => String(row.name)),
+    );
+    if (!columns.has("data_flow_profile")) {
+      // Existing rows receive NULL/empty and fail closed at read time until re-approved.
+      this.db.exec("ALTER TABLE mcp_tools ADD COLUMN data_flow_profile TEXT");
+    }
   }
 
   async createServer(input: McpServerWriteInput): Promise<McpServerRecord> {
@@ -170,17 +199,22 @@ export class SqliteMcpRegistry implements McpRegistry {
   }
 
   async approveTool(input: McpToolApprovalInput): Promise<McpToolRecord> {
+    if (!validateDataFlowProfile(input.dataFlowProfile)) {
+      throw new McpRegistryError("DATA_FLOW_PROFILE_REQUIRED", "MCP tool approval requires a valid dataFlowProfile.");
+    }
     const now = Date.now();
+    const dataFlowProfileJson = JSON.stringify(input.dataFlowProfile);
     this.db.prepare(
-      `INSERT INTO mcp_tools (server_id, tool_id, schema_digest, result_authorization, provenance_path, state, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 'approved', ?, ?)
+      `INSERT INTO mcp_tools (server_id, tool_id, schema_digest, data_flow_profile, result_authorization, provenance_path, state, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'approved', ?, ?)
        ON CONFLICT(server_id, tool_id) DO UPDATE SET
          schema_digest = excluded.schema_digest,
+         data_flow_profile = excluded.data_flow_profile,
          result_authorization = excluded.result_authorization,
          provenance_path = excluded.provenance_path,
          state = 'approved',
          updated_at = excluded.updated_at`,
-    ).run(input.serverId, input.toolId, input.schemaDigest, input.resultAuthorization, input.provenancePath ?? null, now, now);
+    ).run(input.serverId, input.toolId, input.schemaDigest, dataFlowProfileJson, input.resultAuthorization, input.provenancePath ?? null, now, now);
     const tool = await this.getTool(input.serverId, input.toolId);
     if (!tool) throw new Error("MCP tool persist failed.");
     return tool;

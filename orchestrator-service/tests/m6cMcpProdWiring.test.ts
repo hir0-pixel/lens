@@ -15,6 +15,7 @@ import { SqliteMcpRegistry, mcpServerTargetRef, mcpToolAction } from "../../serv
 import { McpAdminService } from "../../services/mcp-registry/adminService";
 import { McpHttpConnector } from "../../services/mcp-registry/McpHttpConnector";
 import { EncryptedSqliteSecretStore } from "../../services/secrets/SecretStore";
+import { INTERNAL_EGRESS_PROFILE, NO_EGRESS_PROFILE } from "../../tests/helpers/mcpDataFlow";
 import { StubMcpServer } from "../../tests/helpers/stubMcpServer";
 import { createProductionAgentHarness } from "../src/agentHarness";
 import { createAgentAuditLedger, createAgentPolicyReplica } from "../src/agentPdpReplica";
@@ -145,8 +146,8 @@ describe("M6c MCP production wiring", () => {
       const admin = new McpAdminService(registry, new EncryptedSqliteSecretStore(secretPath, secretKey), fetch);
       const { id: serverId } = await admin.registerServer({ endpoint, transport: "http", secret: "s".repeat(20) });
       await admin.discoverTools(serverId);
-      await admin.approveTool({ serverId, toolId: "echo", resultAuthorization: "tool-gated" });
-      await admin.approveTool({ serverId, toolId: "lookup_ticket", resultAuthorization: "resource-gated" });
+      await admin.approveTool({ serverId, toolId: "echo", dataFlowProfile: NO_EGRESS_PROFILE, resultAuthorization: "tool-gated" });
+      await admin.approveTool({ serverId, toolId: "lookup_ticket", dataFlowProfile: INTERNAL_EGRESS_PROFILE, resultAuthorization: "resource-gated" });
       await registry.setToolState(serverId, "lookup_ticket", "disabled");
 
       const mcpTools = await loadMcpTools(env({ MCP_REGISTRY_PATH: registryPath, MCP_SECRET_STORE_PATH: secretPath, MCP_SECRET_STORE_KEY: secretKey }));
@@ -200,7 +201,7 @@ describe("M6c MCP production wiring", () => {
       const admin = new McpAdminService(registry, new EncryptedSqliteSecretStore(secretPath, secretKey), fetch);
       const { id: serverId } = await admin.registerServer({ endpoint, transport: "http", secret: "s".repeat(20) });
       await admin.discoverTools(serverId);
-      await admin.approveTool({ serverId, toolId: "echo", resultAuthorization: "tool-gated" });
+      await admin.approveTool({ serverId, toolId: "echo", dataFlowProfile: NO_EGRESS_PROFILE, resultAuthorization: "tool-gated" });
 
       const mcpTools = await loadMcpTools(env({ MCP_REGISTRY_PATH: registryPath, MCP_SECRET_STORE_PATH: secretPath, MCP_SECRET_STORE_KEY: secretKey }));
       expect(mcpTools?.sandbox).toBeInstanceOf(McpHttpConnector);
