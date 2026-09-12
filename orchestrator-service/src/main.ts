@@ -31,6 +31,12 @@ import { assertCompanyRagProfile } from "../../services/rag-profile/companyRagPr
 import type { DecisionFenceSigner, FactReaders, PolicyBundle } from "../../services/pdp/PolicyDecisionPoint";
 import { createAgentAuditLedger, createAgentPolicyReplica, type AgentPolicyReplica } from "./agentPdpReplica";
 import { createDevAgentPolicyFacts } from "./agentDevFacts";
+import type { ProductionAgentHarnessOptions } from "./agentHarness";
+import { SqliteMcpRegistry } from "../../services/mcp-registry/McpRegistry";
+import { McpCredentialBroker } from "../../services/mcp-registry/McpCredentialBroker";
+import { McpHttpConnector } from "../../services/mcp-registry/McpHttpConnector";
+import { EncryptedSqliteSecretStore } from "../../services/secrets/SecretStore";
+import type { McpToolDescriptor } from "../../services/agent-integration/mcpTool";
 
 export interface OrchestratorServiceEnv {
   PORT?: string;
@@ -106,6 +112,21 @@ export interface OrchestratorServiceEnv {
   LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS?: string;
   /** HMAC key for dev agent PDP fences. Required when LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS=true. */
   LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY?: string;
+  /**
+   * M6c: SQLite path to the same MCP registry an admin approves tools into (mirrors the BFF's
+   * MCP_REGISTRY_PATH — see server/src/index.ts). Absent means MCP is entirely unavailable on
+   * this harness; there is no discovery-at-startup fallback. Production must not set this to
+   * ":memory:" — a persistent registry or nothing.
+   */
+  MCP_REGISTRY_PATH?: string;
+  /** SQLite path to the encrypted secret store holding MCP server credentials. Must point at
+   * the same sealed-secrets store an admin's MCP server registration wrote into (see
+   * server/src/index.ts's `secrets`). Required together with MCP_SECRET_STORE_KEY whenever
+   * MCP_REGISTRY_PATH is set. */
+  MCP_SECRET_STORE_PATH?: string;
+  /** 32+ character master key for MCP_SECRET_STORE_PATH — must match the key the store was
+   * sealed with (the BFF's SECRET_STORE_KEY). */
+  MCP_SECRET_STORE_KEY?: string;
 }
 
 function loadEnv(): OrchestratorServiceEnv {
@@ -161,6 +182,9 @@ function loadEnv(): OrchestratorServiceEnv {
     AGENT_SESSION_ROOT: process.env.LENS_AGENT_SESSION_ROOT,
     LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS: process.env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS,
     LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY: process.env.LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY,
+    MCP_REGISTRY_PATH: process.env.LENS_MCP_REGISTRY_PATH,
+    MCP_SECRET_STORE_PATH: process.env.LENS_MCP_SECRET_STORE_PATH,
+    MCP_SECRET_STORE_KEY: process.env.LENS_MCP_SECRET_STORE_KEY,
   };
 }
 
@@ -324,6 +348,62 @@ export function loadAgentPolicyReplica(
   return agentPolicy
     ? createAgentPolicyReplica({ ...agentPolicy, auditLedger: createAgentAuditLedger() })
     : undefined;
+}
+
+/** Open passthrough schema used only as the harness-facing `parameters` shape for a
+ * registry-sourced MCP tool descriptor (M6c). `McpRegistry` persists a tool's `schemaDigest`
+ * but never its raw JSON schema (see `McpToolRecord`), and "no discovery at startup" forbids
+ * fetching the live schema to fill this in. `McpHttpConnector.dispatch` still independently
+ * re-fetches the live schema and compares it against the real pinned `schemaDigest` before
+ * every call, so this placeholder only affects the model's up-front tool-call guidance — never
+ * enforcement, which always runs against the true pinned digest. */
+const OPEN_MCP_TOOL_SCHEMA = { type: "object", additionalProperties: true } as const;
+
+/**
+ * M6c: wires the admin-approved MCP catalog (M6a's `SqliteMcpRegistry` / `McpAdminService`,
+ * server/src/index.ts) onto the production agent harness's `mcpTools` option (M6b,
+ * `agentHarness.ts`). Absent `LENS_MCP_REGISTRY_PATH`, MCP stays entirely absent — no
+ * discovery, no dynamic exposure, only what an admin already approved.
+ *
+ * `McpToolRecord` (what the registry durably stores) is narrower than `McpToolDescriptor`
+ * (what the harness needs), so two gaps are resolved fail-closed rather than guessed
+ * permissively:
+ *  - No `risk` classification is stored. Every registry-sourced tool is treated as
+ *    `high_risk` (forces `requiresApproval` — see `mcpRuntimeCatalogEntry`), the conservative
+ *    default when a security-relevant fact is unknown (ground rule 2: fail closed, always).
+ *  - No `declaredResourceRefs` is stored. A `resource-gated` tool without them would authorize
+ *    against an empty resourceRefs set, which `bindToolGovernance`'s allowed-list-length check
+ *    (governanceBinding.ts) passes vacuously — i.e. fail OPEN. So this wiring exposes only
+ *    `tool-gated` approved tools, whose resourceRef is the synthetic, always-populated `tool:`
+ *    ref from `mcpToolResourceRef`; `resource-gated` approvals are skipped until the registry
+ *    threads resourceRefs through admin approval.
+ */
+export async function loadMcpTools(
+  env: OrchestratorServiceEnv,
+): Promise<ProductionAgentHarnessOptions["mcpTools"] | undefined> {
+  if (!env.MCP_REGISTRY_PATH) return undefined;
+  if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && env.MCP_REGISTRY_PATH === ":memory:") {
+    throw new Error("Production must not use an in-memory MCP registry (LENS_MCP_REGISTRY_PATH=:memory:); a persistent registry is required.");
+  }
+  if (!env.MCP_SECRET_STORE_PATH || !env.MCP_SECRET_STORE_KEY) {
+    throw new Error("LENS_MCP_SECRET_STORE_PATH and LENS_MCP_SECRET_STORE_KEY are required when LENS_MCP_REGISTRY_PATH is set.");
+  }
+  const registry = new SqliteMcpRegistry(env.MCP_REGISTRY_PATH);
+  const secrets = new EncryptedSqliteSecretStore(env.MCP_SECRET_STORE_PATH, env.MCP_SECRET_STORE_KEY);
+  const approvedToolGated = (await registry.listAllTools())
+    .filter((tool) => tool.state === "approved" && tool.resultAuthorization === "tool-gated");
+  const descriptors: McpToolDescriptor[] = approvedToolGated.map((tool) => ({
+    toolId: tool.toolId,
+    version: "1",
+    serverId: tool.serverId,
+    inputSchema: OPEN_MCP_TOOL_SCHEMA,
+    schemaDigest: tool.schemaDigest,
+    resultAuthorization: tool.resultAuthorization,
+    risk: "high_risk",
+  }));
+  const broker = new McpCredentialBroker(registry, secrets);
+  const sandbox = new McpHttpConnector({ registry, credentials: broker });
+  return { descriptors, broker, sandbox };
 }
 
 export type SharedAuthorities = {
@@ -493,6 +573,9 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   if (env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS === "true" && !env.LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY) {
     throw new Error("LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY is required when LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS=true.");
   }
+  if (authorityProfile === "production" && env.MCP_REGISTRY_PATH === ":memory:") {
+    throw new Error("Production must not use an in-memory MCP registry (LENS_MCP_REGISTRY_PATH=:memory:); a persistent registry is required.");
+  }
   const assertionVerifier = new DelegatedSessionAssertionVerifier(env.ASSERTION_VERIFY_KEY);
   const memoryAssertionVerifier = new DelegatedSessionAssertionVerifier(env.MEMORY_ASSERTION_VERIFY_KEY);
   const retrieval = new RetrievalHttpClient(env.RETRIEVAL_URL, env.RETRIEVAL_WORKLOAD_TOKEN);
@@ -537,6 +620,7 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   }
   const sharedAuthorities = loadSharedAuthorities(env, dependencies, effectiveModelEligibility);
   const agentPolicyReplica = loadAgentPolicyReplica(env, dependencies);
+  const mcpTools = await loadMcpTools(env);
   if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && !env.USAGE_RECEIPT_PUBLIC_KEY) {
     throw new Error("Production requires LENS_USAGE_RECEIPT_PUBLIC_KEY to verify sidecar-signed usage.");
   }
@@ -582,6 +666,7 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
     ragProfile,
     conversationHistory: history,
     agentPolicyReplica,
+    mcpTools,
     agentSessionRoot: env.AGENT_SESSION_ROOT,
   });
   const http = createOrchestratorHttp({
