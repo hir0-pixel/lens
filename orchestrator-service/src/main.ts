@@ -621,14 +621,14 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   const sharedAuthorities = loadSharedAuthorities(env, dependencies, effectiveModelEligibility);
   const agentPolicyReplica = loadAgentPolicyReplica(env, dependencies);
   const mcpTools = await loadMcpTools(env);
-  if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && !env.USAGE_RECEIPT_PUBLIC_KEY) {
+  if (authorityProfile === "production" && !env.USAGE_RECEIPT_PUBLIC_KEY) {
     throw new Error("Production requires LENS_USAGE_RECEIPT_PUBLIC_KEY to verify sidecar-signed usage.");
   }
   // Fail-closed like every other production port (FailClosedRoutePolicyPort,
   // FailClosedOutputGuardPort, ...; see groundingPolicy.ts): production must not
   // silently fall back to resolveContext's dev-only "enterprise-docs"/"hybrid"
   // literals just because the profile env var was left unset.
-  if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && !env.COMPANY_RAG_PROFILE_JSON) {
+  if (authorityProfile === "production" && !env.COMPANY_RAG_PROFILE_JSON) {
     throw new Error("Production requires LENS_COMPANY_RAG_PROFILE_JSON so retrieval corpus/mode is profile-driven, not a hard-coded default.");
   }
   const service = new ProductionOrchestratorService({
@@ -656,7 +656,7 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
     // become CLARIFY or forced SINGLE_RETRIEVAL. DevelopmentHeuristicTurnRouter keeps
     // greetings/unrelated chat on NO_RETRIEVAL and enterprise/doc questions on retrieval.
     useGatewayTurnRouter: env.USE_GATEWAY_TURN_ROUTER !== "false",
-    ...(env.USE_GATEWAY_TURN_ROUTER === "false" && parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "development"
+    ...(env.USE_GATEWAY_TURN_ROUTER === "false" && authorityProfile === "development"
       ? { turnRouter: new DevelopmentHeuristicTurnRouter() }
       : {}),
     modelArtifactDigest: env.MODEL_ARTIFACT_DIGEST as `sha256:${string}`,
