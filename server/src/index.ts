@@ -18,6 +18,8 @@ import { DelegatedSessionAssertionIssuer } from "../../services/security/delegat
 import { EncryptedSqliteSecretStore, MemorySecretStore, type SecretStore } from "../../services/secrets/SecretStore";
 import { SqliteProviderRegistry } from "../../services/provider-registry/ProviderRegistry";
 import { ProviderOnboardingService, ProviderOnboardError } from "../../services/provider-registry/onboard";
+import { SqliteMcpRegistry } from "../../services/mcp-registry/McpRegistry";
+import { McpAdminService } from "../../services/mcp-registry/adminService";
 import { assertCompanyRagProfile, computeCompanyRagProfileDigest, type CompanyRagProfile } from "../../services/rag-profile/companyRagProfile";
 import type { AuditLedger } from "../../services/audit/AuditLedger";
 import { createIngestionDeployment, type IngestionDeployment } from "../../services/ingestion";
@@ -53,6 +55,7 @@ export function createApp(options?: {
   ragProfile?: CompanyRagProfile;
   ingestionDeployment?: IngestionDeployment;
   auditLedger?: AuditLedger;
+  mcpAdmin?: McpAdminService;
 }) {
   validateProductionConfig();
   const cfg = getConfig();
@@ -96,6 +99,10 @@ export function createApp(options?: {
     new SqliteProviderRegistry(cfg.PROVIDER_REGISTRY_PATH ?? ":memory:"),
     secrets,
     options?.discoverFetch ?? fetch,
+  );
+  const mcpAdmin = options?.mcpAdmin ?? new McpAdminService(
+    new SqliteMcpRegistry(cfg.MCP_REGISTRY_PATH ?? ":memory:"),
+    secrets,
   );
 
   let ingestionDeployment = options?.ingestionDeployment;
@@ -213,7 +220,7 @@ export function createApp(options?: {
 
   app.use("/auth", createAuthRouter({ auth }));
   app.use("/api", csrfProtection({ getSessionCsrf: (cookieValue) => sessionManager.readSession(cookieValue)?.csrfToken }));
-  app.use("/api", createApiRouter({ auth, ragHandler, conversationReferenceCodec, sessionAssertionIssuer, memoryAssertionIssuer, onboarding, ragProfile, ingestionDeployment, auditLedger: ingestionAuditLedger }));
+  app.use("/api", createApiRouter({ auth, ragHandler, conversationReferenceCodec, sessionAssertionIssuer, memoryAssertionIssuer, onboarding, ragProfile, ingestionDeployment, auditLedger: ingestionAuditLedger, mcpAdmin }));
 
   if (retrievalForIngestion && cfg.RETRIEVAL_HTTP_PORT && cfg.RETRIEVAL_WORKLOAD_TOKEN) {
     const retrievalHttp = createRetrievalHttp({

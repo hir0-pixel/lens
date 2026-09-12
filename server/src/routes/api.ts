@@ -8,6 +8,8 @@ import { ConversationReferenceCodec, ConversationReferenceError } from "../secur
 import { DelegatedSessionAssertionIssuer } from "../../../services/security/delegatedSessionAssertion";
 import { LENS_WORKSPACE_REF, LENS_REQUEST_CLASS, LENS_PURPOSE_REF } from "../../../services/security/workspaceContext";
 import { isAdministrator, createProviderRouter } from "./providers";
+import { createMcpServersRouter } from "./mcpServers";
+import type { McpAdminService } from "../../../services/mcp-registry/adminService";
 import type { ProviderOnboardingService } from "../../../services/provider-registry/onboard";
 import type { CompanyRagProfile } from "../../../services/rag-profile/companyRagProfile";
 import { employeeModelDoesNotAffectRag } from "../../../services/rag-profile/companyRagProfile";
@@ -39,6 +41,7 @@ export function createApiRouter(options: {
   ragProfile?: CompanyRagProfile;
   ingestionDeployment?: IngestionDeployment;
   auditLedger?: AuditLedger;
+  mcpAdmin?: McpAdminService;
 }): Router {
   const router = Router();
   const cfg = getConfig();
@@ -185,6 +188,9 @@ export function createApiRouter(options: {
   }
   if (options.ingestionDeployment && options.auditLedger) {
     router.use("/admin/ingestion", createIngestionRouter({ auth: options.auth, ingestion: options.ingestionDeployment, auditLedger: options.auditLedger }));
+  }
+  if (options.mcpAdmin) {
+    router.use(createMcpServersRouter({ auth: options.auth, admin: options.mcpAdmin }));
   }
 
   return router;
