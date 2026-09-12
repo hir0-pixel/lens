@@ -144,6 +144,30 @@ describe("ToolExecutionService golden behaviour (M6a additive-field proof)", () 
     })).rejects.toMatchObject({ code: "DEPENDENCY_UNAVAILABLE" });
   });
 
+  it("M6b: forwards the optional `arguments` field to dispatch when provided, and omits the key entirely when not (additive-field proof)", async () => {
+    const dispatchCalls: unknown[] = [];
+    const service = new ToolExecutionService(catalog, broker([]), legacySandbox(dispatchCalls));
+
+    await service.execute({
+      idempotencyKey: "idem-golden-11", subjectRef: "subject-1", toolName: "legacy_tool", toolVersion: "1",
+      argumentsDigest: "sha256:j", executionFence: "fence-11",
+    });
+    // No `arguments` passed: the dispatch call must carry exactly the pre-M6b six keys, byte-identical.
+    expect(Object.keys(dispatchCalls[0] as object).sort()).toEqual(
+      ["targetRef", "action", "credentialRef", "executionFence", "idempotencyKey", "argumentsDigest"].sort(),
+    );
+
+    await service.execute({
+      idempotencyKey: "idem-golden-12", subjectRef: "subject-1", toolName: "legacy_tool", toolVersion: "1",
+      argumentsDigest: "sha256:k", executionFence: "fence-12", arguments: { query: "hello" },
+    });
+    // `arguments` passed: the dispatch call carries it as a seventh key, untouched.
+    expect(dispatchCalls[1]).toMatchObject({ arguments: { query: "hello" } });
+    expect(Object.keys(dispatchCalls[1] as object).sort()).toEqual(
+      ["targetRef", "action", "credentialRef", "executionFence", "idempotencyKey", "argumentsDigest", "arguments"].sort(),
+    );
+  });
+
   it("a Sandbox that DOES return the new optional `result` field still behaves identically at the execute() boundary", async () => {
     // execute() only ever reads `outcome.status` — this proves the additive field is inert to
     // every existing caller and that `execute`'s return value (ToolState) is unaffected by it.
