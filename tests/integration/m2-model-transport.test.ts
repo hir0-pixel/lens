@@ -240,7 +240,7 @@ describe("M2a model transport", () => {
 
   it("transport.no-secrets-in-env", () => {
     expect(() => assertAgentEnvironment({})).not.toThrow();
-    for (const name of ["SECRET_STORE_KEY", "LENS_MCP_SECRET_STORE_KEY", "CATALOG_WORKLOAD_TOKEN", "OPENAI_API_KEY", "COMPANY_PROVIDER_API_KEY"]) {
+    for (const name of ["SECRET_STORE_KEY", "CATALOG_WORKLOAD_TOKEN", "OPENAI_API_KEY", "COMPANY_PROVIDER_API_KEY"]) {
       expect(() => assertAgentEnvironment({ [name]: "secret" })).toThrow(/credentials/);
     }
   });

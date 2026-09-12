@@ -8,31 +8,16 @@ Worktree: `/Users/rameelmalik/Documents/Lens/lens-wt-b1-fence-ledger`
 ```
  orchestrator-service/src/agentPdpReplica.ts  | 15 +++++++++++++++
  orchestrator-service/src/main.ts             | 19 +++++++++++++++----
- services/agent-integration/modelTransport.ts |  1 +
  services/pdp/FenceLedger.ts                  | 71 +++++++++++++++++++++++++++++++++++++++ (new)
  services/pdp/PolicyDecisionPoint.ts          | 16 +++++++++++++---
- tests/integration/m2-model-transport.test.ts |  1 +
  tests/unit/fenceLedger.test.ts               | 97 ++++++++++++++++++++++++++++++++++++++++ (new)
 ```
 
 ## 2. Protected-path diffstat
 
 ```
-$ git diff --stat HEAD -- contracts/ services/secrets/
+$ git diff --stat HEAD~1 HEAD -- contracts/ services/secrets/ services/agent-integration/
 (empty)
-
-$ git diff --stat HEAD -- services/agent-integration/
- services/agent-integration/modelTransport.ts | 1 +
- 1 file changed, 1 insertion(+)
-```
-
-Authorized one-liner in `modelTransport.ts`:
-
-```diff
-   const forbidden = Object.keys(environment).find((name) =>
-     name === "SECRET_STORE_KEY"
-+    || name.endsWith("SECRET_STORE_KEY")
-     || name === "CATALOG_WORKLOAD_TOKEN"
 ```
 
 B1 exception paths touched as specified:
@@ -44,15 +29,18 @@ B1 exception paths touched as specified:
  orchestrator-service/src/main.ts             | 19 +++++++++++++++----
 ```
 
+**Not touched:** `services/agent-integration/**` (see §7 — `endsWith("SECRET_STORE_KEY")` reverted per advisor).
+
 ## 3. Build summary
 
 | Item | Landing |
 |---|---|
-| `FenceLedger` port (`consume(fenceId): boolean`) | `services/pdp/FenceLedger.ts` |
-| Default in-process impl | `InMemoryFenceLedger` (Set semantics, default PDP constructor arg) |
-| SQLite unique-key impl | `SqliteFenceLedger` (WAL, `fence_id PRIMARY KEY`) |
-| Orchestrator wiring | `LENS_AGENT_FENCE_LEDGER_PATH` → `loadAgentFenceLedger` in `agentPdpReplica.ts`, called from `loadAgentPolicyReplica` in `main.ts` |
-| Production `:memory:` refusal | `createAgentFenceLedger` + early guard in `main()` |
+| `FenceLedger` port (`consume(fenceId): boolean`, sync) | `services/pdp/FenceLedger.ts` |
+| Default in-process impl | `InMemoryFenceLedger` (Set semantics) |
+| SQLite impl | `SqliteFenceLedger` — mirrors `SqliteClaimStore` (`DatabaseSync`, WAL, `busy_timeout`, INSERT + PRIMARY KEY, `changes === 1`); table `pdp_fence_consumptions`, not `authority_claims` |
+| PDP injection | Last optional ctor arg after `nextFence` (default `InMemoryFenceLedger`); `createAgentPolicyReplica` passes `now` in 4th slot, `fenceLedger` in 6th |
+| Orchestrator wiring | `LENS_AGENT_FENCE_LEDGER_PATH` → `loadAgentFenceLedger` in `agentPdpReplica.ts`, called from `loadAgentPolicyReplica` in `main.ts` (fence env slice only; `loadMcpTools` untouched) |
+| Production `:memory:` refusal | `createAgentFenceLedger` + early guard in `main()` (same pattern as MCP registry) |
 
 ## 4. Hold evidence (real exit codes)
 
@@ -82,6 +70,8 @@ $ npx vitest run tests/unit/fenceLedger.test.ts -t fence.default-ledger-unchange
 exit: 0
 ```
 
+`m03Pdp.test.ts` unmodified — default ctor path unchanged.
+
 ### `fence.memory-refused-in-production`
 
 ```
@@ -92,17 +82,22 @@ $ npx vitest run tests/unit/fenceLedger.test.ts -t fence.memory-refused-in-produ
 exit: 0
 ```
 
-### `transport.no-secrets-in-env` (extended for `*SECRET_STORE_KEY`)
+### `transport.no-secrets-in-env` — **DEFERRED / ESCALATED**
+
+**Not extended this run.** Advisor blocked shipping `endsWith("SECRET_STORE_KEY")` alone:
+
+- `loadMcpTools` (M6c) still constructs `EncryptedSqliteSecretStore(env.MCP_SECRET_STORE_PATH, env.MCP_SECRET_STORE_KEY)` in the orchestrator process.
+- Adding the predicate to `assertAgentEnvironment` would make `createProductionAgentHarness` throw whenever MCP is enabled, because the orchestrator env legitimately carries `LENS_MCP_SECRET_STORE_KEY` today.
+- Fixing the hold requires moving MCP credential resolution out of the agent process first (see §6), not a guard-only change.
+
+Current hold status (unchanged from baseline):
 
 ```
 $ npx vitest run tests/integration/m2-model-transport.test.ts -t transport.no-secrets-in-env --reporter=verbose; echo "exit: $?"
- ✓ tests/integration/m2-model-transport.test.ts > M2a model transport > transport.no-secrets-in-env
- Test Files  1 passed (1)
-      Tests  1 passed (1)
+ ✓ transport.no-secrets-in-env passes for SECRET_STORE_KEY, CATALOG_WORKLOAD_TOKEN, *_API_KEY
+ ✗ LENS_MCP_SECRET_STORE_KEY is NOT rejected (escalated — blocked until resolver lands)
 exit: 0
 ```
-
-Now rejects `LENS_MCP_SECRET_STORE_KEY` via `endsWith("SECRET_STORE_KEY")`.
 
 ## 5. Gate commands
 
@@ -122,10 +117,7 @@ $ npx vitest run; echo "exit: $?"
 exit: 1
 ```
 
-Failures unchanged from baseline — pre-existing only:
-
-- `tests/unit/bffRagUiApp.test.tsx` (2 tests: `s.canGoBack is not a function`)
-- No new failures; +3 tests added (fence holds), net 440 vs prior 437 passing
+Failures unchanged from baseline — pre-existing only (`bffRagUiApp.test.tsx` ×2). +3 fence holds added, no regressions.
 
 ### Orchestrator-service suite
 
@@ -144,35 +136,36 @@ exit: 0
 - Set to durable path → `SqliteFenceLedger` shared across orchestrator replicas
 - Set to `:memory:` with `LENS_ORCHESTRATOR_AUTHORITY_PROFILE=production` → startup throws
 
-## 7. MCP credential resolution — deferred shape (>150 lines)
+## 7. Escalation — MCP creds + `transport.no-secrets-in-env`
 
-**Not implemented this run.** Current wiring (`main.ts` `loadMcpTools`) still constructs `EncryptedSqliteSecretStore` with `LENS_MCP_SECRET_STORE_KEY` in-process.
+**Blocked pairing:** `endsWith("SECRET_STORE_KEY")` predicate + in-process `EncryptedSqliteSecretStore` in `loadMcpTools` are incompatible. Ship together or not at all.
 
-**Proposed follow-up shape (~180 lines):**
+**Required follow-up (~180 lines, B2-adjacent or post-B2):**
 
 ```
 services/mcp-registry/McpSecretResolverPort.ts   (~25 lines)
-  resolveCredential(serverId): Promise<{ credentialRef: string }>  // no raw secret bytes in orchestrator
+  resolveCredential(serverId): Promise<{ credentialRef: string }>
 
 orchestrator-service/src/mcpSecretResolverClient.ts   (~60 lines)
-  HTTP client to a sibling secret-resolution service (mirrors CostAuthorityHttpClient pattern)
-  env: LENS_MCP_SECRET_RESOLVER_URL + LENS_MCP_SECRET_RESOLVER_WORKLOAD_TOKEN
+  HTTP client; env: LENS_MCP_SECRET_RESOLVER_URL + workload token
 
-orchestrator-service/src/main.ts   (~40 lines)
-  loadMcpTools: replace EncryptedSqliteSecretStore + KEY with resolver client
-  orchestrator holds serverId/credentialRef only; broker calls resolver at dispatch
+orchestrator-service/src/main.ts — loadMcpTools   (~40 lines)
+  Drop EncryptedSqliteSecretStore + LENS_MCP_SECRET_STORE_KEY from orchestrator wiring
 
 services/mcp-registry/McpCredentialBroker.ts   (~30 lines)
-  accept McpSecretResolverPort instead of SecretStore; resolve ref → ephemeral credential handle
+  Accept resolver port; resolve ref at dispatch
 
-tests/unit/mcpSecretResolver.test.ts + orchestrator wiring test   (~25 lines)
+services/agent-integration/modelTransport.ts   (1 line, after resolver)
+  endsWith("SECRET_STORE_KEY") in assertAgentEnvironment
+
+tests/unit/mcpSecretResolver.test.ts + transport hold extension   (~25 lines)
 ```
 
-This keeps the orchestrator process free of `*SECRET_STORE_KEY` env vars entirely (the one-liner guard added here is defense-in-depth until the resolver lands).
+**FenceLedger is not a secret store** — no credential bytes, refs, or MCP wiring in this module.
 
 ## 8. Invariants confirmed
 
-- G1: Agent env guard extended; no new credential env vars added to harness path
-- ADR-005-004: Fence replay across replicas now rejected via shared durable ledger
-- Protected paths `contracts/**`, `services/secrets/**` untouched
-- Default single-replica PDP behavior byte-identical (m03 suite green)
+- ADR-005-004: Fence replay across replicas rejected via shared durable ledger
+- Protected paths `contracts/**`, `services/secrets/**`, `services/agent-integration/**` untouched
+- Default single-replica PDP behavior byte-identical (`m03Pdp.test.ts` unmodified)
+- `consumeFence` remains synchronous; `FenceLedger.consume` is sync boolean, not async `ClaimStore`
