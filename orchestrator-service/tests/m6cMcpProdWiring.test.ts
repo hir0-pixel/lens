@@ -17,15 +17,19 @@ import { McpHttpConnector } from "../../services/mcp-registry/McpHttpConnector";
 import { EncryptedSqliteSecretStore } from "../../services/secrets/SecretStore";
 import { INTERNAL_EGRESS_PROFILE, NO_EGRESS_PROFILE } from "../../tests/helpers/mcpDataFlow";
 import { StubMcpServer } from "../../tests/helpers/stubMcpServer";
+import { spawnAgentAuthority } from "../../agent-authority-service/tests/spawnAgentAuthority";
 import { createProductionAgentHarness } from "../src/agentHarness";
 import { createAgentAuditLedger, createAgentPolicyReplica } from "../src/agentPdpReplica";
 import { loadMcpTools, main, type OrchestratorServiceEnv } from "../src/main";
 
 const hash = (value: string): `sha256:${string}` => `sha256:${createHash("sha256").update(value).digest("hex")}`;
 const assertionKey = generateKeyPairSync("ed25519").publicKey.export({ type: "spki", format: "pem" }).toString();
+const AUTHORITY_TOKEN = "a".repeat(40);
 
 const roots: string[] = [];
-afterEach(() => {
+const authorityServers: Array<{ close: () => Promise<void> }> = [];
+afterEach(async () => {
+  while (authorityServers.length > 0) await authorityServers.pop()!.close();
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
@@ -33,6 +37,18 @@ function tempDbPath(prefix: string): string {
   const root = mkdtempSync(join(tmpdir(), prefix));
   roots.push(root);
   return join(root, "db.sqlite");
+}
+
+async function startTestAgentAuthority(secretPath: string, secretKey: string) {
+  const authorityDbPath = tempDbPath("m6c-agent-authority-");
+  const spawned = await spawnAgentAuthority({
+    dbPath: authorityDbPath,
+    secretPath,
+    secretKey,
+    token: AUTHORITY_TOKEN,
+  });
+  authorityServers.push(spawned);
+  return { url: spawned.url, token: AUTHORITY_TOKEN };
 }
 
 const ragProfile: CompanyRagProfile = {
@@ -68,12 +84,6 @@ function env(overrides: Partial<OrchestratorServiceEnv> = {}): OrchestratorServi
   };
 }
 
-/**
- * `createProductionAgentHarness`'s constructor (agentHarness.ts) never calls `pdp`/`gateway`/
- * `retrieval`/the authorities before `.run()` — it only registers tool catalog entries. These
- * stand-ins exist purely to satisfy the option shape; every method throws if actually invoked,
- * which every test below relies on NOT happening (proof the wiring under test never got that far).
- */
 function harnessOptions(mcpTools: Awaited<ReturnType<typeof loadMcpTools>>, runtime: AgentRuntime) {
   const ledger = createAgentAuditLedger();
   const factReaders: FactReaders = {
@@ -142,6 +152,7 @@ describe("M6c MCP production wiring", () => {
       const registryPath = tempDbPath("m6c-registry-");
       const secretPath = tempDbPath("m6c-secrets-");
       const secretKey = "k".repeat(32);
+      const authority = await startTestAgentAuthority(secretPath, secretKey);
       const registry = new SqliteMcpRegistry(registryPath);
       const admin = new McpAdminService(registry, new EncryptedSqliteSecretStore(secretPath, secretKey), fetch);
       const { id: serverId } = await admin.registerServer({ endpoint, transport: "http", secret: "s".repeat(20) });
@@ -150,7 +161,11 @@ describe("M6c MCP production wiring", () => {
       await admin.approveTool({ serverId, toolId: "lookup_ticket", dataFlowProfile: INTERNAL_EGRESS_PROFILE, resultAuthorization: "resource-gated" });
       await registry.setToolState(serverId, "lookup_ticket", "disabled");
 
-      const mcpTools = await loadMcpTools(env({ MCP_REGISTRY_PATH: registryPath, MCP_SECRET_STORE_PATH: secretPath, MCP_SECRET_STORE_KEY: secretKey }));
+      const mcpTools = await loadMcpTools(env({
+        MCP_REGISTRY_PATH: registryPath,
+        AGENT_AUTHORITY_URL: authority.url,
+        AGENT_AUTHORITY_WORKLOAD_TOKEN: authority.token,
+      }));
       expect(mcpTools?.descriptors.map((descriptor) => descriptor.toolId)).toEqual(["echo"]);
 
       const runtime = new AgentRuntime({ authorize: () => true });
@@ -187,6 +202,8 @@ describe("M6c MCP production wiring", () => {
     await expect(main(env({
       ORCHESTRATOR_AUTHORITY_PROFILE: "production",
       MCP_REGISTRY_PATH: ":memory:",
+      AGENT_AUTHORITY_URL: "http://127.0.0.1:8794/",
+      AGENT_AUTHORITY_WORKLOAD_TOKEN: AUTHORITY_TOKEN,
     }))).rejects.toThrow(/in-memory MCP registry/);
   });
 
@@ -197,31 +214,31 @@ describe("M6c MCP production wiring", () => {
       const registryPath = tempDbPath("m6c-registry-");
       const secretPath = tempDbPath("m6c-secrets-");
       const secretKey = "k".repeat(32);
+      const authority = await startTestAgentAuthority(secretPath, secretKey);
       const registry = new SqliteMcpRegistry(registryPath);
       const admin = new McpAdminService(registry, new EncryptedSqliteSecretStore(secretPath, secretKey), fetch);
       const { id: serverId } = await admin.registerServer({ endpoint, transport: "http", secret: "s".repeat(20) });
       await admin.discoverTools(serverId);
       await admin.approveTool({ serverId, toolId: "echo", dataFlowProfile: NO_EGRESS_PROFILE, resultAuthorization: "tool-gated" });
 
-      const mcpTools = await loadMcpTools(env({ MCP_REGISTRY_PATH: registryPath, MCP_SECRET_STORE_PATH: secretPath, MCP_SECRET_STORE_KEY: secretKey }));
+      const mcpTools = await loadMcpTools(env({
+        MCP_REGISTRY_PATH: registryPath,
+        AGENT_AUTHORITY_URL: authority.url,
+        AGENT_AUTHORITY_WORKLOAD_TOKEN: authority.token,
+      }));
       expect(mcpTools?.sandbox).toBeInstanceOf(McpHttpConnector);
 
-      // Proves it is the orchestrator's own secret store wired in, not a second one: the
-      // credential this broker issues resolves against the exact sealed-secrets file/key
-      // `loadMcpTools` was given, and the connector reaches the real stub server with it —
-      // a second, independently-constructed HTTP client/credential path would have nothing to
-      // resolve against.
       const { credentialRef } = await mcpTools!.broker.issue({
         subjectRef: "employee-1",
         targetRef: mcpServerTargetRef(serverId),
         action: mcpToolAction("echo"),
-        executionFence: "fence-1",
+        executionFence: "mcp-fence:req-1:tool-echo",
       });
       const outcome = await mcpTools!.sandbox.dispatch({
         targetRef: mcpServerTargetRef(serverId),
         action: mcpToolAction("echo"),
         credentialRef,
-        executionFence: "fence-1",
+        executionFence: "mcp-fence:req-1:tool-echo",
         idempotencyKey: "idem-1",
         argumentsDigest: "sha256:deadbeef",
       });

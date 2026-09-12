@@ -35,7 +35,9 @@ import type { ProductionAgentHarnessOptions } from "./agentHarness";
 import { SqliteMcpRegistry } from "../../services/mcp-registry/McpRegistry";
 import { McpCredentialBroker } from "../../services/mcp-registry/McpCredentialBroker";
 import { McpHttpConnector } from "../../services/mcp-registry/McpHttpConnector";
-import { EncryptedSqliteSecretStore } from "../../services/secrets/SecretStore";
+import { RemoteMcpSecretResolver } from "../../services/mcp-registry/McpSecretResolver";
+import { AgentAuthorityHttpClient } from "../../services/agent-authority/AgentAuthorityHttpClient";
+import { HttpFenceLedger } from "../../services/pdp/FenceLedger";
 import type { McpToolDescriptor } from "../../services/agent-integration/mcpTool";
 
 export interface OrchestratorServiceEnv {
@@ -119,15 +121,10 @@ export interface OrchestratorServiceEnv {
    * ":memory:" — a persistent registry or nothing.
    */
   MCP_REGISTRY_PATH?: string;
-  /** SQLite path to the encrypted secret store holding MCP server credentials. Must point at
-   * the same sealed-secrets store an admin's MCP server registration wrote into (see
-   * server/src/index.ts's `secrets`). Required together with MCP_SECRET_STORE_KEY whenever
-   * MCP_REGISTRY_PATH is set. */
-  MCP_SECRET_STORE_PATH?: string;
-  /** 32+ character master key for MCP_SECRET_STORE_PATH — must match the key the store was
-   * sealed with (the BFF's SECRET_STORE_KEY). */
-  MCP_SECRET_STORE_KEY?: string;
-  /** SQLite path for cross-replica agent PDP fence consumption. Absent → in-process ledger (single-replica dev/test). Production must not set this to ":memory:". */
+  /** Shared agent authority service for cross-replica fence ledger and MCP credential resolution. Required in production. */
+  AGENT_AUTHORITY_URL?: string;
+  AGENT_AUTHORITY_WORKLOAD_TOKEN?: string;
+  /** SQLite path for cross-replica agent PDP fence consumption. Dev/test fallback when AGENT_AUTHORITY_URL is absent. Production must not set this to ":memory:". */
   AGENT_FENCE_LEDGER_PATH?: string;
 }
 
@@ -185,10 +182,20 @@ function loadEnv(): OrchestratorServiceEnv {
     LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS: process.env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS,
     LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY: process.env.LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY,
     MCP_REGISTRY_PATH: process.env.LENS_MCP_REGISTRY_PATH,
-    MCP_SECRET_STORE_PATH: process.env.LENS_MCP_SECRET_STORE_PATH,
-    MCP_SECRET_STORE_KEY: process.env.LENS_MCP_SECRET_STORE_KEY,
+    AGENT_AUTHORITY_URL: process.env.LENS_AGENT_AUTHORITY_URL,
+    AGENT_AUTHORITY_WORKLOAD_TOKEN: process.env.LENS_AGENT_AUTHORITY_WORKLOAD_TOKEN,
     AGENT_FENCE_LEDGER_PATH: process.env.LENS_AGENT_FENCE_LEDGER_PATH,
   };
+}
+
+export function loadAgentAuthorityClient(env: OrchestratorServiceEnv, authorityProfile: "development" | "test" | "production"): AgentAuthorityHttpClient | undefined {
+  if (env.AGENT_AUTHORITY_URL && env.AGENT_AUTHORITY_WORKLOAD_TOKEN) {
+    return new AgentAuthorityHttpClient(env.AGENT_AUTHORITY_URL, env.AGENT_AUTHORITY_WORKLOAD_TOKEN);
+  }
+  if (authorityProfile === "production") {
+    throw new Error("Production requires LENS_AGENT_AUTHORITY_URL and LENS_AGENT_AUTHORITY_WORKLOAD_TOKEN.");
+  }
+  return undefined;
 }
 
 /**
@@ -350,7 +357,9 @@ export function loadAgentPolicyReplica(
     : undefined);
   if (!agentPolicy) return undefined;
   const authorityProfile = parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE);
-  const fenceLedger = loadAgentFenceLedger(env.AGENT_FENCE_LEDGER_PATH, authorityProfile);
+  const fenceLedger = env.AGENT_AUTHORITY_URL && env.AGENT_AUTHORITY_WORKLOAD_TOKEN
+    ? new HttpFenceLedger(loadAgentAuthorityClient(env, authorityProfile)!)
+    : loadAgentFenceLedger(env.AGENT_FENCE_LEDGER_PATH, authorityProfile);
   return createAgentPolicyReplica({
     ...agentPolicy,
     auditLedger: createAgentAuditLedger(),
@@ -393,11 +402,12 @@ export async function loadMcpTools(
   if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && env.MCP_REGISTRY_PATH === ":memory:") {
     throw new Error("Production must not use an in-memory MCP registry (LENS_MCP_REGISTRY_PATH=:memory:); a persistent registry is required.");
   }
-  if (!env.MCP_SECRET_STORE_PATH || !env.MCP_SECRET_STORE_KEY) {
-    throw new Error("LENS_MCP_SECRET_STORE_PATH and LENS_MCP_SECRET_STORE_KEY are required when LENS_MCP_REGISTRY_PATH is set.");
+  const authorityProfile = parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE);
+  const agentAuthority = loadAgentAuthorityClient(env, authorityProfile);
+  if (!agentAuthority) {
+    throw new Error("LENS_AGENT_AUTHORITY_URL and LENS_AGENT_AUTHORITY_WORKLOAD_TOKEN are required when LENS_MCP_REGISTRY_PATH is set.");
   }
   const registry = new SqliteMcpRegistry(env.MCP_REGISTRY_PATH);
-  const secrets = new EncryptedSqliteSecretStore(env.MCP_SECRET_STORE_PATH, env.MCP_SECRET_STORE_KEY);
   const approvedToolGated = (await registry.listAllTools())
     .filter((tool) => tool.state === "approved" && tool.resultAuthorization === "tool-gated");
   type RegistryBackedDescriptor = McpToolDescriptor & {
@@ -413,7 +423,7 @@ export async function loadMcpTools(
     resultAuthorization: tool.resultAuthorization,
     risk: "high_risk",
   }));
-  const broker = new McpCredentialBroker(registry, secrets);
+  const broker = new McpCredentialBroker(registry, new RemoteMcpSecretResolver(agentAuthority));
   const sandbox = new McpHttpConnector({ registry, credentials: broker });
   return { descriptors, broker, sandbox };
 }
@@ -588,8 +598,11 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   if (authorityProfile === "production" && env.MCP_REGISTRY_PATH === ":memory:") {
     throw new Error("Production must not use an in-memory MCP registry (LENS_MCP_REGISTRY_PATH=:memory:); a persistent registry is required.");
   }
+  if (authorityProfile === "production" && !env.AGENT_AUTHORITY_URL) {
+    throw new Error("Production requires LENS_AGENT_AUTHORITY_URL and LENS_AGENT_AUTHORITY_WORKLOAD_TOKEN.");
+  }
   if (authorityProfile === "production" && env.AGENT_FENCE_LEDGER_PATH === ":memory:") {
-    throw new Error("Production must not use an in-memory agent fence ledger (LENS_AGENT_FENCE_LEDGER_PATH=:memory:); a persistent ledger is required.");
+    throw new Error("Production must not use an in-memory agent fence ledger (LENS_AGENT_FENCE_LEDGER_PATH=:memory:); use LENS_AGENT_AUTHORITY_URL instead.");
   }
   const assertionVerifier = new DelegatedSessionAssertionVerifier(env.ASSERTION_VERIFY_KEY);
   const memoryAssertionVerifier = new DelegatedSessionAssertionVerifier(env.MEMORY_ASSERTION_VERIFY_KEY);

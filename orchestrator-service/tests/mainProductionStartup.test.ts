@@ -71,6 +71,8 @@ function baseValidProductionEnv(port = "8789"): OrchestratorServiceEnv {
     COST_AUTHORITY_WORKLOAD_TOKEN: "c".repeat(40),
     AGENT_RUN_AUTHORITY_URL: "http://127.0.0.1:1/",
     AGENT_RUN_AUTHORITY_WORKLOAD_TOKEN: "g".repeat(40),
+    AGENT_AUTHORITY_URL: "http://127.0.0.1:1/",
+    AGENT_AUTHORITY_WORKLOAD_TOKEN: "b".repeat(40),
     MODEL_USE_RECEIPT_PUBLIC_KEY: publicKeyPem,
     COST_RECEIPT_PUBLIC_KEY: publicKeyPem,
     AGENT_RUN_RECEIPT_PUBLIC_KEY: publicKeyPem,

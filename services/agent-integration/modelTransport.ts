@@ -55,6 +55,7 @@ export function assertAgentEnvironment(environment: NodeJS.ProcessEnv): void {
     name === "SECRET_STORE_KEY"
     || name === "CATALOG_WORKLOAD_TOKEN"
     || name.endsWith("_API_KEY")
+    || name.endsWith("SECRET_STORE_KEY")
   );
   if (forbidden) throw new Error("Agent process environment contains provider credentials.");
 }

@@ -74,6 +74,14 @@ console.log("BFF retrieval (ingestion corpus) ready on :8788");
 
 const services = [
   {
+    name: "agent-authority",
+    args: ["exec", "tsx", "src/main.ts"],
+    cwd: resolve(root, "agent-authority-service"),
+    envFile: "agent-authority.env",
+    url: "http://127.0.0.1:8794/readyz",
+    validate: (response) => response.ok,
+  },
+  {
     name: "authority",
     args: ["exec", "tsx", "src/main.ts"],
     cwd: resolve(root, "authority-service"),
@@ -122,7 +130,7 @@ for (const service of services) {
   console.log(`${service.name} ready`);
 }
 
-console.log("Local RAG stack is up (authority 8790, BFF retrieval 8788, runtime 8793, orchestrator 8789).");
+console.log("Local RAG stack is up (authority 8790, agent-authority 8794, BFF retrieval 8788, runtime 8793, orchestrator 8789).");
 console.log("Paste docs in Settings → Providers, then Ask in chat. Ctrl+C stops this script.");
 
 function shutdown() {

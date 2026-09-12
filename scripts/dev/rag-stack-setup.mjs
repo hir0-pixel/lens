@@ -76,10 +76,13 @@ function preserved(existing, key, fallback) {
 const existingBff = parseEnvFile(resolve(stackDir, "bff-rag.env"));
 const existingOrch = parseEnvFile(resolve(stackDir, "orchestrator.env"));
 const existingAuthority = parseEnvFile(resolve(stackDir, "authority.env"));
+const existingAgentAuthority = parseEnvFile(resolve(stackDir, "agent-authority.env"));
 
 const orchestratorToken = preserved(existingBff, "ORCHESTRATOR_TOKEN", token());
 const retrievalToken = preserved(existingBff, "RETRIEVAL_WORKLOAD_TOKEN", token());
 const authorityToken = preserved(existingAuthority, "AUTHORITY_WORKLOAD_TOKEN", token());
+const agentAuthorityToken = preserved(existingAgentAuthority, "LENS_AGENT_AUTHORITY_WORKLOAD_TOKEN", token());
+const mcpSecretKey = preserved(existingAgentAuthority, "LENS_MCP_SECRET_STORE_KEY", createHash("sha256").update("lens-dev-mcp-secret-store").digest("hex"));
 const runtimeToken = preserved(existingOrch, "LENS_MODEL_RUNTIME_WORKLOAD_TOKEN", token());
 const catalogToken = preserved(existingBff, "CATALOG_WORKLOAD_TOKEN", token());
 const providerSecretToken = preserved(existingBff, "PROVIDER_SECRET_WORKLOAD_TOKEN", token());
@@ -155,6 +158,16 @@ const routePolicySignature = signRoutePolicyManifest(routeOpsKey, routePolicy);
 mkdirSync(stackDir, { recursive: true });
 mkdirSync(dataDir, { recursive: true });
 
+writeEnv("agent-authority.env", {
+  NODE_ENV: "development",
+  PORT: "8794",
+  HOST: "127.0.0.1",
+  LENS_AGENT_AUTHORITY_WORKLOAD_TOKEN: agentAuthorityToken,
+  LENS_AGENT_AUTHORITY_DB_PATH: resolve(dataDir, "agent-authority.db"),
+  LENS_MCP_SECRET_STORE_PATH: resolve(dataDir, "mcp-secrets.db"),
+  LENS_MCP_SECRET_STORE_KEY: mcpSecretKey,
+});
+
 writeEnv("authority.env", {
   NODE_ENV: "development",
   PORT: "8790",
@@ -216,6 +229,8 @@ writeEnv("orchestrator.env", {
   // orchestrator Model Gateway must verify those tokens alongside its own dev authority receipts.
   LENS_SCHEDULER_LEASE_PUBLIC_KEY: pemOneLine(schedulerPublicPem),
   LENS_USAGE_RECEIPT_PUBLIC_KEY: pemOneLine(schedulerPublicPem),
+  LENS_AGENT_AUTHORITY_URL: "http://127.0.0.1:8794/",
+  LENS_AGENT_AUTHORITY_WORKLOAD_TOKEN: agentAuthorityToken,
 });
 
 writeEnv("bff-rag.env", {
@@ -253,7 +268,7 @@ writeFileSync(resolve(stackDir, "README.txt"), [
   "5. Keep IdP (3005), BFF (3001), Vite (1420) running.",
   "6. Settings → Providers → paste a document, then Ask in chat about it.",
   "",
-  "Ports: authority 8790, BFF retrieval 8788, orchestrator 8789, runtime 8793",
+  "Ports: authority 8790, agent-authority 8794, BFF retrieval 8788, orchestrator 8789, runtime 8793",
 ].join("\n"), "utf8");
 
 console.log(`Wrote local RAG stack env to ${stackDir}`);

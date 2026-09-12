@@ -4,6 +4,7 @@
  * call returns `true`.
  */
 import { DatabaseSync } from "node:sqlite";
+import type { AgentAuthorityHttpClient } from "../agent-authority/AgentAuthorityHttpClient";
 
 export interface FenceLedger {
   /** Atomically consumes `fenceId`. Returns true exactly once per id — every subsequent or concurrent caller gets false. */
@@ -51,6 +52,15 @@ export class SqliteFenceLedger implements FenceLedger {
 
   close(): void {
     this.db.close();
+  }
+}
+
+/** Remote fence ledger backed by `agent-authority-service`. Blocking HTTP — same sync contract as SQLite. */
+export class HttpFenceLedger implements FenceLedger {
+  constructor(private readonly client: Pick<AgentAuthorityHttpClient, "consumeFence">) {}
+
+  consume(fenceId: string): boolean {
+    return this.client.consumeFence(fenceId);
   }
 }
 
