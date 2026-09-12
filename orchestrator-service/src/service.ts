@@ -37,7 +37,7 @@ import type { ModelEligibilityCheckPort } from "./modelGovernance";
 import { FailClosedRoutePolicyPort, RoutePolicyError, type RoutePolicyPort, type RoutePolicyResult } from "./groundingPolicy";
 import type { CompanyRagProfile } from "../../services/rag-profile/companyRagProfile";
 import { computeCompanyRagProfileDigest, employeeModelDoesNotAffectRag } from "../../services/rag-profile/companyRagProfile";
-import { createProductionAgentHarness } from "./agentHarness";
+import { createProductionAgentHarness, type ProductionAgentHarnessOptions } from "./agentHarness";
 import type { AgentPolicyReplica } from "./agentPdpReplica";
 import { isValidModelRef } from "./modelSelection";
 
@@ -361,6 +361,10 @@ export interface ProductionOrchestratorOptions {
   devInMemoryAuthorities?: boolean;
   /** Deployer-wired replica of Retrieval's PDP policy and fact sources. Absent means agent mode fails closed. */
   agentPolicyReplica?: AgentPolicyReplica;
+  /** M6c: admin-approved MCP tools wired onto the harness (see agentHarness.ts's `mcpTools`
+   * option, M6b). Absent means MCP is simply unavailable — main.ts's `loadMcpTools` returns
+   * undefined when LENS_MCP_REGISTRY_PATH is unset; there is no permissive default here. */
+  mcpTools?: ProductionAgentHarnessOptions["mcpTools"];
   agentSessionRoot?: string;
   agentMaxSteps?: number;
   agentMaxCostUnits?: number;
@@ -851,6 +855,7 @@ export class ProductionOrchestratorService {
         maxSteps: options.agentMaxSteps,
         maxCostUnits: options.agentMaxCostUnits,
         now: this.now,
+        mcpTools: options.mcpTools,
       });
     }
     this.turnRouter = options.turnRouter ?? (options.useGatewayTurnRouter ? new GatewayTurnRouterLLMPort(this.modelGateway, this.modelSelection, this.modelEligibility) : undefined);
