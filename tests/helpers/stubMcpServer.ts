@@ -31,6 +31,7 @@ export class StubMcpServer {
   private _listCount = 0;
   private _callCount = 0;
   private authorizationsSeen: string[] = [];
+  private _lastCallArguments: Record<string, unknown> | undefined;
 
   get listCount(): number {
     return this._listCount;
@@ -42,6 +43,12 @@ export class StubMcpServer {
 
   get seenAuthorizations(): readonly string[] {
     return this.authorizationsSeen;
+  }
+
+  /** The `arguments` object of the most recent `tools/call` request — lets a test prove the
+   * connector forwarded the caller's arguments to the server intact (M6b's argument transport). */
+  get lastCallArguments(): Record<string, unknown> | undefined {
+    return this._lastCallArguments;
   }
 
   setSchema(toolName: string, inputSchema: unknown): void {
@@ -86,6 +93,7 @@ export class StubMcpServer {
           }
           if (rpc.method === "tools/call") {
             this._callCount += 1;
+            this._lastCallArguments = rpc.params?.arguments;
             const name = rpc.params?.name;
             let result: McpToolCallResult;
             if (name === "echo") {

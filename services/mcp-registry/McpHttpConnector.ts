@@ -1,5 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Sandbox } from "../tool-execution/ToolExecutionService";
+import { canonicalJson } from "../security/canonicalJson";
 import { parseMcpServerTargetRef, parseMcpToolAction, type McpRegistry } from "./McpRegistry";
 import { computeSchemaDigest } from "./schemaDigest";
 import type { McpCredentialResolver } from "./McpCredentialBroker";
@@ -28,6 +29,15 @@ export function boundContent(content: string, maxOutputBytes: number): string {
   let truncated = Buffer.from(content, "utf8").subarray(0, budget).toString("utf8");
   while (Buffer.byteLength(truncated, "utf8") > budget) truncated = truncated.slice(0, -1);
   return `${truncated}${TRUNCATION_MARKER}`;
+}
+
+/** `sha256(canonicalJson(arguments))` — the same canonicalizer every signer/verifier in this
+ * repo uses (`services/security/canonicalJson.ts`), which is also what `governanceBinding.ts`'s
+ * `normalizedToolIntentDigest` builds its own digest from. M6b closes the M6a gap: `dispatch`
+ * previously carried no arguments at all (`Sandbox.dispatch` only threaded `argumentsDigest`).
+ * Exported so tests can compute the expected digest independently of the connector. */
+export function computeArgumentsDigest(args: Record<string, unknown>): string {
+  return `sha256:${createHash("sha256").update(canonicalJson(args)).digest("hex")}`;
 }
 
 async function postJsonRpc<T>(fetcher: typeof fetch, endpoint: string, secret: string, body: unknown, signal: AbortSignal): Promise<T> {
@@ -87,7 +97,16 @@ export class McpHttpConnector implements Sandbox {
     executionFence: string;
     idempotencyKey: string;
     argumentsDigest: string;
+    arguments?: Record<string, unknown>;
   }): Promise<{ status: "succeeded" | "unknown"; result?: { content: string; resourceRefs: readonly string[] } }> {
+    // M6a gap, closed: when the caller supplies `arguments`, verify it against the digest the
+    // fence was bound to BEFORE any network attempt. A mismatch means the exact intent the model
+    // was authorized for no longer matches what is about to be sent — that is an integrity
+    // failure, not a retryable error. See M6 spec's "M6a gap" note on argument transport.
+    if (input.arguments !== undefined && computeArgumentsDigest(input.arguments) !== input.argumentsDigest) {
+      throw new Error("MCP tool call arguments do not match the digest the fence was bound to.");
+    }
+
     const serverId = parseMcpServerTargetRef(input.targetRef);
     const toolId = parseMcpToolAction(input.action);
 
@@ -109,7 +128,7 @@ export class McpHttpConnector implements Sandbox {
       throw new Error("MCP tool schema drift detected; the tool has been marked drifted and blocked.");
     }
 
-    const called = await postJsonRpc<McpToolCallResult>(this.fetcher, server.endpoint, secret, buildCallRequest(randomUUID(), toolId), signal);
+    const called = await postJsonRpc<McpToolCallResult>(this.fetcher, server.endpoint, secret, buildCallRequest(randomUUID(), toolId, input.arguments ?? {}), signal);
     const content = boundContent(called.content, this.maxOutputBytes);
     const resourceRefs = pinned.provenancePath ? asStringArray(resolveJsonPath(called, pinned.provenancePath)) : [];
 

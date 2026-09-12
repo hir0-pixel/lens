@@ -4,7 +4,7 @@ import { MemorySecretStore } from "../../services/secrets/SecretStore";
 import { SqliteMcpRegistry, mcpServerTargetRef, mcpToolAction } from "../../services/mcp-registry/McpRegistry";
 import { McpAdminService } from "../../services/mcp-registry/adminService";
 import { McpCredentialBroker } from "../../services/mcp-registry/McpCredentialBroker";
-import { McpHttpConnector, boundContent } from "../../services/mcp-registry/McpHttpConnector";
+import { McpHttpConnector, boundContent, computeArgumentsDigest } from "../../services/mcp-registry/McpHttpConnector";
 import { probeMcpServerHealth } from "../../services/mcp-registry/healthProbe";
 import { ToolExecutionError, ToolExecutionService, type ToolCatalogEntry } from "../../services/tool-execution/ToolExecutionService";
 import { StubMcpServer, STUB_PROVENANCE_PATH } from "../helpers/stubMcpServer";
@@ -86,6 +86,40 @@ describe("MCP HTTP connector", () => {
     // the secret DOES have to reach the MCP server itself to authenticate the call — that is
     // expected and is the connector's whole job. It just never travels through the orchestrator.
     expect(stub.seenAuthorizations.some((header) => header === `Bearer ${SECRET_VALUE}`)).toBe(true);
+  });
+
+  it("mcp.arguments-verified-against-digest: a tampered arguments object with a stale digest is rejected with zero network calls; a matching pair reaches the stub with the arguments intact", async () => {
+    const { broker, connector } = makeConnector();
+    const args = { text: "hello from the caller" };
+    const goodDigest = computeArgumentsDigest(args);
+
+    const { credentialRef } = await broker.issue({ subjectRef: SUBJECT_REF, targetRef: mcpServerTargetRef(serverId), action: mcpToolAction("echo"), executionFence: FENCE });
+    const listCountBefore = stub.listCount;
+    const callCountBefore = stub.callCount;
+    await expect(connector.dispatch({
+      targetRef: mcpServerTargetRef(serverId),
+      action: mcpToolAction("echo"),
+      credentialRef,
+      executionFence: FENCE,
+      idempotencyKey: "idem-tamper",
+      argumentsDigest: "sha256:stale-digest-that-does-not-match",
+      arguments: args,
+    })).rejects.toThrow(/digest/i);
+    expect(stub.listCount).toBe(listCountBefore); // zero network calls — not even tools/list
+    expect(stub.callCount).toBe(callCountBefore);
+
+    const { credentialRef: secondRef } = await broker.issue({ subjectRef: SUBJECT_REF, targetRef: mcpServerTargetRef(serverId), action: mcpToolAction("echo"), executionFence: "fence-match" });
+    const outcome = await connector.dispatch({
+      targetRef: mcpServerTargetRef(serverId),
+      action: mcpToolAction("echo"),
+      credentialRef: secondRef,
+      executionFence: "fence-match",
+      idempotencyKey: "idem-match",
+      argumentsDigest: goodDigest,
+      arguments: args,
+    });
+    expect(outcome.status).toBe("succeeded");
+    expect(stub.lastCallArguments).toEqual(args);
   });
 
   it("mcp.schema-drift-blocks: a changed live schema blocks the call, marks the tool drifted, and never reaches the tool handler", async () => {

@@ -25,6 +25,13 @@ import {
   type ToolGovernanceLogPort,
 } from "../../services/agent-integration/governanceBinding";
 import { assertAgentEnvironment, createLensAgentProvider } from "../../services/agent-integration/modelTransport";
+import {
+  createMcpTool,
+  mcpRuntimeCatalogEntry,
+  resolveMcpToolIntent,
+  type McpToolDescriptor,
+} from "../../services/agent-integration/mcpTool";
+import type { CredentialBroker, Sandbox } from "../../services/tool-execution/ToolExecutionService";
 import type { AuditLedger } from "../../services/audit/AuditLedger";
 import type { AgentRunAuthorityPort } from "../../services/agent-run-authority/AgentRunAuthority";
 import type { CostAuthorityPort } from "../../services/cost-authority/CostAuthority";
@@ -90,6 +97,14 @@ export interface ProductionAgentHarnessOptions {
   now?: () => number;
   environment?: NodeJS.ProcessEnv;
   runtime?: AgentRuntime;
+  /** Approved MCP tools (M6b), registered at construction time alongside `search_corpus`. A
+   * `drifted`/`disabled` tool must simply be absent from `descriptors` — it is not a run-time
+   * state this option tracks. */
+  mcpTools?: {
+    descriptors: readonly McpToolDescriptor[];
+    broker: CredentialBroker;
+    sandbox: Sandbox;
+  };
 }
 
 class RunAuditLog implements ToolGovernanceLogPort, ContextBindingLogPort {
@@ -129,9 +144,9 @@ function finalText(entries: readonly MessageEntry[]): string {
   return assistant.content.filter((part) => part.type === "text").map((part) => part.text).join("");
 }
 
-function hasUnknownToolCall(entries: readonly MessageEntry[]): boolean {
+function hasUnknownToolCall(entries: readonly MessageEntry[], knownToolNames: ReadonlySet<string>): boolean {
   return entries.some((entry) => entry.message.role === "assistant" && entry.message.content.some(
-    (part) => part.type === "toolCall" && part.name !== searchCorpusCatalogEntry.toolId,
+    (part) => part.type === "toolCall" && !knownToolNames.has(part.name),
   ));
 }
 
@@ -171,6 +186,14 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
     },
   }, now);
   runtime.registerTool(searchCorpusCatalogEntry);
+  const mcpDescriptors = options.mcpTools?.descriptors ?? [];
+  for (const descriptor of mcpDescriptors) runtime.registerTool(mcpRuntimeCatalogEntry(descriptor));
+  const mcpDescriptorsByToolId = new Map(mcpDescriptors.map((descriptor) => [descriptor.toolId, descriptor]));
+  const knownToolNames = new Set<string>([searchCorpusCatalogEntry.toolId, ...mcpDescriptorsByToolId.keys()]);
+  const toolVersionByName = new Map<string, string>([
+    [searchCorpusCatalogEntry.toolId, searchCorpusCatalogEntry.version],
+    ...mcpDescriptors.map((descriptor) => [descriptor.toolId, descriptor.version] as const),
+  ]);
 
   return {
     runtime,
@@ -462,11 +485,18 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
           deadlineAt: request.deadlineAt,
         },
       });
+      const mcpTools = options.mcpTools
+        ? mcpDescriptors.map((descriptor) => createMcpTool(descriptor, {
+            broker: options.mcpTools!.broker,
+            sandbox: options.mcpTools!.sandbox,
+            scope: { requestId: request.requestId, subjectRef: request.subjectRef },
+          }))
+        : [];
       const { harness } = await AgentHarness.create({
         session,
         models,
         model: transport.model,
-        tools: [tool],
+        tools: [tool, ...mcpTools],
         systemPrompt: "Complete the employee task using only authorized company context. Use search_corpus when company information is needed.",
       }, TODO_CONTEXT);
 
@@ -482,8 +512,10 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
             deadlineAt: request.deadlineAt,
           },
           resolveIntent(event) {
-            if (event.toolName !== searchCorpusCatalogEntry.toolId) throw new Error("Unknown tool.");
-            return resolveSearchCorpusIntent(options.profile, profileSelector);
+            if (event.toolName === searchCorpusCatalogEntry.toolId) return resolveSearchCorpusIntent(options.profile, profileSelector);
+            const descriptor = mcpDescriptorsByToolId.get(event.toolName);
+            if (!descriptor) throw new Error("Unknown tool.");
+            return resolveMcpToolIntent(descriptor);
           },
           log: {
             emit(event) {
@@ -503,7 +535,8 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
           now,
         }),
         harness.hooks.on("before_tool", (event: HookInvocation<"before_tool">) => {
-          if (event.toolName !== searchCorpusCatalogEntry.toolId) return undefined;
+          const toolVersion = toolVersionByName.get(event.toolName);
+          if (toolVersion === undefined) return undefined;
           if (now() >= request.deadlineAt) {
             incomplete = "deadline";
             return { block: { reason: "Run incomplete", terminate: true } };
@@ -517,8 +550,8 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
               runId: run.runId,
               expectedRevision: run.revision,
               stepId,
-              toolId: searchCorpusCatalogEntry.toolId,
-              toolVersion: searchCorpusCatalogEntry.version,
+              toolId: event.toolName,
+              toolVersion,
               intentDigest: sha256(JSON.stringify(event.args)),
               declaredCostUnits: 1,
             });
@@ -563,7 +596,7 @@ export function createProductionAgentHarness(options: ProductionAgentHarnessOpti
         const result = await lane.prompt(request.inputText, [], withAbortSignal(deadlineSignal, TODO_CONTEXT));
         const entries = messageEntries(await session.findEntries(undefined, TODO_CONTEXT));
         const output = finalText(entries);
-        if (policyBlocked || hasUnknownToolCall(entries) || output === POLICY_BLOCK_REASON) {
+        if (policyBlocked || hasUnknownToolCall(entries, knownToolNames) || output === POLICY_BLOCK_REASON) {
           runtime.close(run.runId, run.revision, "CANCELLED");
           await closeAuthorities();
           return { status: "DENIED", output: POLICY_BLOCK_REASON, citations: [] };
