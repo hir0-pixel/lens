@@ -2,7 +2,7 @@ export type ToolState = "SUCCEEDED" | "AWAITING_APPROVAL" | "OUTCOME_UNKNOWN" | 
 export class ToolExecutionError extends Error { constructor(readonly code: "CONFLICT" | "FORBIDDEN" | "DEPENDENCY_UNAVAILABLE") { super(code); } }
 export interface ToolCatalogEntry { name: string; version: string; targetRef: string; action: string; risk: "read" | "write"; requiresApproval: boolean; externalCapable: boolean; }
 export interface CredentialBroker { issue(input: { subjectRef: string; targetRef: string; action: string; executionFence: string }): Promise<{ credentialRef: string }>; }
-export interface Sandbox { dispatch(input: { targetRef: string; action: string; credentialRef: string; executionFence: string; idempotencyKey: string; argumentsDigest: string }): Promise<{ status: "succeeded" | "unknown" }>; }
+export interface Sandbox { dispatch(input: { targetRef: string; action: string; credentialRef: string; executionFence: string; idempotencyKey: string; argumentsDigest: string }): Promise<{ status: "succeeded" | "unknown"; result?: { content: string; resourceRefs: readonly string[] } }>; }
 export class ToolExecutionService {
   private readonly executions = new Map<string, { digest: string; state: ToolState }>();
   constructor(private readonly catalog: readonly ToolCatalogEntry[], private readonly broker: CredentialBroker, private readonly sandbox: Sandbox) {}

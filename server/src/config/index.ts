@@ -90,6 +90,7 @@ const envSchema = z.object({
   ADMIN_SUBJECTS: z.string().optional(),
   PROVIDER_PROFILE: z.enum(["sovereign", "development"]).default("sovereign"),
   PROVIDER_REGISTRY_PATH: z.string().optional(),
+  MCP_REGISTRY_PATH: z.string().optional(),
   PUBLICATION_STORE_PATH: z.string().optional(),
   SECRET_STORE_KEY: z.string().min(32).optional(),
   CATALOG_WORKLOAD_TOKEN: z.string().min(32).optional(),
