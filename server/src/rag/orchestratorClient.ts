@@ -15,6 +15,7 @@ export interface RagCitation {
 export interface RagAnswer {
   output: string;
   citations: readonly RagCitation[];
+  incomplete?: true;
 }
 
 export class OrchestratorClientError extends Error {
@@ -26,6 +27,7 @@ export class OrchestratorClientError extends Error {
 
 export type OrchestratorStatusCode =
   | "COMPLETED"
+  | "INCOMPLETE"
   | "CANCELLED"
   | "DENIED"
   | "FAILED";
@@ -126,6 +128,7 @@ export class OrchestratorClient {
       retryBudget: 0 | 1;
       /** Symbolic model alias selected by the authenticated user in the UI; never an endpoint. */
       modelRef?: string;
+      agentMode?: true;
     },
     signal?: AbortSignal,
   ): Promise<RagAnswer> {
@@ -161,6 +164,7 @@ export class OrchestratorClient {
       bulkhead: "interactive",
       capability: "grounded-assistant",
       ...(input.modelRef ? { model_ref: input.modelRef } : {}),
+      ...(input.agentMode === true ? { agent_mode: true } : {}),
     };
 
     let response: Response;
@@ -208,13 +212,14 @@ export class OrchestratorClient {
     return {
       output: result.output,
       citations: result.citations,
+      ...(result.status === "INCOMPLETE" ? { incomplete: true as const } : {}),
     };
   }
 
   private validateResponse(payload: object, requestId: string): OrchestratorResponse {
     const record = payload as Record<string, unknown>;
     if (
-      record.status !== "COMPLETED" ||
+      (record.status !== "COMPLETED" && record.status !== "INCOMPLETE") ||
       record.requestId !== requestId ||
       typeof record.output !== "string" ||
       record.output.length === 0 ||
@@ -237,7 +242,7 @@ export class OrchestratorClient {
       throw new OrchestratorClientError("ORCHESTRATOR_INVALID_RESPONSE");
     }
     return {
-      status: "COMPLETED",
+      status: record.status,
       output: record.output,
       citations: record.citations.map((citation) => ({
         source: (citation as RagCitation).source,

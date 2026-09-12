@@ -37,6 +37,8 @@ import type { ModelEligibilityCheckPort } from "./modelGovernance";
 import { FailClosedRoutePolicyPort, RoutePolicyError, type RoutePolicyPort, type RoutePolicyResult } from "./groundingPolicy";
 import type { CompanyRagProfile } from "../../services/rag-profile/companyRagProfile";
 import { computeCompanyRagProfileDigest, employeeModelDoesNotAffectRag } from "../../services/rag-profile/companyRagProfile";
+import { createProductionAgentHarness } from "./agentHarness";
+import type { AgentPolicyReplica } from "./agentPdpReplica";
 import { isValidModelRef } from "./modelSelection";
 
 function sidecarVerifiedUnits(
@@ -357,6 +359,11 @@ export interface ProductionOrchestratorOptions {
    * receiptVerifier/claimStore to be supplied explicitly, or the FailClosed defaults apply.
    */
   devInMemoryAuthorities?: boolean;
+  /** Deployer-wired replica of Retrieval's PDP policy and fact sources. Absent means agent mode fails closed. */
+  agentPolicyReplica?: AgentPolicyReplica;
+  agentSessionRoot?: string;
+  agentMaxSteps?: number;
+  agentMaxCostUnits?: number;
 }
 
 interface StoredContext {
@@ -745,6 +752,7 @@ export class ProductionOrchestratorService {
   private readonly disclosureCeiling: number;
   private readonly routePolicy: RoutePolicyPort;
   private readonly usageReceiptPublicKey?: string;
+  private readonly agentHarness?: ReturnType<typeof createProductionAgentHarness>;
   private active = 0;
 
   constructor(private readonly options: ProductionOrchestratorOptions) {
@@ -826,6 +834,25 @@ export class ProductionOrchestratorService {
       attempts,
       this.now,
     );
+    if (this.ragProfile && options.agentPolicyReplica) {
+      this.agentHarness = createProductionAgentHarness({
+        gateway: this.modelGateway,
+        retrieval: options.retrieval,
+        profile: this.ragProfile,
+        pdp: options.agentPolicyReplica.pdp,
+        auditLedger: options.agentPolicyReplica.auditLedger,
+        modelSelection: this.modelSelection,
+        modelEligibility: this.modelEligibility,
+        employeeCatalog: this.employeeCatalog,
+        modelUseAuthority: this.modelUseAuthority,
+        costAuthority: this.costAuthority,
+        agentRunAuthority: this.agentRunAuthority,
+        sessionRoot: options.agentSessionRoot,
+        maxSteps: options.agentMaxSteps,
+        maxCostUnits: options.agentMaxCostUnits,
+        now: this.now,
+      });
+    }
     this.turnRouter = options.turnRouter ?? (options.useGatewayTurnRouter ? new GatewayTurnRouterLLMPort(this.modelGateway, this.modelSelection, this.modelEligibility) : undefined);
     this.orchestrator = new Orchestrator(this.dependencies(), { now: this.now, maxOutputBytes: this.maxOutputBytes });
   }
@@ -844,6 +871,17 @@ export class ProductionOrchestratorService {
         this.employeeCatalog.resolve({ modelRef: request.modelRef, capability: "grounded-assistant" });
       } else if (request.modelRef && this.ragProfile && !employeeModelDoesNotAffectRag(this.ragProfile, request.modelRef)) {
         throw new OrchestratorError("FORBIDDEN", "The requested model is not eligible for this company profile.");
+      }
+      if (request.agentMode) {
+        if (!this.agentHarness) throw new OrchestratorError("FORBIDDEN", "Agent policy is unavailable.");
+        const result = await this.agentHarness.run(request, signal);
+        return {
+          status: result.status,
+          requestId: request.requestId,
+          turnId: request.turnId,
+          output: result.output,
+          citations: result.citations,
+        };
       }
       // Session/assertion validity is checked at the HTTP/session layer before this is
       // ever called; here the workflow itself begins with nothing but a bare requestId
