@@ -13,7 +13,8 @@ const APPROVED_HEX = new Set([
   // ink
   "#26251e", // primary
   "#5a5852", // secondary
-  "#a09c92", // tertiary / placeholder (inferred)
+  "#6e6a62", // tertiary / placeholder (ratified, F-A2)
+  "#a09c92", // scrollbar slider (decorative)
   "#807d72", // scrollbar hover (inferred)
   "#141312", // text on primary button
   // accent

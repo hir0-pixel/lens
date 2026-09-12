@@ -229,8 +229,8 @@ export function applyAppearance(settings: AppearanceSettings): void {
     root.style.setProperty("--border-strong", "#8e918f");
     root.style.setProperty("--text-primary", "#26251e");
     root.style.setProperty("--text-secondary", "#5f6368");
-    root.style.setProperty("--text-tertiary", "#818581");
-    root.style.setProperty("--text-disabled", "#818581");
+    root.style.setProperty("--text-tertiary", "#6e6a62");
+    root.style.setProperty("--text-disabled", "#6e6a62");
     root.style.setProperty("--text-on-accent", "#141312");
     root.style.setProperty("--user-message-bg", "#e6e5e0");
     root.style.setProperty("--user-message-fg", "#26251e");

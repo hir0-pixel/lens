@@ -16,7 +16,7 @@ surfaces, dark secondary text, dark borders), and one bespoke accent.
 | User bubble / raised / hover | `#F2F1ED` | `#232325` | Cursor / Perplexity |
 | Primary text (ink) | `#26251E` | `#F0F0F0` | Cursor |
 | Secondary text | `#5A5852` | `#9B9B9B` | Cursor / Perplexity |
-| Tertiary text / placeholder | `#A09C92` | `#9B9B9B` | Cursor · *inferred, ratify* |
+| Tertiary text / placeholder | `#6E6A62` | `#9B9B9B` | Cursor · ratified (F-A2: was `#A09C92`, 2.55:1 on canvas) |
 | Border | `#E6E5E0` | `#2E2E30` | Cursor / Perplexity |
 | Accent | `#3183D8` | `#3183D8` | bespoke |
 | Accent hover | `#5A9BE0` | `#5A9BE0` | derived |
@@ -40,7 +40,7 @@ Light only today; dark values above apply when a dark workbench map is added.
 | `activityBarActiveBorder`, `panelTitleActiveBorder`, `tabActiveBorderTop`, `focusBorder` | `#3183D8` |
 | `foreground`, `editorFg`, `*ActiveFg`, `inputFg` | `#26251E` |
 | `sideBarFg`, `statusBarFg`, `descriptionFg` | `#5A5852` |
-| `*InactiveFg`, `inputPlaceholder` | `#A09C92` · *inferred* |
+| `*InactiveFg`, `inputPlaceholder` | `#6E6A62` · ratified (informational tertiary) |
 | `listHoverBg`, `menuSelectionBg`, `statusBarHoverBg` | `#F2F1ED` |
 | `listActiveSelectionBg` | `#E6E5E0` |
 | `buttonBg` / `buttonFg` / `buttonHoverBg` | `#3183D8` / `#141312` / `#5A9BE0` |
