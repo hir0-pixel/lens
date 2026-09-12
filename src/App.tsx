@@ -634,12 +634,7 @@ function AgentsApp() {
   return (
     <div className="flex h-screen flex-col bg-[var(--bg-canvas)] font-sans text-[var(--text-primary)] antialiased">
       <TitleBar
-        projectName={project.name}
-        onOpenSettings={() => openSettings()}
         variant="agents"
-        onIdeWindow={() => void openIdeWindow()}
-        onOpenTerminal={toggleBottomTerminal}
-        sidePaneOpen={leftSidebarOpen}
         onToggleSidePane={() =>
           setLeftSidebarOpen((open) => !open)
         }

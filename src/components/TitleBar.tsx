@@ -14,14 +14,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface TitleBarProps {
-  projectName?: string;
-  onOpenSettings?: () => void;
   /** agents = Agents OS window; ide = separate IDE OS window */
   variant?: "agents" | "ide";
-  onAgentsWindow?: () => void;
-  onIdeWindow?: () => void;
-  onOpenTerminal?: () => void;
-  sidePaneOpen?: boolean;
   onToggleSidePane?: () => void;
   canGoBack?: boolean;
   canGoForward?: boolean;
@@ -38,8 +32,6 @@ const AGENT_MENUS = MENU_BAR.filter((m) =>
  */
 export default function TitleBar({
   variant = "agents",
-  onAgentsWindow: _onAgentsWindow,
-  onOpenTerminal: _onOpenTerminal,
   onToggleSidePane: _onToggleSidePane,
   canGoBack = false,
   canGoForward = false,

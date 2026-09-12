@@ -8,7 +8,6 @@ import { WorkbenchOverlays } from "@/features/command-palette/WorkbenchOverlays"
 import SettingsDialog from "@/components/settings/SettingsDialog";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { INITIAL_PROJECTS, MODELS } from "@/lib/mock-data";
-import { openAgentsWindow } from "@/features/windows/openAppWindow";
 import { useState } from "react";
 
 /**
@@ -53,15 +52,7 @@ export default function IdeWindowApp() {
 
   return (
     <div className="flex h-screen flex-col bg-[var(--bg-canvas)] font-sans text-[var(--text-primary)] antialiased">
-      <TitleBar
-        projectName={project.name}
-        variant="ide"
-        onOpenSettings={() => setSettingsOpen(true)}
-        onAgentsWindow={() => void openAgentsWindow()}
-        onOpenTerminal={() => {
-          window.dispatchEvent(new CustomEvent("lens:toggle-panel"));
-        }}
-      />
+      <TitleBar variant="ide" />
 
       <div className="flex min-h-0 flex-1">
         <div className="w-12 shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
