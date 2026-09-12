@@ -85,6 +85,7 @@ const catalogToken = preserved(existingBff, "CATALOG_WORKLOAD_TOKEN", token());
 const providerSecretToken = preserved(existingBff, "PROVIDER_SECRET_WORKLOAD_TOKEN", token());
 const conversationSecret = preserved(existingBff, "CONVERSATION_REFERENCE_SECRET", token());
 const routeOpsKey = preserved(existingOrch, "LENS_ROUTE_POLICY_OPS_KEY", randomBytes(32).toString("hex"));
+const agentPdpSigningKey = preserved(existingOrch, "LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY", randomBytes(32).toString("hex"));
 const authorityOutputKey = preserved(existingAuthority, "LENS_AUTHORITY_OUTPUT_KEY_HEX", randomBytes(32).toString("hex"));
 const modelArtifactDigest = preserved(existingOrch, "LENS_MODEL_ARTIFACT_DIGEST", `sha256:${"a".repeat(64)}`);
 
@@ -199,6 +200,8 @@ writeEnv("orchestrator.env", {
   LENS_ORCHESTRATOR_ASSERTION_PUBLIC_KEY: pemOneLine(assertionPublic),
   LENS_MEMORY_ASSERTION_PUBLIC_KEY: pemOneLine(memoryPublic),
   LENS_ORCHESTRATOR_AUTHORITY_PROFILE: "development",
+  LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS: "true",
+  LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY: agentPdpSigningKey,
   LENS_ALLOW_IN_MEMORY_AUTHORITIES: "true",
   LENS_CONVERSATION_HISTORY_PROFILE: "development",
   LENS_ALLOW_IN_MEMORY_HISTORY: "true",

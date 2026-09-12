@@ -29,7 +29,8 @@ import { RuntimeAttemptHttpClient } from "../../services/runtime-attempt/Runtime
 import { loadApprovedCatalogFromBff } from "./approvedCatalogClient";
 import { assertCompanyRagProfile } from "../../services/rag-profile/companyRagProfile";
 import type { DecisionFenceSigner, FactReaders, PolicyBundle } from "../../services/pdp/PolicyDecisionPoint";
-import { createAgentAuditLedger, createAgentPolicyReplica } from "./agentPdpReplica";
+import { createAgentAuditLedger, createAgentPolicyReplica, type AgentPolicyReplica } from "./agentPdpReplica";
+import { createDevAgentPolicyFacts } from "./agentDevFacts";
 
 export interface OrchestratorServiceEnv {
   PORT?: string;
@@ -101,6 +102,10 @@ export interface OrchestratorServiceEnv {
   /** Dev lab: set false to use deterministic route classification instead of dispatching router model "default" (not in BFF catalog). */
   USE_GATEWAY_TURN_ROUTER?: string;
   AGENT_SESSION_ROOT?: string;
+  /** DEV/TEST ONLY. Enables auto-provisioned facts for the real agent PDP; production must never set this. */
+  LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS?: string;
+  /** HMAC key for dev agent PDP fences. Required when LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS=true. */
+  LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY?: string;
 }
 
 function loadEnv(): OrchestratorServiceEnv {
@@ -154,6 +159,8 @@ function loadEnv(): OrchestratorServiceEnv {
     COMPANY_RAG_PROFILE_JSON: process.env.LENS_COMPANY_RAG_PROFILE_JSON,
     USE_GATEWAY_TURN_ROUTER: process.env.LENS_USE_GATEWAY_TURN_ROUTER,
     AGENT_SESSION_ROOT: process.env.LENS_AGENT_SESSION_ROOT,
+    LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS: process.env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS,
+    LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY: process.env.LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY,
   };
 }
 
@@ -305,6 +312,18 @@ export interface OrchestratorMainDependencies {
     policyBundle: PolicyBundle;
     signer: DecisionFenceSigner;
   };
+}
+
+export function loadAgentPolicyReplica(
+  env: OrchestratorServiceEnv,
+  dependencies: OrchestratorMainDependencies,
+): AgentPolicyReplica | undefined {
+  const agentPolicy = dependencies.agentPolicy ?? (env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS === "true"
+    ? createDevAgentPolicyFacts(env.LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY!)
+    : undefined);
+  return agentPolicy
+    ? createAgentPolicyReplica({ ...agentPolicy, auditLedger: createAgentAuditLedger() })
+    : undefined;
 }
 
 export type SharedAuthorities = {
@@ -467,6 +486,13 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
   if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) throw new Error("PORT must be an integer from 1 to 65535.");
   if (!env.ASSERTION_VERIFY_KEY) throw new Error("LENS_ORCHESTRATOR_ASSERTION_PUBLIC_KEY is required for request-bound session proof verification.");
   if (!env.MEMORY_ASSERTION_VERIFY_KEY) throw new Error("LENS_MEMORY_ASSERTION_PUBLIC_KEY is required for Memory request proof verification.");
+  const authorityProfile = parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE);
+  if (env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS === "true" && authorityProfile === "production") {
+    throw new Error("Production must not enable LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS.");
+  }
+  if (env.LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS === "true" && !env.LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY) {
+    throw new Error("LENS_ORCHESTRATOR_DEV_AGENT_SIGNING_KEY is required when LENS_ORCHESTRATOR_ALLOW_DEV_AGENT_FACTS=true.");
+  }
   const assertionVerifier = new DelegatedSessionAssertionVerifier(env.ASSERTION_VERIFY_KEY);
   const memoryAssertionVerifier = new DelegatedSessionAssertionVerifier(env.MEMORY_ASSERTION_VERIFY_KEY);
   const retrieval = new RetrievalHttpClient(env.RETRIEVAL_URL, env.RETRIEVAL_WORKLOAD_TOKEN);
@@ -510,12 +536,7 @@ export async function main(env: OrchestratorServiceEnv = loadEnv(), dependencies
     );
   }
   const sharedAuthorities = loadSharedAuthorities(env, dependencies, effectiveModelEligibility);
-  const agentPolicyReplica = dependencies.agentPolicy
-    ? createAgentPolicyReplica({
-        ...dependencies.agentPolicy,
-        auditLedger: createAgentAuditLedger(),
-      })
-    : undefined;
+  const agentPolicyReplica = loadAgentPolicyReplica(env, dependencies);
   if (parseAuthorityProfile(env.ORCHESTRATOR_AUTHORITY_PROFILE) === "production" && !env.USAGE_RECEIPT_PUBLIC_KEY) {
     throw new Error("Production requires LENS_USAGE_RECEIPT_PUBLIC_KEY to verify sidecar-signed usage.");
   }
