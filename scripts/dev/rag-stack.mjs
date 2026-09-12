@@ -142,4 +142,4 @@ function shutdown() {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-await new Promise(() => {});
+setInterval(() => {}, 60_000);
